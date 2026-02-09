@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ISA 배당 엔진 v5.6 - 캐시 방지 및 리스트 복구</title>
+    <title>ISA 배당 엔진 v5.7 - 슬림 히스토리 UI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -39,7 +39,7 @@
                 </div>
                 <div>
                     <h1 class="text-slate-900 font-black text-lg leading-tight uppercase tracking-tight text-left">ISA RICH</h1>
-                    <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold text-left">v5.6 No Cache</p>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold text-left">v5.7 Slim UI</p>
                 </div>
             </div>
             <button onclick="toggleSidebar()" class="lg:hidden text-slate-400 hover:text-slate-600 p-2">
@@ -176,7 +176,7 @@
                     </div>
 
                     <div class="card-shadow p-6 flex flex-col items-center justify-center min-h-[300px] text-left">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 w-full text-left text-left">자산 비중 상세</p>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 w-full text-left">자산 비중 상세</p>
                         <div class="relative w-40 h-40 flex-shrink-0 text-left">
                             <canvas id="assetChart"></canvas>
                             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-left">
@@ -197,8 +197,10 @@
                 </button>
                 <h2 class="text-2xl font-bold text-slate-900 text-left">거래 히스토리</h2>
             </header>
-            <div class="card-shadow overflow-hidden text-left">
-                <div class="overflow-x-auto text-left">
+            
+            <div class="card-shadow overflow-hidden text-left bg-slate-50/50">
+                <!-- PC 버전 테이블 -->
+                <div class="hidden lg:block overflow-x-auto text-left bg-white">
                     <table class="w-full text-left text-sm text-left">
                         <thead class="bg-slate-100/50 text-slate-500 text-[10px] uppercase tracking-wider font-bold text-left">
                             <tr class="text-left">
@@ -212,6 +214,11 @@
                         </thead>
                         <tbody id="table-transactions" class="divide-y divide-slate-100 text-slate-700 text-left"></tbody>
                     </table>
+                </div>
+
+                <!-- 모바일 버전 슬림 카드 리스트 (여기서 바뀜) -->
+                <div id="mobile-transactions-list" class="lg:hidden p-4 space-y-3">
+                    <!-- JS Dynamic Content -->
                 </div>
             </div>
         </section>
@@ -262,6 +269,7 @@
         </section>
     </main>
 
+    <!-- 모달: 목표 설정 -->
     <div id="goal-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm text-left" onclick="closeGoalModal()"></div>
         <div class="relative bg-white w-full max-w-sm p-6 rounded-3xl shadow-2xl animate-in zoom-in-95 text-left">
@@ -272,7 +280,7 @@
     </div>
 
     <script>
-        // ▼▼▼▼▼▼ GAS 웹 앱 URL 입력 (따옴표 안에 주소 넣기) ▼▼▼▼▼▼
+        // ▼▼▼▼▼▼ GAS 웹 앱 URL 입력 ▼▼▼▼▼▼
         const MY_GAS_URL = "https://script.google.com/macros/s/AKfycbxRDE_WPbcE5oDR4Ha460vHt-FsWve8O6W_kjhoWPoPfhF5CSsJIWhtxlksarsd34t6dQ/exec"; 
         // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
@@ -298,14 +306,10 @@
             }
 
             try {
-                // 캐시 방지를 위한 타임스탬프 추가 (_t)
+                // 캐시 방지 타임스탬프 추가
                 const ts = Date.now();
-                
-                // 1. 가격 데이터
                 const pRes = await fetch(`${MY_GAS_URL}?action=prices&_t=${ts}`, { redirect: 'follow' });
                 marketData = await pRes.json();
-
-                // 2. 거래 내역
                 const hRes = await fetch(`${MY_GAS_URL}?action=get_history&_t=${ts}`, { redirect: 'follow' });
                 transactions = await hRes.json();
                 
@@ -330,7 +334,6 @@
             if (!date || !shares || !price || !ticker) { alert("입력 확인"); return; }
             
             const btn = getEl('save-btn');
-            const originalText = btn.innerText;
             btn.innerText = "저장 중..."; btn.disabled = true;
 
             const url = `${MY_GAS_URL}?action=add&id=${Date.now()}&date=${date}&ticker=${ticker}&name=${encodeURIComponent(name)}&shares=${shares}&price=${price}&category=${selectedCategory}`;
@@ -343,8 +346,7 @@
                 showSection('dashboard');
             } catch(e) { alert("저장 실패"); }
             
-            btn.innerText = originalText;
-            btn.disabled = false;
+            btn.innerText = "저장하기"; btn.disabled = false;
         }
 
         async function deleteTransaction(id) {
@@ -373,47 +375,28 @@
                 const d = h[k];
                 if (d.shares <= 0) return;
                 const m = marketData[k] || { price: 0, yield: 0 };
-                
                 let yieldPct = m.yield < 1 && m.yield > 0 ? m.yield * 100 : m.yield;
-                
-                const val = d.shares * m.price;
-                const profit = val - d.cost;
-                const profitRate = d.cost > 0 ? (profit/d.cost)*100 : 0;
-                const div = val * (yieldPct/100/12) * (1-TAX_RATE);
+                const val = d.shares * m.price, profit = val - d.cost, profitRate = d.cost > 0 ? (profit/d.cost)*100 : 0, div = val * (yieldPct/100/12) * (1-TAX_RATE);
                 
                 totalVal += val; totalDiv += div;
                 labels.push(d.name); data.push(val); bg.push(COLORS[i % COLORS.length]);
 
-                // 날짜 안전 처리 (문자열 자르기 전 확인)
-                const dateStr = d.date ? String(d.date).substring(0,10) : "-";
-
+                // PC 테이블
                 htmlPC += `<tr class="border-b border-slate-100 hover:bg-slate-50 text-left">
-                    <td class="pl-5 py-4 text-left w-1/3">
-                        <div class="flex items-center gap-2">
-                            <div class="w-1 h-8 rounded-sm" style="background:${bg[i]}"></div>
-                            <div>
-                                <div class="font-bold text-slate-800 text-sm text-left">${d.name} <span class="text-blue-500 text-xs font-normal ml-1">[${yieldPct.toFixed(2)}%]</span></div>
-                                <div class="text-[10px] text-slate-400 text-left">${k}</div>
-                            </div>
-                        </div>
-                    </td>
+                    <td class="pl-5 py-4 text-left w-1/3"><div class="flex items-center gap-2"><div class="w-1 h-8 rounded-sm" style="background:${bg[i]}"></div><div><div class="font-bold text-slate-800 text-sm text-left">${d.name} <span class="text-blue-500 text-xs font-normal ml-1">[${yieldPct.toFixed(2)}%]</span></div><div class="text-[10px] text-slate-400 text-left">${k}</div></div></div></td>
                     <td class="px-2 py-4 text-center text-sm font-bold text-slate-700 text-left">${d.shares}</td>
-                    <td class="px-2 py-4 text-right text-left">
-                        <div class="font-bold text-sm text-slate-800 text-right">₩${Math.round(val).toLocaleString()}</div>
-                        <div class="text-[10px] ${profit>=0?'text-red-500':'text-blue-500'} font-bold text-right">${profit>=0?'▲':'▼'} ₩${Math.round(Math.abs(profit)).toLocaleString()} (${profitRate.toFixed(1)}%)</div>
-                    </td>
+                    <td class="px-2 py-4 text-right text-left"><div class="font-bold text-sm text-slate-800 text-right">₩${Math.round(val).toLocaleString()}</div><div class="text-[10px] ${profit>=0?'text-red-500':'text-blue-500'} font-bold text-right">${profit>=0?'▲':'▼'} ₩${Math.round(Math.abs(profit)).toLocaleString()} (${profitRate.toFixed(1)}%)</div></td>
                     <td class="px-2 py-4 text-right text-sm font-black text-blue-600 text-right">₩${Math.round(div).toLocaleString()}</td>
                     <td class="pr-5 py-4 text-right text-xs text-slate-500 font-mono text-right">₩${Math.round(d.cost/d.shares).toLocaleString()}</td>
                 </tr>`;
 
-                htmlMobile += `<div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm"><div class="flex justify-between items-start mb-3"><div class="flex items-center gap-2"><div class="w-1 h-8 rounded-sm" style="background:${bg[i]}"></div><div><h4 class="font-bold text-slate-800 text-sm">${d.name} <span class="text-blue-500 text-[10px] font-normal">[${yieldPct.toFixed(2)}%]</span></h4><span class="text-[10px] text-slate-400">${k}</span></div></div><span class="bg-blue-50 text-blue-600 px-2 py-1 rounded text-xs font-black">₩${Math.round(div).toLocaleString()}</span></div><div class="grid grid-cols-2 gap-y-2 text-xs"><div class="text-slate-500">수량 <span class="font-bold text-slate-800 ml-1">${d.shares}주</span></div><div class="text-right text-slate-500">평단 <span class="font-bold text-slate-800 ml-1">₩${Math.round(d.cost/d.shares).toLocaleString()}</span></div><div class="col-span-2 flex justify-between items-center border-t border-slate-50 pt-2 mt-1"><span class="text-slate-400 text-[10px]">평가금액 (수익)</span><div class="text-right"><span class="font-bold text-slate-800 text-sm">₩${Math.round(val).toLocaleString()}</span><span class="ml-1 text-[10px] font-bold ${profit>=0?'text-red-500':'text-blue-500'}">${profit>=0?'▲':'▼'} ${profitRate.toFixed(1)}%</span></div></div></div></div>`;
+                // 모바일 카드 (보유 종목)
+                htmlMobile += `<div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm"><div class="flex justify-between items-start mb-3"><div class="flex items-center gap-2"><div class="w-1 h-8 rounded-sm" style="background:${bg[i]}"></div><div><h4 class="font-bold text-slate-800 text-sm">${d.name} <span class="text-blue-500 text-[10px] font-normal">[${yieldPct.toFixed(2)}%]</span></h4><span class="text-[10px] text-slate-400">${k}</span></div></div><span class="bg-blue-50 text-blue-600 px-2 py-1 rounded text-xs font-black">₩${Math.round(div).toLocaleString()}</span></div><div class="grid grid-cols-2 gap-y-2 text-xs"><div class="text-slate-500">수량 <span class="font-bold text-slate-800 ml-1">${d.shares}주</span></div><div class="text-right text-slate-500">평단 <span class="font-bold text-slate-800 ml-1">₩${Math.round(d.cost/d.shares).toLocaleString()}</span></div><div class="col-span-2 flex justify-between items-center border-t border-slate-50 pt-2 mt-1"><span class="text-slate-400 text-[10px]">평가금액 (수익)</span><div class="text-right"><span class="font-bold text-slate-800 text-sm">₩${Math.round(val).toLocaleString()}</span><span class="ml-1 text-[10px] font-bold ${profit>=0?'text-red-500':'text-blue-500'}">${profit>=0?'▲':'▼'} ₩${Math.round(Math.abs(profit)).toLocaleString()} (${profitRate.toFixed(1)}%)</span></div></div></div></div>`;
             });
 
             getEl('stat-total-value').innerText = `₩${Math.round(totalVal).toLocaleString()}`;
-            const totProfit = totalVal - (totalInvest + totalReinvest);
-            const totRate = (totalInvest+totalReinvest) > 0 ? (totProfit/(totalInvest+totalReinvest))*100 : 0;
+            const totProfit = totalVal - (totalInvest + totalReinvest), totRate = (totalInvest+totalReinvest) > 0 ? (totProfit/(totalInvest+totalReinvest))*100 : 0;
             getEl('stat-profit-box').innerHTML = `<span class="${totProfit>=0?'text-red-500':'text-blue-500'}">${totProfit>=0?'▲':'▼'} ₩${Math.round(Math.abs(totProfit)).toLocaleString()} (${totRate.toFixed(1)}%)</span>`;
-            
             getEl('stat-total-invested').innerText = `₩${Math.round(totalInvest).toLocaleString()}`;
             getEl('stat-reinvested').innerText = `₩${Math.round(totalReinvest).toLocaleString()}`;
             getEl('stat-monthly-dividend').innerText = `₩${Math.round(totalDiv).toLocaleString()}`;
@@ -421,6 +404,7 @@
             getEl('table-holdings').innerHTML = htmlPC || `<tr><td colspan="5" class="p-8 text-center text-xs text-slate-400">데이터가 없습니다.</td></tr>`;
             getEl('mobile-holdings-list').innerHTML = htmlMobile || `<div class="p-8 text-center text-xs text-slate-400">데이터가 없습니다.</div>`;
 
+            // Chart
             if (assetChart) assetChart.destroy();
             const ctx = getEl('assetChart').getContext('2d');
             assetChart = new Chart(ctx, { type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: bg, borderWidth: 0 }] }, options: { cutout: '75%', plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false } });
@@ -432,18 +416,31 @@
             }
             calculateReinvestment(totalDiv);
             
-            // 거래내역 (날짜 처리 안전장치 추가)
-            getEl('table-transactions').innerHTML = transactions.map(t => {
-                const dateDisplay = t.date ? String(t.date).substring(0,10) : '-';
-                return `<tr class="text-xs border-b border-slate-50 hover:bg-slate-50 text-left">
-                    <td class="pl-6 py-3 text-left">${dateDisplay}</td>
-                    <td class="px-4 py-3 font-bold text-left">${t.name}</td>
-                    <td class="px-4 py-3 text-left">${t.shares}</td>
-                    <td class="px-4 py-3 text-left">₩${Number(t.price).toLocaleString()}</td>
-                    <td class="px-4 py-3 text-left"><span class="px-2 py-0.5 rounded bg-slate-100 text-left">${CAT_NAMES[t.category]}</span></td>
-                    <td class="pr-6 py-3 text-center text-center"><button onclick="deleteTransaction('${t.id}')" class="text-slate-300 hover:text-red-500 text-center"><i class="fa-solid fa-trash text-center"></i></button></td>
-                </tr>`;
-            }).join('');
+            // 거래내역 (PC: 테이블 / 모바일: 슬림 카드)
+            getEl('table-transactions').innerHTML = transactions.map(t => `<tr class="text-xs border-b border-slate-50 hover:bg-slate-50 text-left"><td class="pl-6 py-3 text-left">${t.date.substring(0,10)}</td><td class="px-4 py-3 font-bold text-left">${t.name}</td><td class="px-4 py-3 text-left">${t.shares}</td><td class="px-4 py-3 text-left">₩${Number(t.price).toLocaleString()}</td><td class="px-4 py-3 text-left"><span class="px-2 py-0.5 rounded bg-slate-100 text-left">${CAT_NAMES[t.category]}</span></td><td class="pr-6 py-3 text-center text-center"><button onclick="deleteTransaction('${t.id}')" class="text-slate-300 hover:text-red-500 text-center"><i class="fa-solid fa-trash text-center"></i></button></td></tr>`).join('');
+            
+            // 모바일용 거래내역 리스트
+            getEl('mobile-transactions-list').innerHTML = transactions.map(t => `
+                <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-1">
+                    <div class="flex justify-between items-center border-b border-slate-50 pb-2 mb-1">
+                        <span class="text-xs text-slate-400">${t.date.substring(0,10)}</span>
+                        <span class="text-sm font-bold text-slate-800">${t.name}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <div class="flex gap-2 text-slate-500 items-center">
+                            <span>${t.shares}주</span>
+                            <span class="text-slate-200">|</span>
+                            <span>₩${Number(t.price).toLocaleString()}</span>
+                            <span class="text-slate-200">|</span>
+                            <span class="bg-slate-100 px-1.5 rounded text-slate-600 font-medium">${CAT_NAMES[t.category]}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold text-slate-900">₩${(Number(t.shares)*Number(t.price)).toLocaleString()}</span>
+                            <button onclick="deleteTransaction('${t.id}')" class="text-slate-300 hover:text-red-500 p-1"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `).join('') || `<div class="p-8 text-center text-xs text-slate-400">내역이 없습니다.</div>`;
 
             let goal = parseInt(localStorage.getItem('isa_goal')) || 250000;
             getEl('display-goal-amount').innerText = goal.toLocaleString();
@@ -481,7 +478,7 @@
             [1,2,3].forEach(i => getEl('cat-'+i).className = `py-3 rounded-xl border text-xs font-bold transition text-center ${i==n ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200'}`);
         }
 
-        window.toggleSidebar = () => { getEl('main-sidebar').classList.toggle('active'); getEl('sidebar-overlay').classList.toggle('active'); };
+        window.toggleSidebar = () => { getEl('main-sidebar').classList.toggle('hidden'); getEl('sidebar-overlay').classList.toggle('hidden'); };
         window.showSection = (id) => { ['dashboard','history','add'].forEach(s => getEl('section-'+s).classList.add('hidden')); getEl('section-'+id).classList.remove('hidden'); document.querySelectorAll('.sidebar-item').forEach(btn => btn.classList.remove('sidebar-active')); getEl('btn-'+id).classList.add('sidebar-active'); if(window.innerWidth < 1024) toggleSidebar(); };
         window.openGoalModal = () => getEl('goal-modal').classList.remove('hidden');
         window.closeGoalModal = () => getEl('goal-modal').classList.add('hidden');
