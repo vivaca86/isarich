@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ISA 배당 엔진 v5.3 - 모바일 카드 UI 적용</title>
+    <title>ISA 배당 엔진 v5.2 - Rich Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -36,11 +36,11 @@
         <div class="p-6 flex items-center justify-between border-b border-slate-100">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                    <i class="fa-solid fa-mobile-screen-button text-xl"></i>
+                    <i class="fa-solid fa-coins text-xl"></i>
                 </div>
                 <div>
                     <h1 class="text-slate-900 font-black text-lg leading-tight uppercase tracking-tight text-left">ISA RICH</h1>
-                    <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold text-left">v5.3 Card UI</p>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold text-left">v5.2 Final</p>
                 </div>
             </div>
             <button onclick="toggleSidebar()" class="lg:hidden text-slate-400 hover:text-slate-600 p-2">
@@ -97,7 +97,7 @@
                 
                 <!-- 왼쪽 메인 영역 -->
                 <div class="lg:col-span-8 space-y-6 text-left">
-                    <!-- 요약 카드 (모바일 2열, 데스크톱 4열) -->
+                    <!-- 요약 카드 -->
                     <div class="grid grid-cols-2 gap-4 text-left">
                         <!-- 1. 총 자산 -->
                         <div class="card-shadow p-5 relative overflow-hidden group text-left">
@@ -143,11 +143,11 @@
                         </div>
                     </div>
 
-                    <!-- 보유 종목 리스트 (반응형: 모바일은 카드, PC는 테이블) -->
+                    <!-- 보유 종목 리스트 (수정됨) -->
                     <div class="card-shadow overflow-hidden text-left bg-slate-50/50">
                         <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-white text-left">
                             <h3 class="font-black text-base text-slate-800 text-left">보유 종목</h3>
-                            <span class="text-[10px] font-bold text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded text-left">Cloud Sync</span>
+                            <span class="text-[10px] font-bold text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded text-left">Cloud Sync</span>
                         </div>
                         
                         <!-- 모바일용 카드 리스트 -->
@@ -158,7 +158,7 @@
                         <!-- 데스크톱용 테이블 -->
                         <div class="hidden lg:block overflow-x-auto text-left bg-white">
                             <table class="w-full text-left border-collapse text-left">
-                                <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider font-black text-left">
+                                <thead class="bg-slate-100/50 text-slate-500 text-[10px] uppercase tracking-wider font-black text-left">
                                     <tr class="text-left">
                                         <th class="pl-5 py-3 text-left w-1/3">종목명 <span class="font-normal text-slate-400">[배당률]</span></th>
                                         <th class="px-2 py-3 text-center">수량</th>
@@ -197,7 +197,7 @@
                         <i class="fa-solid fa-coins absolute -bottom-4 -right-4 text-7xl text-white/5 pointer-events-none text-left"></i>
                     </div>
 
-                    <!-- 자산 비중 차트 -->
+                    <!-- 자산 비중 차트 (디테일 개선) -->
                     <div class="card-shadow p-6 flex flex-col items-center justify-center min-h-[300px] text-left">
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 w-full text-left text-left">자산 비중 상세</p>
                         <div class="relative w-40 h-40 flex-shrink-0 text-left">
@@ -223,7 +223,7 @@
             <div class="card-shadow overflow-hidden text-left">
                 <div class="overflow-x-auto text-left">
                     <table class="w-full text-left text-sm text-left">
-                        <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider font-bold text-left">
+                        <thead class="bg-slate-100/50 text-slate-500 text-[10px] uppercase tracking-wider font-bold text-left">
                             <tr class="text-left">
                                 <th class="pl-6 py-4 text-left">날짜</th>
                                 <th class="px-4 py-4 text-left">종목</th>
@@ -302,7 +302,7 @@
 
         const COLORS = ["#3b82f6", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6"];
         const CAT_NAMES = { "1": "원금", "2": "특별", "3": "재투자" };
-        const TAX_RATE = 0; // ISA 비과세
+        const TAX_RATE = 0; // ISA 비과세 혜택
 
         let transactions = [];
         let marketData = {};
@@ -357,7 +357,8 @@
             const url = `${MY_GAS_URL}?action=add&id=${Date.now()}&date=${date}&ticker=${ticker}&name=${encodeURIComponent(name)}&shares=${shares}&price=${price}&category=${selectedCategory}`;
             
             try {
-                await fetch(url);
+                // 리다이렉트 대응 옵션 추가
+                await fetch(url, { method: "GET", redirect: "follow" });
                 alert("저장 완료");
                 getEl('input-shares').value = ""; getEl('input-price').value = "";
                 syncAllData(); // 저장 후 즉시 동기화
@@ -371,7 +372,7 @@
         async function deleteTransaction(id) {
             if(!confirm("삭제하시겠습니까?")) return;
             try {
-                await fetch(`${MY_GAS_URL}?action=delete&id=${id}`);
+                await fetch(`${MY_GAS_URL}?action=delete&id=${id}`, { method: "GET", redirect: "follow" });
                 syncAllData();
             } catch(e) { alert("삭제 실패"); }
         }
@@ -401,6 +402,7 @@
                 const val = d.shares * m.price;
                 const profit = val - d.cost;
                 const profitRate = d.cost > 0 ? (profit/d.cost)*100 : 0;
+                // 세금 0원 (비과세)
                 const div = val * (yieldPct/100/12) * (1-TAX_RATE);
                 
                 totalVal += val; totalDiv += div;
@@ -433,8 +435,8 @@
                         <div class="flex items-center gap-2">
                             <div class="w-1 h-8 rounded-sm" style="background:${bg[i]}"></div>
                             <div>
-                                <h4 class="font-bold text-slate-800 text-sm">${d.name}</h4>
-                                <span class="text-[10px] text-slate-400">${k} · ${yieldPct.toFixed(2)}%</span>
+                                <h4 class="font-bold text-slate-800 text-sm">${d.name} <span class="text-blue-500 text-[10px] font-normal">[${yieldPct.toFixed(2)}%]</span></h4>
+                                <span class="text-[10px] text-slate-400">${k}</span>
                             </div>
                         </div>
                         <span class="bg-blue-50 text-blue-600 px-2 py-1 rounded text-xs font-black">₩${Math.round(div).toLocaleString()}</span>
@@ -443,10 +445,10 @@
                         <div class="text-slate-500">수량 <span class="font-bold text-slate-800 ml-1">${d.shares}주</span></div>
                         <div class="text-right text-slate-500">평단 <span class="font-bold text-slate-800 ml-1">₩${Math.round(d.cost/d.shares).toLocaleString()}</span></div>
                         <div class="col-span-2 flex justify-between items-center border-t border-slate-50 pt-2 mt-1">
-                            <span class="text-slate-400 text-[10px]">평가금액</span>
+                            <span class="text-slate-400 text-[10px]">평가금액 (수익)</span>
                             <div class="text-right">
                                 <span class="font-bold text-slate-800">₩${Math.round(val).toLocaleString()}</span>
-                                <span class="ml-1 text-[10px] font-bold ${profit>=0?'text-red-500':'text-blue-500'}">${profit>=0?'▲':'▼'} ${profitRate.toFixed(1)}%</span>
+                                <span class="ml-1 text-[10px] font-bold ${profit>=0?'text-red-500':'text-blue-500'}">${profit>=0?'▲':'▼'} ₩${Math.round(Math.abs(profit)).toLocaleString()} (${profitRate.toFixed(1)}%)</span>
                             </div>
                         </div>
                     </div>
@@ -461,6 +463,7 @@
             
             getEl('stat-total-invested').innerText = `₩${Math.round(totalInvest).toLocaleString()}`;
             getEl('stat-reinvested').innerText = `₩${Math.round(totalReinvest).toLocaleString()}`;
+            // 세전=세후 (비과세)
             getEl('stat-monthly-dividend').innerText = `₩${Math.round(totalDiv / (1-TAX_RATE)).toLocaleString()}`; 
             getEl('stat-monthly-dividend-net').innerText = `₩${Math.round(totalDiv).toLocaleString()}`;
 
