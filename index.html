@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ISA 배당 엔진 v3.7</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+
+<style>
+body { font-family: 'Noto Sans KR', sans-serif; background:#f8fafc; }
+.card { background:white; border-radius:2rem; padding:1.5rem; box-shadow:0 4px 12px rgba(0,0,0,.05); }
+</style>
+</head>
+
+<body class="p-6 space-y-6">
+
+<!-- ================= 재투자 추천 카드 ================= -->
+<div class="card">
+  <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
+    자동 재투자 추천
+  </p>
+  <div id="reinvest-box" class="text-sm font-bold text-slate-700">
+    데이터 계산 중...
+  </div>
+</div>
+
+<!-- ================= 요약 카드 ================= -->
+<div class="card">
+  <h2 class="text-xl font-black mb-4">포트폴리오 요약</h2>
+  <p>총 평가금액: <span id="total-value">0</span></p>
+  <p>예상 월 배당금: <span id="monthly-dividend">0</span></p>
+</div>
+
+<script>
+/********************************************************
+ * ISA ENGINE v3.7 (Netlify Safe)
+ ********************************************************/
+
+const TAX_RATE = 0.154;
+const START_KEY = 'isa_start_date';
+
+/* ===== 시작일 자동 저장 ===== */
+if (!localStorage.getItem(START_KEY)) {
+  localStorage.setItem(START_KEY, new Date().toISOString());
+}
+
+/* ===== 예시 데이터 (실제에선 시트 연동됨) ===== */
+let transactions = JSON.parse(localStorage.getItem('isa_data')) || [
+  { ticker:'486290', shares:10, yield:12 },
+  { ticker:'474220', shares:10, yield:8 },
+  { ticker:'329200', shares:5, yield:6 }
+];
+
+let marketData = {
+  '486290': { price:10500 },
+  '474220': { price:15500 },
+  '458730': { price:14700 },
+  '329200': { price:4500 }
+};
+
+/* ===== 유틸 ===== */
+function diffMonths(a,b){
+  return (b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth());
+}
+
+/* ===== 현재 단계 ===== */
+function getPhase(){
+  const start = new Date(localStorage.getItem(START_KEY));
+  return diffMonths(start,new Date()) < 12 ? 1 : 2;
+}
+
+/* ===== 월 배당금 계산 ===== */
+function getMonthlyDividend(){
+  let total = 0;
+  transactions.forEach(t=>{
+    const p = marketData[t.ticker]?.price || 0;
+    if(!p || !t.yield) return;
+    total += t.shares * p * (t.yield/100/12);
+  });
+  return Math.floor(total);
+}
+
+/* ===== 재투자 추천 ===== */
+function renderReinvest(){
+  const el = document.getElementById('reinvest-box');
+  const cash = getMonthlyDividend();
+  if(cash <= 0){
+    el.innerHTML = `<span class="text-slate-400">배당 데이터 없음</span>`;
+    return;
+  }
+
+  const phase = getPhase();
+  const schdPrice = marketData['458730']?.price || 0;
+
+  let html = `<p class="text-xs mb-2">현재 단계: <b>${phase===1?'1년차 (배당 극대화)':'2년차 (구조 전환)'}</b></p>`;
+
+  if(phase === 1){
+    html += `<p>✔ TIGER 리츠부동산인프라 (329200)</p>`;
+    html += `<p class="text-xs text-slate-500">₩${cash.toLocaleString()}</p>`;
+  } else {
+    if(cash >= schdPrice){
+      html += `<p>✔ TIGER 미국배당다우존스 (458730) 1주</p>`;
+      html += `<p>✔ TIGER 리츠부동산인프라 (329200)</p>`;
+      html += `<p class="text-xs text-slate-500">잔액 ₩${(cash-schdPrice).toLocaleString()}</p>`;
+    } else {
+      html += `<p>✔ TIGER 리츠부동산인프라 (329200)</p>`;
+      html += `<p class="text-xs text-slate-500">₩${cash.toLocaleString()}</p>`;
+    }
+  }
+
+  el.innerHTML = html;
+}
+
+/* ===== 요약 렌더 ===== */
+function updateUI(){
+  let totalVal = 0;
+  transactions.forEach(t=>{
+    const p = marketData[t.ticker]?.price || 0;
+    totalVal += t.shares * p;
+  });
+
+  document.getElementById('total-value').innerText = `₩${totalVal.toLocaleString()}`;
+  document.getElementById('monthly-dividend').innerText = `₩${getMonthlyDividend().toLocaleString()}`;
+
+  renderReinvest();
+}
+
+/* ===== 초기 실행 ===== */
+updateUI();
+</script>
+
+</body>
+</html>
