@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ISA 배당 엔진 v5.0 - 클라우드 동기화 완성</title>
+    <title>ISA 배당 엔진 v5.1 - Rich Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
         body { font-family: 'Noto Sans KR', sans-serif; background-color: #f8fafc; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
-        .card-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); background-color: white; border-radius: 1.5rem; }
+        .card-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02); background-color: white; border: 1px solid #f1f5f9; border-radius: 1.5rem; }
         .sidebar-active { background-color: #2563eb; color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         
@@ -36,11 +36,11 @@
         <div class="p-6 flex items-center justify-between border-b border-slate-100">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                    <i class="fa-solid fa-cloud text-xl"></i>
+                    <i class="fa-solid fa-coins text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-slate-900 font-black text-lg leading-tight uppercase tracking-tight text-left">ISA ENGINE</h1>
-                    <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold text-left">v5.0 Sync</p>
+                    <h1 class="text-slate-900 font-black text-lg leading-tight uppercase tracking-tight text-left">ISA RICH</h1>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold text-left">v5.1 Final</p>
                 </div>
             </div>
             <button onclick="toggleSidebar()" class="lg:hidden text-slate-400 hover:text-slate-600 p-2">
@@ -50,7 +50,7 @@
 
         <nav class="flex-1 p-4 flex flex-col gap-1 mt-4">
             <button onclick="showSection('dashboard')" id="btn-dashboard" class="sidebar-item sidebar-active flex items-center gap-3 p-3.5 rounded-xl transition text-sm font-bold w-full text-left">
-                <i class="fa-solid fa-house w-5 text-center"></i> <span>대시보드</span>
+                <i class="fa-solid fa-chart-pie w-5 text-center"></i> <span>Rich 대시보드</span>
             </button>
             <button onclick="showSection('history')" id="btn-history" class="sidebar-item flex items-center gap-3 p-3.5 rounded-xl hover:bg-slate-100 transition text-sm text-slate-500 font-bold w-full text-left">
                 <i class="fa-solid fa-list-ul w-5 text-center"></i> <span>거래 내역</span>
@@ -84,8 +84,7 @@
                         <i class="fa-solid fa-bars"></i>
                     </button>
                     <div class="text-left">
-                        <h2 class="text-2xl font-black text-slate-900 tracking-tight text-left">대시보드</h2>
-                        <p class="text-xs text-slate-500 font-medium mt-1 text-left">PC와 모바일이 실시간으로 연동됩니다.</p>
+                        <h2 class="text-3xl font-black text-slate-900 tracking-tight text-left">Rich</h2>
                     </div>
                 </div>
                 <button id="cloud-sync-btn" onclick="syncAllData()" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-500/20 active:scale-95 flex items-center gap-2 text-center">
@@ -95,9 +94,9 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start text-left">
                 
-                <!-- 왼쪽 메인 영역 (요약 카드 + 테이블) -->
+                <!-- 왼쪽 메인 영역 -->
                 <div class="lg:col-span-8 space-y-6 text-left">
-                    <!-- 요약 카드 (4개) -->
+                    <!-- 요약 카드 -->
                     <div class="grid grid-cols-2 gap-4 text-left">
                         <!-- 1. 총 자산 -->
                         <div class="card-shadow p-5 relative overflow-hidden group text-left">
@@ -143,7 +142,7 @@
                         </div>
                     </div>
 
-                    <!-- 보유 종목 테이블 (순서 최적화) -->
+                    <!-- 보유 종목 테이블 (순서 및 배당률 위치 변경) -->
                     <div class="card-shadow overflow-hidden text-left">
                         <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 text-left">
                             <h3 class="font-black text-base text-slate-800 text-left">보유 종목</h3>
@@ -151,14 +150,13 @@
                         </div>
                         <div class="overflow-x-auto text-left">
                             <table class="w-full text-left border-collapse text-left">
-                                <thead class="bg-slate-100/50 text-slate-500 text-[10px] uppercase tracking-wider font-bold text-left">
+                                <thead class="bg-slate-100/50 text-slate-500 text-[10px] uppercase tracking-wider font-black text-left">
                                     <tr class="text-left">
-                                        <th class="pl-5 py-3 text-left">종목명</th>
+                                        <th class="pl-5 py-3 text-left w-1/3">종목명 <span class="font-normal text-slate-400">[배당률]</span></th>
                                         <th class="px-2 py-3 text-center">수량</th>
                                         <th class="px-2 py-3 text-right">평가금액 (수익)</th>
                                         <th class="px-2 py-3 text-right text-blue-500">배당(세후)</th>
-                                        <th class="px-2 py-3 text-right">평단가</th>
-                                        <th class="pr-5 py-3 text-right">배당률</th>
+                                        <th class="pr-5 py-3 text-right">평단</th>
                                     </tr>
                                 </thead>
                                 <tbody id="table-holdings" class="divide-y divide-slate-100 text-sm font-medium text-left"></tbody>
@@ -177,14 +175,12 @@
                                     <span class="bg-blue-600 p-1.5 rounded-lg text-xs"><i class="fa-solid fa-robot"></i></span>
                                     <h3 class="font-bold text-sm uppercase tracking-widest text-left">AI 어드바이저</h3>
                                 </div>
-                                <select id="strategy-selector" onchange="updateUI()" class="bg-slate-700 border-none text-xs rounded px-2 py-1 text-white text-left cursor-pointer">
+                                <select id="strategy-selector" onchange="updateUI()" class="bg-slate-700 border-none text-xs rounded px-2 py-1 text-white text-left outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
                                     <option value="1">1년차 (리츠 올인)</option>
                                     <option value="2">2년차 (SCHD+리츠)</option>
                                 </select>
                             </div>
                             <p class="text-slate-400 text-[10px] mb-1 text-left">이번 달 예상 수령액으로</p>
-                            <p class="text-xl font-black mb-4 text-left">다음 자산을 사세요!</p>
-                            
                             <div id="reinvest-recommendation" class="space-y-3 text-left">
                                 <!-- JS Dynamic Content -->
                                 <p class="text-xs text-slate-500 text-left">데이터 분석 중...</p>
@@ -193,16 +189,16 @@
                         <i class="fa-solid fa-coins absolute -bottom-4 -right-4 text-7xl text-white/5 pointer-events-none text-left"></i>
                     </div>
 
-                    <!-- 자산 비중 차트 -->
-                    <div class="card-shadow p-6 flex flex-col items-center justify-center min-h-[250px] text-left">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 w-full text-left text-left">자산 비중</p>
-                        <div class="relative w-32 h-32 flex-shrink-0 text-left">
+                    <!-- 자산 비중 차트 (디테일 개선) -->
+                    <div class="card-shadow p-6 flex flex-col items-center justify-center min-h-[300px] text-left">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 w-full text-left text-left">자산 비중 상세</p>
+                        <div class="relative w-40 h-40 flex-shrink-0 text-left">
                             <canvas id="assetChart"></canvas>
                             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-left">
                                 <span class="text-xs font-black text-slate-800 text-center">PORTFOLIO</span>
                             </div>
                         </div>
-                        <div id="chart-legend" class="w-full mt-4 space-y-2 text-left"></div>
+                        <div id="chart-legend" class="w-full mt-6 space-y-3 text-left"></div>
                     </div>
                 </div>
             </div>
@@ -256,16 +252,16 @@
                     <div class="grid grid-cols-2 gap-4 text-left">
                         <div>
                             <label class="text-[11px] font-bold text-slate-400 uppercase block mb-1 text-left">날짜</label>
-                            <input type="date" id="input-date" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-950 text-sm text-left">
+                            <input type="date" id="input-date" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 text-sm text-left">
                         </div>
                         <div>
                             <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1 text-left">수량</label>
-                            <input type="number" id="input-shares" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-950 text-sm text-left" placeholder="0">
+                            <input type="number" id="input-shares" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 text-sm text-left" placeholder="0">
                         </div>
                     </div>
                     <div>
                         <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1 text-left">단가</label>
-                        <input type="number" id="input-price" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-950 text-sm text-left" placeholder="₩">
+                        <input type="number" id="input-price" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 text-sm text-left" placeholder="₩">
                     </div>
                     
                     <div class="grid grid-cols-3 gap-2 text-center">
@@ -292,7 +288,7 @@
     </div>
 
     <script>
-        // ▼▼▼▼▼▼ 여기에 배포한 GAS 웹 앱 URL을 넣으세요 ▼▼▼▼▼▼
+        // ▼▼▼▼▼▼ GAS 웹 앱 URL 입력 ▼▼▼▼▼▼
         const MY_GAS_URL = "https://script.google.com/macros/s/AKfycbyBjfh2nCSpIPrtjYU6wEO8bZrrONR93qovFfZJJEUHLJThoNJEZHpMfkqJWmHit6DWGg/exec"; 
         // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
@@ -314,7 +310,7 @@
             if (icon) icon.classList.add('sync-spin');
 
             if (!MY_GAS_URL) {
-                alert("코드에 GAS URL을 입력해주세요!");
+                alert("코드 상단에 GAS URL을 입력해주세요!");
                 if (btn) btn.disabled = false;
                 if (icon) icon.classList.remove('sync-spin');
                 return;
@@ -390,27 +386,36 @@
                 const d = h[k];
                 if (d.shares <= 0) return;
                 const m = marketData[k] || { price: 0, yield: 0 };
+                
+                // 배당률 자동 보정 (9.39 -> 9.39%, 0.0939 -> 9.39%)
+                let yieldPct = m.yield;
+                if(yieldPct < 1 && yieldPct > 0) yieldPct *= 100;
+                
                 const val = d.shares * m.price;
                 const profit = val - d.cost;
                 const profitRate = d.cost > 0 ? (profit/d.cost)*100 : 0;
-                const div = val * (m.yield/100/12) * (1-TAX_RATE);
+                const div = val * (yieldPct/100/12) * (1-TAX_RATE);
                 
                 totalVal += val; totalDiv += div;
                 labels.push(d.name); data.push(val); bg.push(COLORS[i % COLORS.length]);
 
-                html += `<tr class="border-b border-slate-100 hover:bg-slate-50 text-left">
-                    <td class="pl-5 py-3 text-left">
-                        <div class="font-bold text-slate-800 text-sm text-left">${d.name}</div>
-                        <div class="text-[10px] text-slate-400 text-left">${k}</div>
+                html += `<tr class="border-b border-slate-50 hover:bg-slate-50 text-left">
+                    <td class="pl-5 py-4 text-left w-1/3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-1 h-8 rounded-sm" style="background:${bg[i]}"></div>
+                            <div>
+                                <div class="font-bold text-slate-800 text-sm text-left">${d.name} <span class="text-blue-500 text-xs font-normal ml-1">[${yieldPct.toFixed(2)}%]</span></div>
+                                <div class="text-[10px] text-slate-400 text-left">${k}</div>
+                            </div>
+                        </div>
                     </td>
-                    <td class="px-2 py-3 text-center text-sm text-left">${d.shares}</td>
-                    <td class="px-2 py-3 text-right text-left">
+                    <td class="px-2 py-4 text-center text-sm font-bold text-slate-700 text-left">${d.shares}</td>
+                    <td class="px-2 py-4 text-right text-left">
                         <div class="font-bold text-sm text-slate-800 text-right">₩${Math.round(val).toLocaleString()}</div>
-                        <div class="text-[10px] ${profit>=0?'text-red-500':'text-blue-500'} text-right">${profit>=0?'▲':'▼'} ${profitRate.toFixed(1)}%</div>
+                        <div class="text-[10px] ${profit>=0?'text-red-500':'text-blue-500'} font-bold text-right">${profit>=0?'▲':'▼'} ₩${Math.round(Math.abs(profit)).toLocaleString()} (${profitRate.toFixed(1)}%)</div>
                     </td>
-                    <td class="px-2 py-3 text-right text-sm font-bold text-blue-600 text-right">₩${Math.round(div).toLocaleString()}</td>
-                    <td class="px-2 py-3 text-right text-xs text-slate-500 text-right">₩${Math.round(d.cost/d.shares).toLocaleString()}</td>
-                    <td class="pr-5 py-3 text-right text-xs text-slate-400 text-right">${(m.yield*100).toFixed(1)}%</td>
+                    <td class="px-2 py-4 text-right text-sm font-black text-blue-600 text-right">₩${Math.round(div).toLocaleString()}</td>
+                    <td class="pr-5 py-4 text-right text-xs text-slate-500 font-mono text-right">₩${Math.round(d.cost/d.shares).toLocaleString()}</td>
                 </tr>`;
             });
 
@@ -422,10 +427,11 @@
             
             getEl('stat-total-invested').innerText = `₩${Math.round(totalInvest).toLocaleString()}`;
             getEl('stat-reinvested').innerText = `₩${Math.round(totalReinvest).toLocaleString()}`;
-            getEl('stat-monthly-dividend').innerText = `₩${Math.round(totalDiv / (1-TAX_RATE)).toLocaleString()}`; // 세전 역산
+            // 월 배당 역산 (세전)
+            getEl('stat-monthly-dividend').innerText = `₩${Math.round(totalDiv / (1-TAX_RATE)).toLocaleString()}`; 
             getEl('stat-monthly-dividend-net').innerText = `₩${Math.round(totalDiv).toLocaleString()}`;
 
-            getEl('table-holdings').innerHTML = html || `<tr><td colspan="6" class="p-8 text-center text-xs text-slate-400">데이터가 없습니다.</td></tr>`;
+            getEl('table-holdings').innerHTML = html || `<tr><td colspan="5" class="p-8 text-center text-xs text-slate-400">데이터가 없습니다.</td></tr>`;
 
             // Chart & Legend
             if (assetChart) assetChart.destroy();
@@ -439,9 +445,9 @@
             const legendBox = getEl('chart-legend');
             if(legendBox) {
                 legendBox.innerHTML = labels.map((l, i) => `
-                    <div class="flex justify-between items-center text-xs mb-1 text-left">
-                        <div class="flex items-center gap-1.5 text-left"><span class="w-2 h-2 rounded-full text-left" style="background:${bg[i]}"></span><span class="truncate w-20 text-left">${l}</span></div>
-                        <span class="font-bold text-slate-600 text-right">${((data[i]/totalVal)*100).toFixed(1)}%</span>
+                    <div class="flex justify-between items-center text-xs mb-2 text-left">
+                        <div class="flex items-center gap-1.5 text-left"><span class="w-2 h-2 rounded-full text-left" style="background:${bg[i]}"></span><span class="truncate w-24 font-medium text-slate-600 text-left">${l}</span></div>
+                        <span class="font-bold text-slate-800 text-right">${((data[i]/totalVal)*100).toFixed(1)}%</span>
                     </div>
                 `).join('');
             }
@@ -498,7 +504,7 @@
             const box = getEl('dynamic-quick-select');
             box.innerHTML = Object.keys(marketData).map(k => {
                 const d = marketData[k];
-                return `<button onclick="fillForm('${k}')" class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold hover:border-blue-500 transition text-center">${d.name}</button>`;
+                return `<button onclick="fillForm('${k}')" class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold hover:border-blue-500 hover:text-blue-600 hover:border-blue-200 transition text-center">${d.name}</button>`;
             }).join('');
         }
 
