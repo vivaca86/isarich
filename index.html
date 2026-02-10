@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ISA RICH v6.1 - UI Fix</title>
+    <title>ISA RICH v1.0.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -23,8 +23,7 @@
         .text-profit { color: #F04452; } 
         .text-loss { color: #3182F6; }   
         .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .card-press { cursor: pointer; transition: transform 0.1s; }
-        .card-press:active { transform: scale(0.97); }
+        .card-press:active { transform: scale(0.97); transition: transform 0.1s; }
         .sync-spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
@@ -87,10 +86,11 @@
             </header>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+                
                 <!-- 왼쪽: 핵심 자산 정보 -->
                 <div class="lg:col-span-2 space-y-5">
                     
-                    <!-- 1. 총 자산 카드 -->
+                    <!-- 1. 총 자산 카드 (히어로) -->
                     <div class="hero-card p-6 text-left">
                         <i class="fa-solid fa-chart-line hero-pattern"></i>
                         <div class="relative z-10">
@@ -141,6 +141,7 @@
 
                     <!-- 3. 월 배당 & 목표 달성률 -->
                     <div class="grid grid-cols-2 gap-4">
+                        <!-- 월 배당금 (레벨 시스템 적용) -->
                         <div class="glass-card p-5 flex flex-col justify-between">
                             <div class="flex justify-between items-start mb-1">
                                 <span class="text-[10px] font-bold text-slate-400 uppercase">월 배당금</span>
@@ -154,6 +155,7 @@
                             </div>
                         </div>
 
+                        <!-- 목표 달성률 -->
                         <div class="glass-card p-4 flex items-center justify-between relative overflow-hidden">
                             <div class="z-10 w-full">
                                 <span class="text-[10px] font-bold text-slate-400 uppercase block mb-1">목표 달성</span>
@@ -181,9 +183,7 @@
                             <h3 class="font-bold text-base text-slate-800">보유 자산</h3>
                             <span class="text-[9px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">Auto Sync</span>
                         </div>
-                        <div id="holdings-list" class="space-y-3">
-                            <!-- JS로 생성 -->
-                        </div>
+                        <div id="holdings-list" class="space-y-3"></div>
                     </div>
                     
                     <!-- 도넛 차트 -->
@@ -205,12 +205,10 @@
         <!-- [섹션 2] 거래 내역 -->
         <section id="section-history" class="hidden p-4 md:p-8 animate-fade-up">
             <h2 class="text-xl font-bold text-slate-900 mb-4 pl-1">거래 내역</h2>
-            <div id="history-list" class="space-y-3">
-                <!-- JS Dynamic -->
-            </div>
+            <div id="history-list" class="space-y-3"></div>
         </section>
 
-        <!-- [섹션 3] 거래 입력 (UI 수정됨) -->
+        <!-- [섹션 3] 거래 입력 (UI 수정됨: 간격 줄임) -->
         <section id="section-add" class="hidden p-4 md:p-8 animate-fade-up max-w-lg mx-auto">
             <h2 class="text-xl font-bold text-slate-900 mb-2 pl-1" id="form-title">거래 기록</h2>
             <p class="text-xs text-slate-500 mb-6 pl-1">새로운 매수/배당 내역을 기록하세요.</p>
@@ -220,27 +218,26 @@
                 <div id="quick-select-buttons" class="flex flex-wrap gap-2"></div>
             </div>
 
-            <div class="glass-card p-5 space-y-5">
-                <!-- 날짜/수량 칸 줄임 -->
-                <div class="grid grid-cols-2 gap-2">
+            <div class="glass-card p-5 space-y-4">
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1 pl-1">날짜</label>
+                        <label class="text-[10px] font-bold text-slate-500 mb-1 block pl-1">날짜</label>
                         <input type="date" id="input-date" class="w-full p-2.5 bg-slate-50 rounded-xl text-sm font-black text-slate-950 outline-none focus:ring-2 focus:ring-blue-500 transition border border-slate-200">
                     </div>
                     <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1 pl-1">수량</label>
+                        <label class="text-[10px] font-bold text-slate-500 mb-1 block pl-1">수량</label>
                         <input type="number" id="input-shares" placeholder="0" class="w-full p-2.5 bg-slate-50 rounded-xl text-sm font-black text-slate-950 outline-none focus:ring-2 focus:ring-blue-500 transition border border-slate-200">
                     </div>
                 </div>
                 <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1 pl-1">체결 단가</label>
+                    <label class="text-[10px] font-bold text-slate-500 mb-1 block pl-1">체결 단가</label>
                     <div class="relative">
                         <span class="absolute left-3 top-2.5 text-slate-400 font-bold text-xs">₩</span>
                         <input type="number" id="input-price" class="w-full p-2.5 pl-7 bg-slate-50 rounded-xl text-sm font-black text-slate-950 outline-none focus:ring-2 focus:ring-blue-500 transition border border-slate-200">
                     </div>
                 </div>
                 <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1 pl-1">자금 출처</label>
+                    <label class="text-[10px] font-bold text-slate-500 mb-1 block pl-1">자금 출처</label>
                     <div class="grid grid-cols-3 gap-2">
                         <button onclick="setCategory(1)" id="cat-1" class="py-2.5 rounded-xl border border-slate-200 text-xs font-bold transition">원금</button>
                         <button onclick="setCategory(2)" id="cat-2" class="py-2.5 rounded-xl border border-slate-200 text-xs font-bold transition">특별</button>
@@ -272,6 +269,12 @@
                     <label class="text-xs font-bold text-slate-500 block mb-1">GAS API URL (고급)</label>
                     <input type="text" id="setting-url" class="w-full p-3 bg-slate-50 rounded-xl text-xs text-slate-500 truncate border border-slate-200">
                 </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-500 block mb-1">현재 버전</label>
+                    <div class="w-full p-3 bg-slate-50 rounded-xl text-xs text-slate-400 font-mono border border-slate-200">
+                        v1.0.0
+                    </div>
+                </div>
                 <button onclick="saveSettings()" class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-sm">저장</button>
             </div>
         </div>
@@ -289,7 +292,6 @@
                 <button onclick="closeDetailModal()" class="p-2 bg-slate-100 rounded-full"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
-            <!-- 자금 출처 그래프 -->
             <div class="bg-slate-50 p-4 rounded-2xl mb-6 border border-slate-100">
                 <div class="flex justify-between text-[10px] font-bold text-slate-400 mb-2 uppercase">
                     <span>자금 출처 비율</span>
@@ -308,14 +310,13 @@
                 </div>
             </div>
 
-            <p class="text-xs font-bold text-slate-400 mb-2">거래 내역</p>
+            <p class="text-xs font-bold text-slate-400 mb-2">거래 내역 (필터됨)</p>
             <div id="modal-history-list" class="flex-1 overflow-y-auto space-y-3 pb-10"></div>
         </div>
     </div>
 
     <script>
-        // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
-        // ⚠️ 여기에 구글 배포 URL을 꼭 다시 넣어주세요! ⚠️
+        // ▼▼▼▼▼▼ GAS 웹 앱 URL 입력 ▼▼▼▼▼▼
         const MY_GAS_URL = "https://script.google.com/macros/s/AKfycbxRDE_WPbcE5oDR4Ha460vHt-FsWve8O6W_kjhoWPoPfhF5CSsJIWhtxlksarsd34t6dQ/exec"; 
         // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
@@ -349,7 +350,7 @@
             icon.classList.remove('sync-spin');
         }
 
-        // 배당금 레벨 계산기
+        // 배당 레벨 계산기
         function getDividendLevel(amount) {
             if (amount < 5000) return { icon: "🌱", text: "아직은 귀여운 새싹" };
             if (amount < 10000) return { icon: "☕", text: "매달 스벅 공짜" };
@@ -372,14 +373,18 @@
                 h[ticker].shares += Number(t.shares);
                 h[ticker].cost += amt;
                 
-                if (t.category == "3") { totalReinvest += amt; h[ticker].reinvest += amt; }
-                else { totalInvest += amt; h[ticker].invest += amt; }
+                if (t.category == "1") { totalInvest += amt; h[ticker].invest += amt; }
+                else if (t.category == "2") { totalInvest += amt; h[ticker].invest += amt; }
+                else if (t.category == "3") { totalReinvest += amt; h[ticker].reinvest += amt; }
             });
 
             let listHTML = "", labels = [], data = [], bg = [];
             Object.keys(h).forEach((k, i) => {
-                const d = h[k]; if (d.shares <= 0) return;
-                const m = marketData[k] || { price: 0, yield: 0 };
+                const d = h[k]; 
+                if (d.shares <= 0) return;
+                
+                // marketData 안전 접근
+                const m = (marketData && marketData[k]) ? marketData[k] : { price: 0, yield: 0 };
                 let yieldPct = m.yield < 1 && m.yield > 0 ? m.yield * 100 : m.yield;
                 
                 const val = d.shares * m.price;
@@ -392,7 +397,7 @@
                 totalVal += val; totalDiv += div;
                 labels.push(d.name); data.push(val); bg.push(COLORS[i % COLORS.length]);
 
-                // Holdings Card Item (모바일 & PC 공용) - 클릭 시 상세 팝업 오픈
+                // Holdings Card Item
                 listHTML += `
                 <div class="flex justify-between items-center p-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition cursor-pointer card-press" onclick="openDetailModal('${k}')">
                     <div class="flex items-center gap-3">
@@ -430,7 +435,8 @@
             getEl('holdings-list').innerHTML = listHTML || `<div class="text-center p-10 text-slate-400 text-xs">보유 종목이 없습니다.</div>`;
 
             if (assetChart) assetChart.destroy();
-            assetChart = new Chart(getEl('assetChart').getContext('2d'), {
+            const ctx = getEl('assetChart').getContext('2d');
+            assetChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: { labels, datasets: [{ data, backgroundColor: bg, borderWidth: 0 }] },
                 options: { cutout: '75%', plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false }
@@ -438,7 +444,7 @@
             
             getEl('chart-legend').innerHTML = labels.map((l, i) => `
                 <div class="flex justify-between text-xs mb-1">
-                    <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background:${bg[i]}"></span><span class="truncate w-24 font-medium text-slate-600 text-left">${l}</span></span>
+                    <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background:${bg[i]}"></span><span class="truncate w-24 font-medium text-slate-600">${l}</span></span>
                     <span class="font-bold text-slate-800">${((data[i]/totalVal)*100).toFixed(1)}%</span>
                 </div>
             `).join('');
@@ -455,7 +461,7 @@
             getEl('reinvest-recommendation').innerHTML = `
                 <div class="bg-white/10 p-3 rounded-xl space-y-2">
                     ${buySCHD ? `<div class="flex justify-between text-xs"><span class="font-bold text-emerald-300">SCHD 1주</span><span class="text-slate-300">₩${pSCHD.toLocaleString()}</span></div>` : ''}
-                    <div class="flex justify-between text-xs"><span class="font-bold text-blue-300">리츠 ${buyReits}주</span><span class="text-slate-300">₩${(buyReits*pReits).toLocaleString()}</span></div>
+                    <div class="flex justify-between text-xs"><span class="font-bold text-blue-300">리츠 ${buyReits}주</span><span class="text-slate-300">₩${(buyReits*(pReits||5000)).toLocaleString()}</span></div>
                 </div>`;
 
             // Goal
@@ -488,7 +494,6 @@
             `).join('') || `<div class="text-center p-10 text-slate-400 text-xs">내역 없음</div>`;
         }
 
-        // 종목 상세 모달 (3색 바 적용)
         function openDetailModal(ticker) {
             const data = transactions.filter(t => String(t.ticker).trim() === ticker);
             if(data.length === 0) return;
@@ -522,9 +527,9 @@
             getEl('detail-modal').classList.remove('hidden');
         }
 
-        // Quick Select
         function updateQuickSelect() {
-            getEl('quick-select-buttons').innerHTML = Object.keys(marketData).map(k => `
+            const box = getEl('quick-select-buttons');
+            box.innerHTML = Object.keys(marketData).map(k => `
                 <button onclick="fillForm('${k}')" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:border-blue-500 hover:text-blue-600 transition card-press">${marketData[k].name}</button>
             `).join('');
         }
@@ -543,7 +548,6 @@
             });
         }
 
-        // Actions
         async function saveTransaction() {
             const date = getEl('input-date').value, shares = getEl('input-shares').value, price = getEl('input-price').value, ticker = getEl('input-ticker').value, name = getEl('input-name').value;
             if(!date || !shares || !price) return alert("정보 입력!");
@@ -562,7 +566,7 @@
                 alert("저장 완료");
                 cancelEdit(); 
                 syncAllData();
-            } catch(e) { alert("실패"); }
+            } catch(e) { alert("실패: " + e.message); }
             btn.innerText = "기록하기"; btn.disabled = false;
         }
 
@@ -601,7 +605,6 @@
             syncAllData(); closeDetailModal();
         };
 
-        // Navigation
         window.showSection = (id) => {
             ['dashboard','history','add'].forEach(s => getEl('section-'+s).classList.add('hidden'));
             getEl('section-'+id).classList.remove('hidden');
