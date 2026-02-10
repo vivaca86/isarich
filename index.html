@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ISA RICH Premium v2.0.1</title>
+    <title>ISA RICH Premium v2.0.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;600;800&display=swap');
         
-        /* 몽환적인 메시 그라데이션 배경 */
         @keyframes meshMove {
             0% { background-position: 0% 0%; }
             50% { background-position: 100% 100%; }
@@ -20,10 +19,10 @@
         body { 
             font-family: 'Pretendard', sans-serif; 
             background: 
-                radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.1) 0px, transparent 50%),
-                radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.1) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%),
-                radial-gradient(at 0% 100%, rgba(245, 158, 11, 0.1) 0px, transparent 50%),
+                radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, rgba(245, 158, 11, 0.08) 0px, transparent 50%),
                 #f8fafc;
             background-size: 200% 200%;
             animation: meshMove 20s ease-in-out infinite;
@@ -31,183 +30,179 @@
             -webkit-tap-highlight-color: transparent; 
         }
 
-        /* 프리미엄 글래스모피즘 카드 */
         .card-shadow { 
-            background: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.75);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            box-shadow: 
-                0 10px 40px -10px rgba(0, 0, 0, 0.04),
-                inset 0 0 20px rgba(255, 255, 255, 0.2);
-            border-radius: 1.75rem; 
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05);
+            border-radius: 1.5rem; 
         }
 
-        /* 배당 재투자 유도 글로우 효과 */
         .reinvest-active {
             border: 2px solid rgba(37, 99, 235, 0.3) !important;
             animation: borderGlow 3s infinite;
         }
         @keyframes borderGlow {
             0% { box-shadow: 0 0 5px rgba(37, 99, 235, 0.1); }
-            50% { box-shadow: 0 0 20px rgba(37, 99, 235, 0.3); }
+            50% { box-shadow: 0 0 15px rgba(37, 99, 235, 0.2); }
             100% { box-shadow: 0 0 5px rgba(37, 99, 235, 0.1); }
         }
 
         input[type="date"] { min-height: 2.5rem; -webkit-appearance: none; }
         .input-compact { padding: 0.6rem 0.5rem !important; font-size: 0.8rem !important; border-radius: 12px !important; }
         
-        .sub-tab-btn { flex: 1; padding: 12px; font-size: 13px; font-weight: 800; text-align: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 14px; color: #94a3b8; }
-        .sub-tab-btn.active { background-color: white; color: #2563eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); transform: translateY(-1px); }
+        .sub-tab-btn { flex: 1; padding: 10px; font-size: 12px; font-weight: 800; text-align: center; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 12px; color: #94a3b8; }
+        .sub-tab-btn.active { background-color: white; color: #2563eb; box-shadow: 0 4px 12px rgba(0,0,0,0.06); transform: translateY(-1px); }
         
-        .clickable-card { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-        .clickable-card:active { transform: scale(0.96); opacity: 0.8; }
+        .clickable-card { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+        .clickable-card:active { transform: scale(0.97); opacity: 0.9; }
 
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 10px; }
 
         .sync-spin { animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="pb-24 lg:pb-0 lg:pl-20 text-left font-sans text-left">
+<body class="pb-24 lg:pb-0 lg:pl-20 text-left font-sans">
 
     <!-- PC 사이드바 -->
-    <aside id="main-sidebar" class="hidden lg:flex fixed left-0 top-0 h-full w-20 bg-white/80 backdrop-blur-xl border-r border-slate-200/50 flex-col items-center py-10 z-50 font-sans text-left">
-        <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-xl shadow-xl shadow-blue-500/30 mb-10 transition hover:rotate-12 cursor-pointer text-center">
-            <i class="fa-solid fa-gem text-center"></i>
+    <aside id="main-sidebar" class="hidden lg:flex fixed left-0 top-0 h-full w-20 bg-white/80 backdrop-blur-xl border-r border-slate-200/50 flex-col items-center py-10 z-50">
+        <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white text-xl shadow-lg shadow-blue-500/30 mb-10 transition hover:rotate-12 cursor-pointer">
+            <i class="fa-solid fa-gem"></i>
         </div>
-        <nav class="flex flex-col gap-8 w-full font-sans text-center text-left">
-            <button onclick="showSection('dashboard')" id="pc-nav-dashboard" class="pc-nav-item w-full py-4 text-blue-500 border-r-4 border-blue-500 transition-all text-center"><i class="fa-solid fa-chart-pie text-xl text-center"></i></button>
-            <button onclick="showSection('history')" id="pc-nav-history" class="pc-nav-item w-full py-4 text-slate-300 hover:text-slate-600 transition-all text-center"><i class="fa-solid fa-receipt text-xl text-center"></i></button>
-            <button onclick="showSection('transaction')" id="pc-nav-transaction" class="pc-nav-item w-full py-4 text-slate-300 hover:text-slate-600 transition-all text-center"><i class="fa-solid fa-shuffle text-xl text-center"></i></button>
+        <nav class="flex flex-col gap-8 w-full text-center">
+            <button onclick="showSection('dashboard')" id="pc-nav-dashboard" class="pc-nav-item w-full py-4 text-blue-500 border-r-4 border-blue-500 transition-all text-center"><i class="fa-solid fa-chart-pie text-xl"></i></button>
+            <button onclick="showSection('history')" id="pc-nav-history" class="pc-nav-item w-full py-4 text-slate-300 hover:text-slate-600 transition-all text-center"><i class="fa-solid fa-receipt text-xl"></i></button>
+            <button onclick="showSection('transaction')" id="pc-nav-transaction" class="pc-nav-item w-full py-4 text-slate-300 hover:text-slate-600 transition-all text-center"><i class="fa-solid fa-shuffle text-xl"></i></button>
         </nav>
-        <div class="mt-auto pb-10 text-left">
-            <button onclick="openSettings()" class="text-slate-300 hover:text-slate-600 p-3 transition hover:rotate-90 text-center"><i class="fa-solid fa-sliders text-xl text-center"></i></button>
+        <div class="mt-auto pb-10">
+            <button onclick="openSettings()" class="text-slate-300 hover:text-slate-600 p-3 transition hover:rotate-90"><i class="fa-solid fa-gear text-xl"></i></button>
         </div>
     </aside>
 
     <!-- 모바일 하단바 -->
-    <nav class="lg:hidden fixed bottom-6 left-6 right-6 h-16 rounded-2xl bg-white/80 backdrop-blur-xl border border-white/50 shadow-[0_10px_30px_rgba(0,0,0,0.1)] flex justify-around items-center z-50 px-4 text-left">
-        <button onclick="showSection('dashboard')" id="mob-nav-dashboard" class="nav-item active flex flex-col items-center gap-1 text-blue-600 text-center">
-            <i class="fa-solid fa-chart-pie text-xl mb-0.5 text-center"></i>
-            <span class="text-[9px] font-black uppercase tracking-tighter text-center">Asset</span>
+    <nav class="lg:hidden fixed bottom-6 left-6 right-6 h-16 rounded-2xl bg-white/80 backdrop-blur-xl border border-white/50 shadow-[0_10px_30px_rgba(0,0,0,0.08)] flex justify-around items-center z-50 px-2">
+        <button onclick="showSection('dashboard')" id="mob-nav-dashboard" class="nav-item active flex flex-col items-center gap-1 w-14 text-blue-600">
+            <i class="fa-solid fa-chart-pie text-lg mb-0.5"></i>
+            <span class="text-[8px] font-black uppercase tracking-tighter">Asset</span>
         </button>
-        <button onclick="showSection('history')" id="mob-nav-history" class="nav-item text-slate-300 flex flex-col items-center gap-1 text-center">
-            <i class="fa-solid fa-receipt text-xl mb-0.5 text-center"></i>
-            <span class="text-[9px] font-black uppercase tracking-tighter text-center">History</span>
+        <button onclick="showSection('history')" id="mob-nav-history" class="nav-item text-slate-300 flex flex-col items-center gap-1 w-14">
+            <i class="fa-solid fa-receipt text-lg mb-0.5"></i>
+            <span class="text-[8px] font-black uppercase tracking-tighter">History</span>
         </button>
-        <button onclick="showSection('transaction')" id="mob-nav-transaction" class="nav-item text-slate-300 flex flex-col items-center gap-1 text-center">
-            <i class="fa-solid fa-shuffle text-xl mb-0.5 font-sans text-center"></i>
-            <span class="text-[9px] font-black uppercase tracking-tighter text-center">Trade</span>
+        <button onclick="showSection('transaction')" id="mob-nav-transaction" class="nav-item text-slate-300 flex flex-col items-center gap-1 w-14">
+            <i class="fa-solid fa-shuffle text-lg mb-0.5"></i>
+            <span class="text-[8px] font-black uppercase tracking-tighter">Trade</span>
         </button>
-        <button onclick="openSettings()" class="nav-item text-slate-300 flex flex-col items-center gap-1 text-center">
-            <i class="fa-solid fa-sliders text-xl mb-0.5 text-center"></i>
-            <span class="text-[9px] font-black uppercase tracking-tighter text-center">Set</span>
+        <button onclick="openSettings()" class="nav-item text-slate-300 flex flex-col items-center gap-1 w-14">
+            <i class="fa-solid fa-sliders text-lg mb-0.5"></i>
+            <span class="text-[8px] font-black uppercase tracking-tighter">Set</span>
         </button>
     </nav>
 
-    <main class="max-w-screen-xl mx-auto p-4 lg:p-12 text-left font-sans min-h-screen text-left">
+    <main class="max-w-screen-xl mx-auto p-4 lg:p-12 text-left min-h-screen">
         
-        <!-- 대시보드 섹션 -->
-        <section id="section-dashboard" class="animate-fade-up space-y-8 text-left">
-            <header class="flex justify-between items-end mb-4 text-left">
+        <!-- 대시보드 -->
+        <section id="section-dashboard" class="animate-fade-up space-y-6 text-left font-sans">
+            <header class="flex justify-between items-end mb-2">
                 <div class="text-left font-sans">
-                    <p class="text-blue-600 font-black text-xs uppercase tracking-[0.2em] mb-1 text-left">Premium Engine</p>
-                    <h2 class="text-3xl font-black text-slate-900 tracking-tighter text-left">나의 자산</h2>
+                    <h2 class="text-2xl font-black text-slate-900 tracking-tighter">나의 자산</h2>
+                    <p class="text-[10px] text-slate-400 mt-0.5 text-left font-sans font-bold" id="sync-time">동기화 대기 중</p>
                 </div>
-                <button onclick="syncAllData()" class="bg-white/50 backdrop-blur-md p-3 rounded-2xl shadow-sm border border-white active:scale-90 transition text-slate-400 hover:text-blue-600 text-center">
-                    <i id="sync-icon" class="fa-solid fa-rotate text-center"></i>
+                <button onclick="syncAllData()" class="bg-white/50 backdrop-blur-md p-2.5 rounded-2xl shadow-sm border border-slate-200 active:scale-90 transition text-blue-500 hover:text-blue-600">
+                    <i id="sync-icon" class="fa-solid fa-rotate"></i>
                 </button>
             </header>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start font-sans text-left">
-                <div class="lg:col-span-8 space-y-6 text-left">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start font-sans">
+                <div class="lg:col-span-8 space-y-5">
                     
-                    <!-- 메인 총 자산 카드 (순수도 점수 제거됨) -->
-                    <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group text-left">
+                    <!-- 메인 총 자산 카드 -->
+                    <div class="bg-slate-900 rounded-[2rem] p-5 md:p-8 text-white shadow-2xl relative overflow-hidden group">
                         <div class="absolute -right-20 -top-20 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-700"></div>
-                        <div class="relative z-10 text-left">
-                            <div class="flex justify-between items-start mb-2 text-left">
-                                <span class="text-slate-400 text-[10px] font-bold tracking-[0.2em] uppercase text-left">Total Portfolio Value</span>
-                            </div>
-                            <h1 class="text-4xl font-black mt-1 mb-6 tracking-tighter text-left" id="stat-total-value">₩0</h1>
-                            <div class="flex items-center gap-3 mb-8 text-left">
-                                <div class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-2xl text-xs font-black flex items-center gap-2 border border-white/5 text-left">
+                        <div class="relative z-10">
+                            <span class="text-slate-400 text-[9px] font-bold tracking-[0.2em] uppercase text-left block">Total Portfolio Value</span>
+                            <h1 class="text-3xl md:text-4xl font-black mt-0.5 mb-3 md:mb-6 tracking-tighter" id="stat-total-value">₩0</h1>
+                            <div class="flex items-center gap-2 mb-4 md:mb-8">
+                                <div class="bg-white/10 backdrop-blur-md px-3 py-1 rounded-xl text-[10px] md:text-[11px] font-black flex items-center gap-1.5 border border-white/5">
                                     <span id="stat-profit-icon">🚀</span>
-                                    <span id="stat-profit-amount" class="text-left">₩0</span>
+                                    <span id="stat-profit-amount">₩0</span>
                                 </div>
-                                <span class="text-sm font-black text-white/90 text-left" id="stat-profit-pct">0.0%</span>
+                                <span class="text-[11px] md:text-xs font-black text-white/90" id="stat-profit-pct">0.0%</span>
                             </div>
-                            <div class="grid grid-cols-2 gap-4 border-t border-white/5 pt-6 font-sans text-left">
-                                <div onclick="openCashModal()" id="cash-card-area" class="cursor-pointer active:scale-95 transition p-4 rounded-[1.5rem] hover:bg-white/5 border border-transparent text-left">
-                                    <p class="text-[10px] text-slate-500 mb-1.5 uppercase font-bold tracking-widest text-left font-sans">Available Cash <i class="fa-solid fa-chevron-right ml-1 text-[8px] text-center"></i></p>
-                                    <p class="font-black text-xl text-left" id="stat-cash-balance">₩0</p>
+                            <div class="grid grid-cols-2 gap-2 border-t border-white/5 pt-3 md:pt-6">
+                                <div onclick="openCashModal()" id="cash-card-area" class="cursor-pointer active:scale-95 transition p-2 rounded-xl hover:bg-white/5">
+                                    <p class="text-[9px] text-slate-500 mb-0.5 uppercase font-bold tracking-widest text-left">Cash <i class="fa-solid fa-chevron-right ml-0.5 text-[7px]"></i></p>
+                                    <p class="font-black text-base md:text-lg" id="stat-cash-balance">₩0</p>
                                 </div>
-                                <div class="text-right p-4 text-right">
-                                    <p class="text-[10px] text-slate-500 mb-1.5 uppercase font-bold tracking-widest text-right font-sans">Reinvest Rate</p>
-                                    <p class="font-black text-xl text-emerald-400 text-right" id="stat-reinvest-rate">0%</p>
+                                <div class="text-right p-2">
+                                    <p class="text-[9px] text-slate-500 mb-0.5 uppercase font-bold tracking-widest text-right">Reinvest</p>
+                                    <p class="font-black text-base md:text-lg text-emerald-400" id="stat-reinvest-rate">0%</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- 월 예상 배당 카드 -->
-                    <div class="card-shadow p-6 flex justify-between items-center clickable-card group relative text-left">
-                        <div class="flex items-center gap-5 text-left">
-                            <div class="w-16 h-16 bg-blue-600 rounded-3xl flex items-center justify-center text-3xl shadow-xl shadow-blue-500/20 group-hover:rotate-6 transition text-center font-sans" id="div-level-icon">🌱</div>
-                            <div class="text-left">
-                                <div class="flex items-center gap-2 mb-1 text-left">
-                                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-left font-sans">Yield Performance</p>
-                                    <span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-black text-center font-sans">Stable</span>
+                    <div class="card-shadow p-4 md:p-6 flex justify-between items-center clickable-card group relative">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 md:w-16 md:h-16 bg-blue-600 rounded-2xl md:rounded-3xl flex items-center justify-center text-2xl md:text-3xl shadow-xl shadow-blue-500/20 group-hover:rotate-6 transition" id="div-level-icon">🌱</div>
+                            <div>
+                                <div class="flex items-center gap-2 mb-0.5">
+                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Yield</p>
+                                    <span class="text-[8px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-black">Monthly</span>
                                 </div>
-                                <p id="dividend-level-text" class="text-xl font-black text-slate-900 tracking-tight leading-none text-left font-sans">새싹 엔진 가동 중</p>
+                                <p id="dividend-level-text" class="text-base md:text-lg font-black text-slate-900 tracking-tight leading-none">새싹 엔진 가동 중</p>
                             </div>
                         </div>
-                        <div class="text-right font-sans">
-                            <p class="text-[10px] font-black text-slate-400 uppercase mb-1 text-right font-sans">Monthly Expected</p>
-                            <p class="text-3xl font-black text-blue-600 tracking-tighter text-right font-sans" id="stat-monthly-dividend">₩0</p>
+                        <div class="text-right">
+                            <p class="text-[9px] font-black text-slate-400 uppercase mb-0.5 text-right">Expected</p>
+                            <p class="text-2xl md:text-3xl font-black text-blue-600 tracking-tighter text-right" id="stat-monthly-dividend">₩0</p>
                         </div>
                     </div>
 
-                    <!-- 보유 주식 상세 -->
-                    <div class="card-shadow overflow-hidden text-left">
-                        <div class="p-6 border-b border-slate-100 flex justify-between items-center text-left">
-                            <h3 class="font-black text-lg text-slate-900 tracking-tighter text-left">보유 주식</h3>
-                            <span class="text-[10px] font-bold text-slate-400 bg-slate-50 border border-slate-200 px-3 py-1 rounded-xl uppercase text-center font-sans">Live Details</span>
+                    <!-- 보유 주식 상세 리스트 -->
+                    <div class="card-shadow overflow-hidden">
+                        <div class="p-4 md:p-5 border-b border-slate-100/50 flex justify-between items-center">
+                            <h3 class="font-black text-base text-slate-900 tracking-tighter">보유 주식</h3>
+                            <span class="text-[8px] font-bold text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-lg uppercase">Live Feed</span>
                         </div>
-                        <div id="holdings-list" class="divide-y divide-slate-50 p-2 text-left"></div>
+                        <div id="holdings-list" class="divide-y divide-slate-50 p-1">
+                            <div class="text-center p-12 text-slate-300 text-[10px] font-black uppercase tracking-widest">데이터 로드 중...</div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- 오른쪽 사이드 -->
-                <div class="lg:col-span-4 space-y-6 text-left">
+                <!-- 오른쪽 사이드 패널 -->
+                <div class="lg:col-span-4 space-y-5">
                     <!-- Rich AI 카드 -->
-                    <div class="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 p-7 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group text-left font-sans">
-                        <div class="relative z-10 text-left">
-                            <div class="flex justify-between items-center mb-8 text-left">
-                                <div class="flex items-center gap-3 text-left">
-                                    <span class="bg-white/20 p-2.5 rounded-2xl text-xs text-center"><i class="fa-solid fa-brain text-center"></i></span>
-                                    <h3 class="font-black text-sm uppercase tracking-[0.2em] text-left">Rich AI</h3>
+                    <div class="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 p-6 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group">
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-center mb-6">
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-white/20 p-2 rounded-xl text-xs"><i class="fa-solid fa-brain"></i></span>
+                                    <h3 class="font-black text-xs uppercase tracking-widest">Rich AI</h3>
                                 </div>
-                                <select id="strategy-selector" onchange="updateUI()" class="bg-white/10 border border-white/10 text-[10px] rounded-xl px-3 py-2 text-white outline-none cursor-pointer font-bold backdrop-blur-md text-left font-sans">
+                                <select id="strategy-selector" onchange="updateUI()" class="bg-white/10 border border-white/10 text-[9px] rounded-lg px-2 py-1 text-white outline-none cursor-pointer font-bold backdrop-blur-md">
                                     <option value="1">1년차 (리츠)</option>
                                     <option value="2">2년차 (SCHD+)</option>
                                 </select>
                             </div>
-                            <p class="text-white/60 text-[10px] mb-3 uppercase font-black tracking-widest text-left font-sans">Recommended Purchase</p>
-                            <div id="reinvest-recommendation" class="space-y-3 text-left"></div>
+                            <p class="text-white/60 text-[9px] mb-2 uppercase font-black tracking-widest text-left">Buy Suggestion</p>
+                            <div id="reinvest-recommendation" class="space-y-2"></div>
                         </div>
-                        <i class="fa-solid fa-fingerprint absolute -bottom-10 -right-10 text-[10rem] text-white/5 pointer-events-none transition-transform duration-1000 group-hover:scale-110 text-center"></i>
+                        <i class="fa-solid fa-fingerprint absolute -bottom-8 -right-8 text-8xl text-white/5 pointer-events-none transition-transform duration-1000 group-hover:scale-110"></i>
                     </div>
                     
                     <!-- 차트 카드 -->
-                    <div class="card-shadow p-8 flex flex-col items-center justify-center min-h-[320px] text-left font-sans">
-                        <h3 class="font-black text-xs text-slate-400 uppercase tracking-[0.2em] mb-8 w-full text-left font-sans">Asset Allocation</h3>
-                        <div class="relative w-48 h-48 mb-8 text-center">
+                    <div class="card-shadow p-6 flex flex-col items-center justify-center min-h-[280px]">
+                        <h3 class="font-black text-[10px] text-slate-400 uppercase tracking-[0.2em] mb-6 w-full text-left">Allocation</h3>
+                        <div class="relative w-40 h-40 mb-6">
                             <canvas id="assetChart"></canvas>
                         </div>
-                        <div id="chart-legend" class="w-full space-y-2.5 text-left"></div>
+                        <div id="chart-legend" class="w-full space-y-1.5"></div>
                     </div>
                 </div>
             </div>
@@ -215,185 +210,173 @@
 
         <!-- 거래 내역 섹션 -->
         <section id="section-history" class="hidden animate-fade-up text-left">
-            <header class="mb-8 pl-1 text-left font-sans">
-                <p class="text-blue-600 font-black text-xs uppercase tracking-[0.2em] mb-1 text-left font-sans">Transaction</p>
-                <h2 class="text-3xl font-black text-slate-900 tracking-tighter text-left font-sans">거래 내역</h2>
+            <header class="mb-6 pl-1 text-left">
+                <p class="text-blue-600 font-black text-[10px] uppercase tracking-[0.2em] mb-0.5 text-left">Transaction</p>
+                <h2 class="text-2xl font-black text-slate-900 tracking-tighter text-left">거래 내역</h2>
             </header>
-            <div id="history-list" class="grid grid-cols-1 gap-4 text-left"></div>
+            <div id="history-list" class="space-y-3 px-1 text-left"></div>
         </section>
 
         <!-- 거래소 섹션 -->
-        <section id="section-transaction" class="hidden animate-fade-up max-w-lg mx-auto text-left font-sans">
-            <header class="mb-8 pl-1 text-center text-left font-sans">
-                <p class="text-blue-600 font-black text-xs uppercase tracking-[0.2em] mb-1 text-center font-sans">Exchange</p>
-                <h2 class="text-3xl font-black text-slate-900 tracking-tighter text-center font-sans">거래소</h2>
+        <section id="section-transaction" class="hidden animate-fade-up max-w-lg mx-auto">
+            <header class="mb-6 pl-1 text-center font-sans text-center">
+                <p class="text-blue-600 font-black text-[10px] uppercase tracking-[0.2em] mb-0.5 text-center">Exchange</p>
+                <h2 class="text-2xl font-black text-slate-900 tracking-tighter text-center">거래소</h2>
             </header>
             
-            <div class="flex bg-slate-200/40 backdrop-blur-md p-1.5 rounded-[1.5rem] mb-8 gap-1 border border-white/50 text-left font-sans font-sans">
-                <button onclick="switchTab('purchase')" id="tab-btn-purchase" class="sub-tab-btn active font-sans">주식 매수</button>
-                <button onclick="switchTab('deposit')" id="tab-btn-deposit" class="sub-tab-btn font-sans">현금 충전</button>
+            <div class="flex bg-slate-200/40 backdrop-blur-md p-1.5 rounded-2xl mb-6 gap-1 border border-white/50">
+                <button onclick="switchTab('purchase')" id="tab-btn-purchase" class="sub-tab-btn active">주식 매수</button>
+                <button onclick="switchTab('deposit')" id="tab-btn-deposit" class="sub-tab-btn">현금 충전</button>
             </div>
             
             <!-- 주식 매수 탭 -->
-            <div id="tab-content-purchase" class="space-y-4 text-left font-sans">
-                <div class="card-shadow p-8 space-y-8 text-left font-sans">
-                    <div class="text-left font-sans">
-                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-4 tracking-widest text-left font-sans">Select Ticker</label>
-                        <div id="quick-select-buttons" class="flex flex-wrap gap-2.5 text-left"></div>
+            <div id="tab-content-purchase" class="space-y-4">
+                <div class="card-shadow p-6 md:p-8 space-y-6">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-3 tracking-widest text-left">Quick Select</label>
+                        <div id="quick-select-buttons" class="flex flex-wrap gap-2"></div>
                     </div>
 
-                    <div class="grid grid-cols-10 gap-3 items-end text-left font-sans">
-                        <div class="col-span-6 text-left font-sans font-sans">
-                            <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left font-sans">Date</label>
-                            <input type="date" id="input-date" class="w-full p-4 bg-slate-100/50 border border-slate-200 rounded-2xl font-black text-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition text-left font-sans">
+                    <div class="grid grid-cols-10 gap-2.5 items-end">
+                        <div class="col-span-6">
+                            <label class="text-[10px] font-black text-slate-400 uppercase block mb-1.5 pl-1 text-left">Date</label>
+                            <input type="date" id="input-date" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-xs outline-none focus:ring-4 focus:ring-blue-500/5 transition">
                         </div>
-                        <div class="col-span-4 text-left font-sans font-sans">
-                            <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left font-sans">Qty</label>
-                            <input type="number" id="input-shares" placeholder="0" class="w-full p-4 bg-slate-100/50 border border-slate-200 rounded-2xl font-black text-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition text-left font-sans">
+                        <div class="col-span-4">
+                            <label class="text-[10px] font-black text-slate-400 uppercase block mb-1.5 pl-1 text-left">Qty</label>
+                            <input type="number" id="input-shares" placeholder="0" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-xs outline-none focus:ring-4 focus:ring-blue-500/5 transition">
                         </div>
                     </div>
                     
-                    <div class="text-left font-sans font-sans font-sans">
-                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left font-sans font-sans">Price per Share</label>
-                        <div class="relative text-left font-sans font-sans">
-                            <span class="absolute left-5 top-4.5 text-slate-400 font-bold text-sm text-center">₩</span>
-                            <input type="number" id="input-price" class="w-full p-4 pl-10 bg-slate-100/50 border border-slate-200 rounded-2xl text-sm font-black outline-none focus:ring-4 focus:ring-blue-500/10 transition text-left font-sans">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-1.5 pl-1 text-left">Price</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-3 text-slate-400 font-bold text-xs">₩</span>
+                            <input type="number" id="input-price" class="w-full p-3 pl-8 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black outline-none focus:ring-4 focus:ring-blue-500/5 transition">
                         </div>
                     </div>
 
                     <input type="hidden" id="input-ticker"><input type="hidden" id="input-name">
-                    <button onclick="saveStockPurchase()" id="save-btn" class="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-2xl active:scale-95 transition-all hover:bg-slate-800 text-center font-sans">매수하기</button>
+                    <button onclick="saveStockPurchase()" id="save-btn" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs shadow-xl active:scale-95 transition-all hover:bg-slate-800 text-center">매수</button>
                 </div>
             </div>
 
             <!-- 현금 충전 탭 -->
-            <div id="tab-content-deposit" class="hidden space-y-4 text-left font-sans">
-                <div class="card-shadow p-8 space-y-8 text-left font-sans">
-                    <div class="text-left font-sans font-sans">
-                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left font-sans font-sans">Deposit Date</label>
-                        <input type="date" id="div-date" class="w-full p-4 bg-slate-100/50 border border-slate-200 rounded-2xl text-sm font-black outline-none focus:ring-4 focus:ring-blue-500/10 transition text-left font-sans">
+            <div id="tab-content-deposit" class="hidden space-y-4">
+                <div class="card-shadow p-6 md:p-8 space-y-6">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-1.5 pl-1 text-left">Date</label>
+                        <input type="date" id="div-date" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black outline-none focus:ring-4 focus:ring-blue-500/5 transition">
                     </div>
-                    <div class="text-left font-sans font-sans">
-                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-4 tracking-widest text-left font-sans">Category</label>
-                        <div class="grid grid-cols-3 gap-3 text-left font-sans">
-                            <button onclick="setDepositCat(3)" id="dep-cat-3" class="py-4 rounded-2xl border-2 border-blue-600 bg-blue-600 text-white text-[11px] font-black transition shadow-lg shadow-blue-500/20 text-center font-sans">배당금</button>
-                            <button onclick="setDepositCat(2)" id="dep-cat-2" class="py-4 rounded-2xl border-2 border-slate-200 bg-white text-slate-500 text-[11px] font-black transition text-center font-sans">특별금</button>
-                            <button onclick="setDepositCat(1)" id="dep-cat-1" class="py-4 rounded-2xl border-2 border-slate-200 bg-white text-slate-500 text-[11px] font-black transition text-center font-sans">원금</button>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-3 tracking-widest text-left">Category</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="setDepositCat(3)" id="dep-cat-3" class="py-3.5 rounded-xl border-2 border-blue-600 bg-blue-600 text-white text-[10px] font-black transition">배당금</button>
+                            <button onclick="setDepositCat(2)" id="dep-cat-2" class="py-3.5 rounded-xl border-2 border-slate-100 bg-slate-50 text-slate-500 text-[10px] font-black transition">특별금</button>
+                            <button onclick="setDepositCat(1)" id="dep-cat-1" class="py-3.5 rounded-xl border-2 border-slate-100 bg-slate-50 text-slate-500 text-[10px] font-black transition">원금</button>
                         </div>
                         <input type="hidden" id="wallet-category" value="3">
                     </div>
-                    <div class="text-left font-sans font-sans">
-                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left font-sans">Amount</label>
-                        <input type="number" id="div-amount" placeholder="₩" class="w-full p-4 bg-slate-100/50 border border-slate-200 rounded-2xl text-sm font-black outline-none focus:ring-4 focus:ring-blue-500/10 transition text-left font-sans">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-1.5 pl-1 text-left">Amount</label>
+                        <input type="number" id="div-amount" placeholder="₩" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black outline-none focus:ring-4 focus:ring-blue-500/5 transition">
                     </div>
-                    <button onclick="saveWalletDeposit()" id="save-div-btn" class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-2xl active:scale-95 transition-all hover:bg-blue-700 text-center font-sans">충전하기</button>
+                    <button onclick="saveWalletDeposit()" id="save-div-btn" class="w-full py-4 bg-blue-600 text-white rounded-xl font-black text-xs shadow-xl active:scale-95 transition-all hover:bg-blue-700 text-center">충전</button>
                 </div>
             </div>
         </section>
     </main>
 
     <!-- 종목 상세 모달 -->
-    <div id="detail-modal" class="fixed inset-0 z-[100] hidden flex items-end lg:items-center justify-center lg:p-4 text-left font-sans">
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-xl font-sans font-sans" onclick="closeDetailModal()"></div>
-        <div class="relative bg-white w-full lg:max-w-md p-8 rounded-t-[3rem] lg:rounded-[3rem] shadow-2xl animate-fade-up font-sans text-left">
-            <div class="flex justify-between items-start mb-8 text-left font-sans font-sans">
-                <div class="text-left font-sans">
-                    <h3 id="modal-name" class="text-3xl font-black text-slate-900 leading-tight text-left font-sans">종목명</h3>
-                    <p id="modal-ticker" class="text-xs text-slate-400 font-black uppercase tracking-[0.2em] mt-2 text-left font-sans">000000</p>
+    <div id="detail-modal" class="fixed inset-0 z-[100] hidden flex items-end lg:items-center justify-center lg:p-4 text-left">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-xl" onclick="closeDetailModal()"></div>
+        <div class="relative bg-white w-full lg:max-w-md p-6 rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-fade-up text-left font-sans">
+            <div class="flex justify-between items-start mb-6 text-left">
+                <div class="text-left">
+                    <h3 id="modal-name" class="text-2xl font-black text-slate-900 leading-tight text-left">종목명</h3>
+                    <p id="modal-ticker" class="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1 text-left">000000</p>
                 </div>
-                <button onclick="closeDetailModal()" class="p-3 bg-slate-100 rounded-full text-slate-400 transition hover:bg-slate-200 text-center font-sans"><i class="fa-solid fa-xmark text-center"></i></button>
+                <button onclick="closeDetailModal()" class="p-2.5 bg-slate-100 rounded-full text-slate-400 hover:bg-slate-200 transition text-center"><i class="fa-solid fa-xmark text-center"></i></button>
             </div>
             
-            <div class="bg-slate-50 p-6 rounded-[2rem] mb-8 border border-slate-100 text-left font-sans">
-                <div class="flex justify-between text-[10px] font-black text-slate-400 mb-4 uppercase tracking-[0.2em] text-left font-sans">
-                    <span class="text-left font-sans">Fund Source Ratio</span>
+            <div class="bg-slate-50 p-5 rounded-3xl mb-6 border border-slate-100 text-left font-sans text-left">
+                <p class="text-[9px] font-black text-slate-400 mb-3 uppercase tracking-widest text-left font-sans">Fund Source Ratio</p>
+                <div class="w-full h-4 bg-white rounded-full overflow-hidden flex border border-slate-200/50 shadow-inner text-left">
+                    <div id="bar-invest-1" class="h-full bg-blue-500 transition-all duration-1000 text-left" style="width:0%"></div>
+                    <div id="bar-invest-2" class="h-full bg-purple-500 transition-all duration-1000 text-left" style="width:0%"></div>
+                    <div id="bar-reinvest" class="h-full bg-emerald-500 transition-all duration-1000 text-left" style="width:0%"></div>
                 </div>
-                <div class="w-full h-5 bg-white rounded-full overflow-hidden flex border border-slate-200/50 text-left font-sans shadow-inner text-left font-sans">
-                    <div id="bar-invest-1" class="h-full bg-blue-500 transition-all duration-1000 text-left font-sans" style="width:0%"></div>
-                    <div id="bar-invest-2" class="h-full bg-purple-500 transition-all duration-1000 text-left font-sans" style="width:0%"></div>
-                    <div id="bar-reinvest" class="h-full bg-emerald-500 transition-all duration-1000 text-left font-sans" style="width:0%"></div>
-                </div>
-                <div class="flex justify-between text-[10px] mt-4 font-black text-left font-sans font-sans">
-                    <div class="flex gap-4 text-left font-sans">
-                        <span class="flex items-center gap-2 text-left font-sans font-sans"><span class="w-2 h-2 rounded-full bg-blue-500 text-center"></span>원금 <span id="val-invest-1" class="text-slate-400 font-sans">0%</span></span>
-                        <span class="flex items-center gap-2 text-left font-sans font-sans"><span class="w-2 h-2 rounded-full bg-purple-500 text-center"></span>특별 <span id="val-invest-2" class="text-slate-400 font-sans">0%</span></span>
+                <div class="flex justify-between text-[9px] mt-3 font-black text-left font-sans">
+                    <div class="flex gap-3 text-left">
+                        <span class="flex items-center gap-1 text-left font-sans"><span class="w-1.5 h-1.5 rounded-full bg-blue-500 text-center"></span>원금 <span id="val-invest-1" class="text-slate-400 font-sans">0%</span></span>
+                        <span class="flex items-center gap-1 text-left font-sans font-sans"><span class="w-1.5 h-1.5 rounded-full bg-purple-500 text-center"></span>특별 <span id="val-invest-2" class="text-slate-400 font-sans">0%</span></span>
                     </div>
-                    <span class="flex items-center gap-2 text-left font-sans font-sans font-sans"><span class="w-2 h-2 rounded-full bg-emerald-500 text-center"></span>재투자 <span id="val-reinvest" class="text-emerald-600 font-black font-sans">0%</span></span>
+                    <span class="flex items-center gap-1 text-left font-sans font-sans"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 text-center font-sans"></span>재투자 <span id="val-reinvest" class="text-emerald-600 font-black font-sans font-sans">0%</span></span>
                 </div>
             </div>
-
-            <p class="text-[10px] font-black text-slate-400 mb-4 uppercase tracking-[0.2em] text-left font-sans">Recent History</p>
-            <div id="modal-history-list" class="flex-1 overflow-y-auto max-h-[30vh] space-y-3 pb-2 text-left font-sans font-sans"></div>
+            <p class="text-[9px] font-black text-slate-400 mb-3 uppercase tracking-widest text-left font-sans font-sans">Recent History</p>
+            <div id="modal-history-list" class="flex-1 overflow-y-auto max-h-[30vh] space-y-2 pb-2 text-left font-sans font-sans"></div>
         </div>
     </div>
 
     <!-- 현금 잔고 상세 모달 -->
-    <div id="cash-modal" class="fixed inset-0 z-[100] hidden flex items-end lg:items-center justify-center lg:p-4 text-left font-sans">
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-xl font-sans font-sans" onclick="closeCashModal()"></div>
-        <div class="relative bg-white w-full lg:max-w-md p-8 rounded-t-[3rem] lg:rounded-[3rem] shadow-2xl animate-fade-up text-left font-sans">
-            <div class="flex justify-between items-start mb-8 text-left font-sans font-sans">
+    <div id="cash-modal" class="fixed inset-0 z-[100] hidden flex items-end lg:items-center justify-center lg:p-4 text-left">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-xl" onclick="closeCashModal()"></div>
+        <div class="relative bg-white w-full lg:max-w-md p-7 rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-fade-up text-left font-sans">
+            <div class="flex justify-between items-start mb-6 text-left">
                 <div class="text-left font-sans">
-                    <h3 class="text-3xl font-black text-slate-900 text-left font-sans">현금 잔고</h3>
-                    <p class="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-2 text-left font-sans">Cash Flow Breakdown</p>
+                    <h3 class="text-2xl font-black text-slate-900 tracking-tighter text-left">현금 잔고</h3>
+                    <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1 text-left">Cash Breakdown</p>
                 </div>
-                <button onclick="closeCashModal()" class="p-3 bg-slate-100 rounded-full text-slate-400 transition hover:bg-slate-200 text-center font-sans"><i class="fa-solid fa-xmark text-center"></i></button>
+                <button onclick="closeCashModal()" class="p-2.5 bg-slate-100 rounded-full text-slate-400 hover:bg-slate-200 transition text-center font-sans font-sans"><i class="fa-solid fa-xmark text-center font-sans"></i></button>
             </div>
-            
-            <div class="space-y-4 font-sans font-sans text-left">
-                <div class="bg-emerald-50 p-6 rounded-[2rem] border border-emerald-100/50 flex justify-between items-center transition hover:scale-[1.02] text-left font-sans">
-                    <div class="text-left font-sans">
-                        <span class="text-[10px] font-black text-emerald-600 uppercase tracking-widest text-left font-sans font-sans">Level 1: Reinvest</span>
-                        <p class="text-xl font-black text-emerald-900 text-left font-sans font-sans">배당금 잔고</p>
+            <div class="space-y-3 text-left font-sans font-sans font-sans">
+                <div class="bg-emerald-50 p-5 rounded-3xl border border-emerald-100/50 flex justify-between items-center transition active:scale-[0.98] text-left font-sans font-sans font-sans">
+                    <div class="text-left">
+                        <span class="text-[9px] font-black text-emerald-600 uppercase tracking-widest text-left">Level 1: Reinvest</span>
+                        <p class="text-lg font-black text-emerald-900 text-left">배당금 잔고</p>
                     </div>
-                    <p class="text-2xl font-black text-emerald-600 text-right font-sans font-sans" id="modal-cash-div">₩0</p>
+                    <p class="text-xl font-black text-emerald-600 text-right" id="modal-cash-div">₩0</p>
                 </div>
-                <div class="bg-purple-50 p-6 rounded-[2rem] border border-purple-100/50 flex justify-between items-center transition hover:scale-[1.02] text-left font-sans">
-                    <div class="text-left font-sans">
-                        <span class="text-[10px] font-black text-purple-600 uppercase tracking-widest text-left font-sans font-sans">Level 2: Special</span>
-                        <p class="text-xl font-black text-purple-900 text-left font-sans font-sans">특별금 잔고</p>
+                <div class="bg-purple-50 p-5 rounded-3xl border border-purple-100/50 flex justify-between items-center transition active:scale-[0.98] text-left">
+                    <div class="text-left font-sans font-sans">
+                        <span class="text-[9px] font-black text-purple-600 uppercase tracking-widest text-left font-sans">Level 2: Special</span>
+                        <p class="text-lg font-black text-purple-900 text-left font-sans">특별금 잔고</p>
                     </div>
-                    <p class="text-2xl font-black text-purple-600 text-right font-sans font-sans" id="modal-cash-spec">₩0</p>
+                    <p class="text-xl font-black text-purple-600 text-right font-sans" id="modal-cash-spec">₩0</p>
                 </div>
-                <div class="bg-blue-50 p-6 rounded-[2rem] border border-blue-100/50 flex justify-between items-center transition hover:scale-[1.02] text-left font-sans">
+                <div class="bg-blue-50 p-5 rounded-3xl border border-blue-100/50 flex justify-between items-center transition active:scale-[0.98] text-left font-sans">
                     <div class="text-left font-sans">
-                        <span class="text-[10px] font-black text-blue-600 uppercase tracking-widest text-left font-sans font-sans">Level 3: Principal</span>
-                        <p class="text-xl font-black text-blue-900 text-left font-sans font-sans">원금 잔고</p>
+                        <span class="text-[9px] font-black text-blue-600 uppercase tracking-widest text-left font-sans">Level 3: Principal</span>
+                        <p class="text-lg font-black text-blue-900 text-left font-sans">원금 잔고</p>
                     </div>
-                    <p class="text-2xl font-black text-blue-600 text-right font-sans font-sans" id="modal-cash-base">₩0</p>
+                    <p class="text-xl font-black text-blue-600 text-right font-sans font-sans" id="modal-cash-base">₩0</p>
                 </div>
             </div>
-
-            <div class="mt-10 pt-6 border-t border-slate-100 text-left font-sans">
-                <button onclick="showSection('transaction'); closeCashModal(); switchTab('deposit');" class="w-full py-5 bg-slate-900 text-white rounded-3xl font-black text-sm shadow-xl transition hover:bg-slate-800 text-center font-sans">자금 충전하러 가기</button>
+            <div class="mt-8 pt-4 border-t border-slate-100 text-center">
+                <button onclick="showSection('transaction'); closeCashModal(); switchTab('deposit');" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-xl active:scale-95 transition text-center font-sans font-sans">현금 충전하기</button>
             </div>
         </div>
     </div>
 
     <!-- 설정 모달 -->
-    <div id="settings-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6 text-left font-sans">
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-xl font-sans font-sans font-sans" onclick="closeSettings()"></div>
-        <div class="relative bg-white w-full max-w-sm p-8 rounded-[2.5rem] shadow-2xl animate-fade-up text-left font-sans text-left font-sans">
-            <h3 class="text-2xl font-black mb-8 tracking-tighter text-left font-sans font-sans font-sans font-sans">System Settings</h3>
-            <div class="space-y-6 text-left font-sans font-sans font-sans">
-                <div class="text-left font-sans">
-                    <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-[0.2em] text-left font-sans font-sans">API Interface URL</label>
-                    <input type="text" id="setting-url" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-500 font-black truncate focus:ring-4 focus:ring-blue-500/10 outline-none transition text-left font-sans font-sans">
+    <div id="settings-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6 text-left">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-xl" onclick="closeSettings()"></div>
+        <div class="relative bg-white w-full max-w-sm p-8 rounded-[2.5rem] shadow-2xl animate-fade-up text-left">
+            <h3 class="text-xl font-black mb-6 tracking-tighter text-left font-sans">Settings</h3>
+            <div class="space-y-5 text-left font-sans">
+                <div class="text-left">
+                    <label class="text-[10px] font-black text-slate-400 uppercase block mb-1.5 tracking-widest text-left">API Endpoint URL</label>
+                    <input type="text" id="setting-url" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-[10px] text-slate-500 font-bold truncate focus:ring-4 focus:ring-blue-500/5 outline-none transition text-left">
                 </div>
-                 <div class="text-left font-sans font-sans">
-                    <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-[0.2em] text-left font-sans font-sans font-sans">Build ID</label>
-                    <div class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-[10px] text-slate-400 font-black font-mono text-left font-sans">
-                        ISA_RICH_BUILD_v2.0.1_ULTIMATE
-                    </div>
-                </div>
-                <button onclick="saveSettings()" class="w-full py-5 bg-slate-900 text-white rounded-[1.5rem] font-black text-sm shadow-2xl transition hover:bg-slate-800 mt-4 text-center font-sans font-sans font-sans">설정값 업데이트</button>
+                <button onclick="saveSettings()" class="w-full py-4.5 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-xl active:scale-95 transition mt-2 text-center font-sans">환경 설정 저장</button>
             </div>
         </div>
     </div>
 
     <script>
-        // ▼▼▼▼▼▼ GAS 웹 앱 URL 입력 ▼▼▼▼▼▼
+        // ★중요★ MY_GAS_URL 변수를 하드코딩된 기본값으로 유지합니다.
         const MY_GAS_URL = "https://script.google.com/macros/s/AKfycbxRDE_WPbcE5oDR4Ha460vHt-FsWve8O6W_kjhoWPoPfhF5CSsJIWhtxlksarsd34t6dQ/exec"; 
-        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
         const COLORS = ["#3B82F6", "#F59E0B", "#10B981", "#EF4444", "#8B5CF6"];
         const CAT_NAMES = { "1": "원금", "2": "특별", "3": "배당" };
@@ -401,6 +384,8 @@
         let transactions = [];
         let marketData = {};
         let assetChart = null;
+
+        // ★중요★ sheetsUrl 초기화 시 MY_GAS_URL을 기본값으로 사용하도록 수정
         let sheetsUrl = localStorage.getItem('isa_sheets_url') || MY_GAS_URL;
 
         function getEl(id) { return document.getElementById(id); }
@@ -410,6 +395,9 @@
             getEl('tab-btn-deposit').classList.toggle('active', type === 'deposit');
             getEl('tab-content-purchase').classList.toggle('hidden', type !== 'purchase');
             getEl('tab-content-deposit').classList.toggle('hidden', type !== 'deposit');
+            
+            // 탭 전환 시 퀵 메뉴 다시 그리기 (보장용)
+            if(type === 'purchase') updateQuickSelectUI();
         }
 
         function setDepositCat(n) {
@@ -417,35 +405,39 @@
             [1,2,3].forEach(i => {
                 const btn = getEl('dep-cat-'+i);
                 if(i == n) {
-                    btn.className = "py-4 rounded-2xl border-2 border-blue-600 bg-blue-600 text-white text-[11px] font-black transition shadow-lg shadow-blue-500/20";
+                    btn.className = "py-3.5 rounded-xl border-2 border-blue-600 bg-blue-600 text-white text-[10px] font-black transition";
                 } else {
-                    btn.className = "py-4 rounded-2xl border-2 border-slate-200 bg-white text-slate-500 text-[11px] font-black transition hover:border-slate-300";
+                    btn.className = "py-3.5 rounded-xl border-2 border-slate-100 bg-slate-50 text-slate-500 text-[10px] font-black transition";
                 }
             });
         }
 
         async function syncAllData() {
-            if(!sheetsUrl) sheetsUrl = MY_GAS_URL;
-            if(localStorage.getItem('isa_sheets_url')) sheetsUrl = localStorage.getItem('isa_sheets_url');
-            if(!sheetsUrl) return;
-
+            // sheetsUrl이 없으면 동기화 중단
+            if(!sheetsUrl) {
+                getEl('sync-time').innerText = "URL을 설정해주세요.";
+                return;
+            }
+            
             const icon = getEl('sync-icon');
             if(icon) icon.classList.add('sync-spin');
-            
             try {
                 const ts = Date.now();
                 const [pRes, hRes] = await Promise.all([
                     fetch(`${sheetsUrl}?action=prices&_t=${ts}`, { redirect: 'follow' }),
                     fetch(`${sheetsUrl}?action=get_history&_t=${ts}`, { redirect: 'follow' })
                 ]);
-                
                 marketData = JSON.parse(await pRes.text() || "{}");
                 transactions = JSON.parse(await hRes.text() || "[]");
                 
                 updateUI();
                 updateQuickSelectUI();
-                if(getEl('sync-time')) getEl('sync-time').innerText = "Update: " + new Date().toLocaleTimeString();
-            } catch(e) { console.error(e); } 
+                
+                if(getEl('sync-time')) getEl('sync-time').innerText = "Last sync: " + new Date().toLocaleTimeString();
+            } catch(e) { 
+                console.error(e); 
+                if(getEl('sync-time')) getEl('sync-time').innerText = "동기화 실패";
+            } 
             if(icon) icon.classList.remove('sync-spin');
         }
 
@@ -458,7 +450,7 @@
                 getEl('input-shares').value = ""; getEl('input-price').value = "";
                 syncAllData(); showSection('dashboard');
             } catch(e) { console.error(e); }
-            btn.innerText = "매수하기"; btn.disabled = false;
+            btn.innerText = "매수"; btn.disabled = false;
         }
 
         async function saveWalletDeposit() {
@@ -469,15 +461,14 @@
                 await fetch(`${sheetsUrl}?action=add&id=${Date.now()}&date=${date}&ticker=DEPOSIT&name=${encodeURIComponent('현금 충전')}&shares=1&price=${amount}&category=${cat}`, { redirect: "follow" });
                 getEl('div-amount').value = ""; syncAllData();
             } catch(e) {}
-            btn.innerText = "충전하기"; btn.disabled = false;
+            btn.innerText = "충전"; btn.disabled = false;
         }
 
         function getDividendLevel(amount) {
-            if (amount < 5000) return { icon: "🌱", text: "새싹 엔진 단계" };
-            if (amount < 20000) return { icon: "☕", text: "스타벅스 무한 단계" };
-            if (amount < 50000) return { icon: "🍔", text: "국밥 프리패스 단계" };
-            if (amount < 150000) return { icon: "🍗", text: "치킨 프리패스 단계" };
-            if (amount < 400000) return { icon: "📱", text: "통신비 전액 방어" };
+            if (amount < 10000) return { icon: "🌱", text: "새싹 엔진 가동 중" };
+            if (amount < 50000) return { icon: "☕", text: "커피 엔진 가동 중" };
+            if (amount < 150000) return { icon: "🍔", text: "국밥 엔진 가동 중" };
+            if (amount < 400000) return { icon: "🍗", text: "치킨 프리패스 단계" };
             return { icon: "✈️", text: "경제적 자유 엔진" };
         }
 
@@ -485,6 +476,7 @@
             const h = {};
             let totalStockValue = 0, totalStockCost = 0, totalExpDiv = 0;
             let cashDeposit = { "1": 0, "2": 0, "3": 0 }; 
+            
             transactions.forEach(t => {
                 const amt = Number(t.shares) * Number(t.price);
                 if(t.ticker === 'DEPOSIT') { cashDeposit[t.category] += amt; return; }
@@ -493,10 +485,12 @@
                 h[ticker].shares += Number(t.shares); h[ticker].cost += amt;
                 totalStockCost += amt;
             });
+
             let remainingCost = totalStockCost;
             let usedDiv = Math.min(remainingCost, cashDeposit["3"]); remainingCost -= usedDiv;
             let usedSpec = Math.min(remainingCost, cashDeposit["2"]); remainingCost -= usedSpec;
             let usedBase = remainingCost; 
+            
             let currentCashBalance = (cashDeposit["1"] + cashDeposit["2"] + cashDeposit["3"]) - totalStockCost;
             let reinvestRate = totalStockCost > 0 ? (usedDiv / totalStockCost * 100) : 0;
             
@@ -505,82 +499,64 @@
             else getEl('cash-card-area').classList.remove('reinvest-active');
 
             let listHTML = "", labels = [], data = [], bg = [];
-            Object.keys(h).forEach((k, i) => {
-                const d = h[k]; if (d.shares <= 0) return;
-                const m = marketData[k] || { price: 0, yield: 0 };
-                let yieldPct = m.yield < 1 && m.yield > 0 ? m.yield * 100 : m.yield;
-                const val = d.shares * m.price;
-                const profit = val - d.cost, profitRate = d.cost > 0 ? (profit/d.cost)*100 : 0;
-                const div = val * (yieldPct/100/12);
-                totalStockValue += val; totalExpDiv += div;
-                labels.push(d.name); data.push(val); bg.push(COLORS[i % COLORS.length]);
-                listHTML += `
-                <div class="flex justify-between items-center p-5 hover:bg-white/40 transition-all rounded-2xl cursor-pointer group text-left" onclick="openDetailModal('${k}')">
-                    <div class="flex items-center gap-4 text-left font-sans">
-                        <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-bold text-sm shadow-lg group-hover:scale-110 transition text-center" style="background:${bg[i]}">${d.name ? d.name[0] : '?'}</div>
-                        <div class="text-left font-sans">
-                            <p class="font-black text-slate-800 text-[15px] font-sans">${d.name} <span class="text-blue-500 font-bold text-[10px] ml-1 font-sans">[${yieldPct.toFixed(1)}%]</span></p>
-                            <p class="text-[11px] text-slate-400 font-black mt-0.5 font-sans">${d.shares.toFixed(2)}주 · ₩${Math.round(d.cost/d.shares).toLocaleString()}</p>
+            const tickers = Object.keys(h);
+            
+            if (tickers.length === 0) {
+                getEl('holdings-list').innerHTML = `<div class="text-center p-12 text-slate-300 font-black text-[10px] uppercase tracking-widest font-sans">No Holdings Found</div>`;
+            } else {
+                tickers.forEach((k, i) => {
+                    const d = h[k]; if (d.shares <= 0) return;
+                    const m = marketData[k] || { price: 0, yield: 0 };
+                    let yieldPct = m.yield < 1 && m.yield > 0 ? m.yield * 100 : m.yield;
+                    const val = d.shares * m.price;
+                    const profit = val - d.cost, profitRate = d.cost > 0 ? (profit/d.cost)*100 : 0;
+                    const div = val * (yieldPct/100/12);
+                    
+                    totalStockValue += val; totalExpDiv += div;
+                    labels.push(d.name); data.push(val); bg.push(COLORS[i % COLORS.length]);
+                    
+                    listHTML += `
+                    <div class="flex justify-between items-center p-4 hover:bg-white/50 transition rounded-2xl cursor-pointer group text-left font-sans" onclick="openDetailModal('${k}')">
+                        <div class="flex items-center gap-3 text-left">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-md" style="background:${bg[i]}">${d.name ? d.name[0] : '?'}</div>
+                            <div class="text-left font-sans">
+                                <p class="font-black text-slate-800 text-[14px] font-sans">${d.name} <span class="text-blue-500 font-bold text-[9px] ml-0.5">[${yieldPct.toFixed(2)}%]</span></p>
+                                <p class="text-[10px] text-slate-400 font-bold mt-0.5 font-sans">${d.shares.toFixed(2)}주 · ₩${Math.round(d.cost/d.shares).toLocaleString()}</p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="text-right font-sans">
-                        <p class="font-black text-slate-900 text-[15px] text-right font-sans">₩${Math.round(val).toLocaleString()}</p>
-                        <p class="text-[10px] font-black ${profit>=0?'text-red-500':'text-blue-500'} uppercase mt-0.5 text-right font-sans font-sans">${profit>=0?'▲':'▼'} ${Math.abs(profitRate).toFixed(1)}%</p>
-                    </div>
-                </div>`;
-            });
+                        <div class="text-right font-sans">
+                            <p class="font-black text-slate-900 text-sm text-right font-sans font-sans">₩${Math.round(val).toLocaleString()}</p>
+                            <p class="text-[9px] font-black ${profit>=0?'text-red-500':'text-blue-500'} uppercase mt-0.5 text-right font-sans font-sans">${profit>=0?'▲':'▼'} ${Math.abs(profitRate).toFixed(1)}%</p>
+                        </div>
+                    </div>`;
+                });
+                getEl('holdings-list').innerHTML = listHTML;
+            }
+
             getEl('stat-total-value').innerText = `₩${Math.round(totalStockValue).toLocaleString()}`;
-            const totProfit = totalStockValue - totalStockCost;
-            const totRate = totalStockCost > 0 ? (totProfit/totalStockCost)*100 : 0;
+            const totProfit = totalStockValue - totalStockCost, totRate = totalStockCost > 0 ? (totProfit/totalStockCost)*100 : 0;
             getEl('stat-profit-amount').innerText = `₩${Math.round(Math.abs(totProfit)).toLocaleString()}`;
             getEl('stat-profit-pct').innerText = `(${totProfit>=0?'+':''}${totRate.toFixed(1)}%)`;
-            getEl('stat-profit-pct').className = `font-black ${totProfit>=0?'text-red-400':'text-blue-300'} ml-2 font-sans font-sans`;
+            getEl('stat-profit-pct').className = `font-black ${totProfit>=0?'text-red-400':'text-blue-300'} ml-1 text-xs font-sans font-sans font-sans`;
             getEl('stat-profit-icon').innerText = totProfit >= 0 ? "🚀" : "💧";
             getEl('stat-cash-balance').innerText = `₩${Math.round(currentCashBalance).toLocaleString()}`;
             getEl('stat-reinvest-rate').innerText = `${reinvestRate.toFixed(1)}%`;
             getEl('stat-monthly-dividend').innerText = `₩${Math.round(totalExpDiv).toLocaleString()}`;
             
             const level = getDividendLevel(totalExpDiv);
-            getEl('div-level-icon').innerText = level.icon;
-            getEl('dividend-level-text').innerText = level.text;
+            getEl('div-level-icon').innerText = level.icon; getEl('dividend-level-text').innerText = level.text;
             
             const balSpec = Math.round(cashDeposit["2"] - usedSpec), balBase = Math.round(cashDeposit["1"] - usedBase);
-            getEl('modal-cash-div').innerText = `₩${balDiv.toLocaleString()}`;
-            getEl('modal-cash-spec').innerText = `₩${balSpec.toLocaleString()}`;
-            getEl('modal-cash-base').innerText = `₩${balBase.toLocaleString()}`;
-            getEl('cash-div-display').innerText = balDiv.toLocaleString();
-            getEl('cash-spec-display').innerText = balSpec.toLocaleString();
-            getEl('cash-base-display').innerText = balBase.toLocaleString();
+            getEl('modal-cash-div').innerText = `₩${balDiv.toLocaleString()}`; getEl('modal-cash-spec').innerText = `₩${balSpec.toLocaleString()}`; getEl('modal-cash-base').innerText = `₩${balBase.toLocaleString()}`;
+            getEl('cash-div-display').innerText = balDiv.toLocaleString(); getEl('cash-spec-display').innerText = balSpec.toLocaleString(); getEl('cash-base-display').innerText = balBase.toLocaleString();
 
-            getEl('holdings-list').innerHTML = listHTML || `<div class="text-center p-12 text-slate-300 font-black text-xs uppercase tracking-[0.3em] font-sans font-sans font-sans">No Stock Found</div>`;
-            
             if (assetChart) assetChart.destroy();
-            assetChart = new Chart(getEl('assetChart').getContext('2d'), { 
-                type: 'doughnut', 
-                data: { labels, datasets: [{ data, backgroundColor: bg, borderWidth: 5, borderColor: 'rgba(255,255,255,0.7)', hoverOffset: 10 }] }, 
-                options: { cutout: '82%', plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false } 
-            });
-            getEl('chart-legend').innerHTML = labels.map((l, i) => `
-                <div class="flex justify-between text-[11px] mb-2 font-black transition hover:translate-x-1 text-left font-sans">
-                    <span class="flex items-center gap-2.5 text-left">
-                        <span class="w-2.5 h-2.5 rounded-full text-center" style="background:${bg[i]}"></span>
-                        <span class="truncate w-24 text-slate-500 font-sans">${l}</span>
-                    </span>
-                    <span class="text-slate-800 text-right font-sans font-sans">${((data[i]/totalStockValue)*100).toFixed(1)}%</span>
-                </div>`).join('');
+            assetChart = new Chart(getEl('assetChart').getContext('2d'), { type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: bg, borderWidth: 3, borderColor: 'rgba(255,255,255,0.7)', hoverOffset: 10 }] }, options: { cutout: '82%', plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false } });
+            getEl('chart-legend').innerHTML = labels.map((l, i) => `<div class="flex justify-between text-[10px] mb-2 font-black transition hover:translate-x-1 text-left font-sans font-sans"><span class="flex items-center gap-2 text-left font-sans"><span class="w-2 h-2 rounded-full text-center" style="background:${bg[i]}"></span><span class="truncate w-24 text-slate-500 font-sans">${l}</span></span><span class="text-slate-800 text-right font-sans font-sans">${((data[i]/totalStockValue)*100).toFixed(1)}%</span></div>`).join('');
             
             const pSCHD = marketData["458730"]?.price || 0, pReits = marketData["329200"]?.price || 0;
-            let remain = totalExpDiv; const buyReits = (pReits > 0) ? Math.floor(remain / pReits) : 0;
-            getEl('reinvest-recommendation').innerHTML = `
-                <div class="bg-white/10 backdrop-blur-md border border-white/10 p-5 rounded-3xl space-y-3 shadow-inner text-left font-sans">
-                    <div class="flex justify-between text-xs font-black text-left">
-                        <span class="text-white/90 font-sans">K-REITS ${buyReits}주 구매 가능</span>
-                        <span class="text-white/50 font-sans font-sans">₩${(buyReits*(pReits||5000)).toLocaleString()}</span>
-                    </div>
-                    <div class="h-1.5 bg-white/10 rounded-full overflow-hidden text-left">
-                        <div class="h-full bg-emerald-400 text-left" style="width: 75%"></div>
-                    </div>
-                </div>`;
+            let remain = totalExpDiv; const buyReits = (pReits > 0) ? Math.floor(remain / (pReits || 5000)) : 0;
+            getEl('reinvest-recommendation').innerHTML = `<div class="bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-3xl space-y-2 text-left font-sans font-sans"><div class="flex justify-between text-[11px] font-black text-left"><span class="text-white/90 font-sans font-sans font-sans">K-REITS ${buyReits}주 제안</span><span class="text-white/50 font-sans font-sans font-sans font-sans font-sans">₩${(buyReits*(pReits||5000)).toLocaleString()}</span></div><div class="h-1 bg-white/10 rounded-full overflow-hidden text-left font-sans font-sans"><div class="h-full bg-emerald-400 text-left font-sans font-sans" style="width: 65%"></div></div></div>`;
             renderHistoryList('history-list', transactions);
         }
 
@@ -589,31 +565,17 @@
             container.innerHTML = data.map(t => {
                 const isDeposit = t.ticker === 'DEPOSIT';
                 const icon = isDeposit ? 'fa-arrow-down-to-bracket text-emerald-500' : 'fa-basket-shopping text-slate-400';
-                return `
-                <div class="card-shadow p-5 flex justify-between items-center transition hover:translate-y-[-2px] text-left font-sans">
-                    <div class="flex items-center gap-4 text-left font-sans">
-                        <div class="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-lg border border-slate-50 shadow-sm text-center"><i class="fa-solid ${icon} text-center"></i></div>
-                        <div class="text-left font-sans">
-                            <p class="text-[10px] text-slate-400 font-black mb-1 uppercase tracking-widest text-left font-sans font-sans">${t.date ? t.date.substring(0,10) : '-'} · ${isDeposit ? CAT_NAMES[t.category] : 'Trade'}</p>
-                            <p class="text-sm font-black text-slate-800 text-left font-sans font-sans">${t.name}</p>
-                            <p class="text-[11px] text-slate-400 font-black uppercase mt-0.5 text-left font-sans font-sans font-sans">${isDeposit ? 'Deposit Success' : Number(t.shares).toFixed(2) + ' shares · @₩' + Number(t.price).toLocaleString()}</p>
-                        </div>
-                    </div>
-                    <div class="flex flex-col items-end gap-2 text-right font-sans font-sans">
-                        <p class="font-black ${isDeposit ? 'text-blue-600' : 'text-slate-900'} text-base tracking-tighter text-right font-sans font-sans font-sans">${isDeposit ? '+' : ''}₩${Math.round(t.shares*t.price).toLocaleString()}</p>
-                        <button onclick="deleteTransaction('${t.id}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-400 hover:bg-red-100 transition active:scale-90 text-center font-sans"><i class="fa-solid fa-trash-can text-xs text-center font-sans"></i></button>
-                    </div>
-                </div>`;
-            }).join('') || `<div class="text-center p-32 text-slate-300 font-black text-xs uppercase tracking-[0.4em] font-sans font-sans font-sans font-sans">No History Records</div>`;
+                return `<div class="card-shadow p-4 flex justify-between items-center transition hover:translate-y-[-1px] text-left font-sans font-sans font-sans"><div class="flex items-center gap-3 text-left font-sans font-sans font-sans"><div class="w-10 h-10 rounded-xl bg-white/50 flex items-center justify-center text-sm border border-white shadow-sm text-center font-sans font-sans font-sans"><i class="fa-solid ${icon} text-center font-sans"></i></div><div class="text-left font-sans font-sans font-sans font-sans"><p class="text-[9px] text-slate-400 font-black mb-0.5 uppercase tracking-widest text-left font-sans font-sans font-sans font-sans font-sans font-sans font-sans">${t.date ? t.date.substring(0,10) : '-'} · ${isDeposit ? CAT_NAMES[t.category] : 'Trade'}</p><p class="text-xs font-black text-slate-800 text-left font-sans font-sans font-sans font-sans">${t.name}</p><p class="text-[9px] text-slate-400 font-black uppercase mt-0.5 text-left font-sans font-sans font-sans font-sans font-sans font-sans font-sans">${isDeposit ? 'Deposit In' : Number(t.shares).toFixed(2) + ' sh · @₩' + Number(t.price).toLocaleString()}</p></div></div><div class="flex flex-col items-end gap-1.5 text-right font-sans font-sans font-sans font-sans font-sans"><p class="font-black ${isDeposit ? 'text-blue-600' : 'text-slate-900'} text-sm tracking-tighter text-right font-sans font-sans font-sans font-sans font-sans font-sans">₩${Math.round(t.shares*t.price).toLocaleString()}</p><button onclick="deleteTransaction('${t.id}')" class="text-slate-200 hover:text-red-500 transition active:scale-90 text-center font-sans font-sans font-sans font-sans font-sans font-sans font-sans"><i class="fa-solid fa-trash-can text-[10px] text-center font-sans font-sans font-sans"></i></button></div></div>`;
+            }).join('') || `<div class="text-center p-24 text-slate-300 font-black text-[10px] uppercase tracking-[0.2em] font-sans font-sans font-sans font-sans font-sans font-sans font-sans">Empty Log</div>`;
         }
 
         function updateQuickSelectUI() {
             const box = getEl('quick-select-buttons');
             const tickers = Object.keys(marketData);
             if(tickers.length > 0) {
-                box.innerHTML = tickers.map(k => `<button onclick="fillForm('${k}')" class="px-4 py-3 bg-white/50 backdrop-blur-sm border border-white rounded-2xl text-[11px] font-black text-slate-600 hover:border-blue-500 hover:text-blue-600 hover:bg-white transition-all shadow-sm active:scale-95 text-center font-sans font-sans font-sans font-sans font-sans font-sans font-sans">${marketData[k].name}</button>`).join('');
+                box.innerHTML = tickers.map(k => `<button onclick="fillForm('${k}')" class="px-3 py-2 bg-white/50 backdrop-blur-sm border border-slate-200 rounded-xl text-[10px] font-black text-slate-600 hover:border-blue-500 hover:text-blue-600 transition active:scale-95 shadow-sm text-center font-sans font-sans font-sans font-sans font-sans font-sans font-sans font-sans font-sans font-sans font-sans">${marketData[k].name}</button>`).join('');
             } else { 
-                box.innerHTML = `<div class="text-[10px] text-slate-400 p-4 border border-dashed rounded-2xl w-full text-center font-black uppercase tracking-widest font-sans font-sans font-sans font-sans font-sans font-sans">Awaiting Live Feed...</div>`; 
+                box.innerHTML = `<div class="text-[10px] text-slate-400 p-4 border border-dashed rounded-2xl w-full text-center font-black uppercase tracking-widest font-sans font-sans font-sans font-sans font-sans font-sans font-sans font-sans">데이터 로드 중...</div>`; 
             }
         }
 
@@ -624,7 +586,7 @@
         };
 
         window.deleteTransaction = async (id) => {
-            if(!confirm("시스템에서 이 내역을 삭제하시겠습니까? (복구 불가)")) return;
+            if(!confirm("시스템에서 이 내역을 삭제하시겠습니까?")) return;
             await fetch(`${sheetsUrl}?action=delete&id=${id}`, {redirect:'follow'});
             syncAllData(); closeDetailModal();
         };
@@ -643,10 +605,8 @@
             const p1 = tot>0 ? (c1/tot)*100 : 0, p2 = tot>0 ? (c2/tot)*100 : 0, p3 = tot>0 ? (c3/tot)*100 : 0;
             getEl('bar-invest-1').style.width = p1+"%"; getEl('bar-invest-2').style.width = p2+"%"; getEl('bar-reinvest').style.width = p3+"%";
             getEl('val-invest-1').innerText = `${Math.round(p1)}%`; getEl('val-invest-2').innerText = `${Math.round(p2)}%`; getEl('val-reinvest').innerText = `${Math.round(p3)}%`;
-            
             const historyBox = getEl('modal-history-list');
-            historyBox.innerHTML = data.map(t => `<div class="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 flex justify-between items-center text-xs font-black text-left font-sans"><div class="text-left font-sans font-bold"><p class="text-[9px] text-slate-400 mb-1 font-sans font-sans">${t.date.substring(0,10)}</p><p class="text-slate-800 font-sans font-sans">${t.shares} shares · ₩${Number(t.price).toLocaleString()}</p></div><button onclick="deleteTransaction('${t.id}')" class="text-slate-200 hover:text-red-500 transition text-center font-sans"><i class="fa-solid fa-trash-can text-center"></i></button></div>`).join('');
-            
+            historyBox.innerHTML = data.map(t => `<div class="bg-slate-50/50 p-3 rounded-2xl border border-slate-100 flex justify-between items-center text-[10px] font-black text-left font-sans font-sans font-sans font-sans"><div class="text-left font-sans font-bold font-sans"><p class="text-[8px] text-slate-400 mb-1 font-sans font-sans font-sans font-sans">${t.date.substring(0,10)}</p><p class="text-slate-800 font-sans font-sans font-sans">${t.shares} shares · ₩${Number(t.price).toLocaleString()}</p></div><button onclick="deleteTransaction('${t.id}')" class="text-slate-200 hover:text-red-500 transition text-center font-sans font-sans font-sans"><i class="fa-solid fa-trash-can text-center font-sans"></i></button></div>`).join('');
             getEl('detail-modal').classList.remove('hidden');
         };
 
@@ -659,6 +619,9 @@
             document.querySelectorAll('.pc-nav-item').forEach(b => b.classList.remove('text-blue-500', 'border-r-4', 'border-blue-500'));
             const activePcBtn = getEl('pc-nav-'+id);
             if(activePcBtn) { activePcBtn.classList.add('text-blue-500', 'border-r-4', 'border-blue-500'); }
+            
+            // 거래소 섹션 진입 시 퀵 메뉴 로드 보장
+            if(id === 'transaction') updateQuickSelectUI();
         };
         
         window.openSettings = () => { getEl('setting-url').value = sheetsUrl; getEl('settings-modal').classList.remove('hidden'); };
