@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ISA RICH v1.0.1</title>
+    <title>ISA RICH v1.0.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -205,7 +205,7 @@
             <div id="history-list" class="space-y-3 text-left"></div>
         </section>
 
-        <!-- [섹션 3] 거래 입력 (수정됨: 모바일 겹침 방지 최적화) -->
+        <!-- [섹션 3] 거래 입력 (수정됨: 수량 입력칸 가로 사이즈 축소) -->
         <section id="section-add" class="hidden p-4 md:p-8 animate-fade-up max-w-lg mx-auto text-left">
             <h2 class="text-xl font-bold text-slate-900 mb-2 pl-1 text-left" id="form-title">거래 기록</h2>
             <p class="text-xs text-slate-500 mb-6 pl-1 text-left">새로운 매수/배당 내역을 기록하세요.</p>
@@ -216,16 +216,14 @@
             </div>
 
             <div class="card-shadow p-6 space-y-4 text-left">
-                <!-- gap-2로 축소하여 모바일 겹침 방지 -->
-                <div class="grid grid-cols-2 gap-2 text-left">
-                    <div class="text-left">
+                <!-- 날짜와 수량의 그리드 비중을 3:1로 조절하여 수량 칸을 확실히 줄임 -->
+                <div class="grid grid-cols-4 gap-2 text-left">
+                    <div class="col-span-3 text-left">
                         <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1 pl-1 text-left">날짜</label>
-                        <!-- p-2, text-xs로 축소하여 공간 확보 -->
                         <input type="date" id="input-date" class="w-full p-2 bg-slate-50 rounded-lg text-xs font-black text-slate-950 outline-none focus:ring-2 focus:ring-blue-500 transition border border-slate-200 text-left">
                     </div>
-                    <div class="text-left">
+                    <div class="col-span-1 text-left">
                         <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1 pl-1 text-left">수량</label>
-                        <!-- p-2, text-xs로 축소하여 공간 확보 -->
                         <input type="number" id="input-shares" placeholder="0" class="w-full p-2 bg-slate-50 rounded-lg text-xs font-black text-slate-950 outline-none focus:ring-2 focus:ring-blue-500 transition border border-slate-200 text-left">
                     </div>
                 </div>
@@ -272,7 +270,7 @@
                  <div class="text-left">
                     <label class="text-xs font-bold text-slate-500 block mb-1 text-left">현재 버전</label>
                     <div class="w-full p-3 bg-slate-50 rounded-xl text-xs text-slate-400 font-mono border border-slate-200 text-left">
-                        v1.0.1
+                        v1.0.2
                     </div>
                 </div>
                 <button onclick="saveSettings()" class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-sm text-center">저장</button>
