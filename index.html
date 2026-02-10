@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ISA RICH v7.0 - Perfect Edition</title>
+    <title>ISA RICH v7.1 - Level Up Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -29,7 +29,6 @@
         .circle-bg { fill: none; stroke: #eee; stroke-width: 3.8; }
         .circle { fill: none; stroke-width: 2.8; stroke-linecap: round; animation: progress 1s ease-out forwards; }
         @keyframes progress { 0% { stroke-dasharray: 0 100; } }
-        .percentage { fill: #191F28; font-family: 'Pretendard', sans-serif; font-weight: bold; font-size: 0.5em; text-anchor: middle; }
     </style>
 </head>
 <body class="pb-24 lg:pb-0 lg:pl-20">
@@ -93,7 +92,7 @@
                     <div class="hero-card p-6 text-left">
                         <i class="fa-solid fa-chart-line hero-pattern"></i>
                         <div class="relative z-10">
-                            <span class="opacity-80 text-xs font-medium tracking-wide">총 자산</span>
+                            <span class="opacity-80 text-xs font-medium tracking-wide">총 평가 자산</span>
                             <h1 class="text-3xl font-black mt-1 mb-4 tracking-tight" id="stat-total-value">₩0</h1>
                             
                             <div class="flex items-center gap-2 mb-6">
@@ -117,7 +116,7 @@
                         </div>
                     </div>
 
-                    <!-- 2. AI 어드바이저 (위치 변경 & 디자인 변경) -->
+                    <!-- 2. AI 어드바이저 -->
                     <div class="ai-card p-5 text-left">
                         <i class="fa-solid fa-robot absolute -right-3 -bottom-5 text-8xl text-white/10 pointer-events-none"></i>
                         <div class="relative z-10">
@@ -133,7 +132,6 @@
                             </div>
                             <p class="text-white/70 text-[10px] mb-2">이번 달 예상 배당금으로 살 수 있어요!</p>
                             <div id="reinvest-recommendation" class="space-y-2">
-                                <!-- JS Dynamic Content -->
                                 <p class="text-xs opacity-50">분석 중...</p>
                             </div>
                         </div>
@@ -141,26 +139,33 @@
 
                     <!-- 3. 월 배당 & 목표 달성률 (하단 배치) -->
                     <div class="grid grid-cols-2 gap-4">
-                        <!-- 월 배당금 -->
+                        <!-- 월 배당금 (레벨 시스템 적용) -->
                         <div class="glass-card p-5 flex flex-col justify-between">
-                            <div class="flex justify-between items-start mb-2">
+                            <div class="flex justify-between items-start mb-1">
                                 <span class="text-[10px] font-bold text-slate-400 uppercase">월 배당금</span>
                                 <i class="fa-solid fa-coins text-blue-400"></i>
                             </div>
                             <div>
                                 <p class="text-xl font-black text-blue-600" id="stat-monthly-dividend">₩0</p>
-                                <p class="text-[10px] text-slate-400 mt-1">비과세 100% 수령</p>
+                                <div class="mt-2 pt-2 border-t border-slate-100">
+                                    <p id="dividend-level-text" class="text-[10px] text-slate-600 font-bold break-keep">🌱 물 주는 중...</p>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- 목표 달성률 (원형 디자인 적용) -->
+                        <!-- 목표 달성률 (D-Day 컨셉) -->
                         <div class="glass-card p-4 flex items-center justify-between relative overflow-hidden">
-                            <div class="z-10">
+                            <div class="z-10 w-full">
                                 <span class="text-[10px] font-bold text-slate-400 uppercase block mb-1">목표 달성</span>
-                                <p class="text-2xl font-black text-slate-800"><span id="goal-percent">0</span><span class="text-sm text-slate-400">%</span></p>
-                                <p class="text-[9px] text-slate-400 mt-1">목표: <span id="display-goal">0</span></p>
+                                <div class="flex items-baseline gap-1">
+                                    <p class="text-2xl font-black text-slate-800" id="goal-percent">0</p>
+                                    <span class="text-xs text-slate-400 font-bold mb-1">%</span>
+                                </div>
+                                <div class="mt-2 text-[10px] text-slate-500 bg-slate-50 px-2 py-1 rounded-lg inline-block">
+                                    남은 금액: <span id="goal-remaining" class="font-bold text-slate-700">₩0</span>
+                                </div>
                             </div>
-                            <div class="w-16 h-16 relative">
+                            <div class="w-14 h-14 relative flex-shrink-0 ml-2">
                                 <svg viewBox="0 0 36 36" class="circular-chart transform -rotate-90 w-full h-full">
                                     <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke="#eee" />
                                     <path id="goal-circle-bar" class="circle" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke="#3182F6" />
@@ -207,7 +212,7 @@
             </div>
         </section>
 
-        <!-- [섹션 3] 거래 입력 (수정 모드 포함) -->
+        <!-- [섹션 3] 거래 입력 -->
         <section id="section-add" class="hidden p-4 md:p-8 animate-fade-up max-w-lg mx-auto">
             <h2 class="text-xl font-bold text-slate-900 mb-2 pl-1" id="form-title">거래 기록</h2>
             <p class="text-xs text-slate-500 mb-6 pl-1">새로운 매수/배당 내역을 기록하세요.</p>
@@ -221,18 +226,18 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="text-[11px] font-bold text-slate-500 mb-1 block pl-1">날짜</label>
-                        <input type="date" id="input-date" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 transition">
+                        <input type="date" id="input-date" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold text-slate-950 outline-none focus:ring-2 focus:ring-blue-500 transition">
                     </div>
                     <div>
                         <label class="text-[11px] font-bold text-slate-500 mb-1 block pl-1">수량</label>
-                        <input type="number" id="input-shares" placeholder="0" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 transition">
+                        <input type="number" id="input-shares" placeholder="0" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold text-slate-950 outline-none focus:ring-2 focus:ring-blue-500 transition">
                     </div>
                 </div>
                 <div>
                     <label class="text-[11px] font-bold text-slate-500 mb-1 block pl-1">체결 단가</label>
                     <div class="relative">
                         <span class="absolute left-3 top-3 text-slate-400 font-bold text-xs">₩</span>
-                        <input type="number" id="input-price" class="w-full p-3 pl-7 bg-slate-50 rounded-xl text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 transition">
+                        <input type="number" id="input-price" class="w-full p-3 pl-7 bg-slate-50 rounded-xl text-sm font-bold text-slate-950 outline-none focus:ring-2 focus:ring-blue-500 transition">
                     </div>
                 </div>
                 <div>
@@ -265,7 +270,7 @@
                     <input type="number" id="setting-goal" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-sm">
                 </div>
                 <div>
-                    <label class="text-xs font-bold text-slate-500 block mb-1">GAS API URL (고급)</label>
+                    <label class="text-xs font-bold text-slate-500 block mb-1">GAS API URL</label>
                     <input type="text" id="setting-url" class="w-full p-3 bg-slate-50 rounded-xl text-xs text-slate-500 truncate">
                 </div>
                 <button onclick="saveSettings()" class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-sm">저장</button>
@@ -273,7 +278,7 @@
         </div>
     </div>
 
-    <!-- 종목 상세 모달 (수정: 3색 바) -->
+    <!-- 종목 상세 모달 -->
     <div id="detail-modal" class="fixed inset-0 z-[100] hidden flex items-end lg:items-center justify-center lg:p-4">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeDetailModal()"></div>
         <div class="relative bg-white w-full lg:max-w-md p-6 rounded-t-3xl lg:rounded-3xl shadow-2xl h-[85vh] lg:h-auto flex flex-col animate-fade-up">
@@ -285,15 +290,14 @@
                 <button onclick="closeDetailModal()" class="p-2 bg-slate-100 rounded-full"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
-            <!-- 자금 출처 그래프 (3색) -->
             <div class="bg-slate-50 p-4 rounded-2xl mb-6">
                 <div class="flex justify-between text-[10px] font-bold text-slate-400 mb-2 uppercase">
                     <span>자금 출처 비율</span>
                 </div>
                 <div class="w-full h-4 bg-white rounded-full overflow-hidden flex">
-                    <div id="bar-invest-1" class="h-full bg-blue-500" style="width:0%"></div> <!-- 원금 -->
-                    <div id="bar-invest-2" class="h-full bg-purple-500" style="width:0%"></div> <!-- 특별 -->
-                    <div id="bar-reinvest" class="h-full bg-emerald-500" style="width:0%"></div> <!-- 재투자 -->
+                    <div id="bar-invest-1" class="h-full bg-blue-500" style="width:0%"></div>
+                    <div id="bar-invest-2" class="h-full bg-purple-500" style="width:0%"></div>
+                    <div id="bar-reinvest" class="h-full bg-emerald-500" style="width:0%"></div>
                 </div>
                 <div class="flex justify-between text-[10px] mt-2 font-medium">
                     <div class="flex gap-2">
@@ -344,6 +348,18 @@
             icon.classList.remove('sync-spin');
         }
 
+        // [신규 기능] 배당금 레벨 계산기
+        function getDividendLevel(amount) {
+            if (amount < 5000) return { icon: "🌱", text: "아직은 귀여운 새싹! 물 주는 중..." };
+            if (amount < 10000) return { icon: "☕", text: "매달 스타벅스 한 잔 공짜!" };
+            if (amount < 20000) return { icon: "🍔", text: "든든한 국밥 or 버거 세트 해결!" };
+            if (amount < 50000) return { icon: "🍗", text: "축하합니다! 매달 치킨이 공짜!" };
+            if (amount < 100000) return { icon: "📱", text: "통신비/교통비 방어 성공!" };
+            if (amount < 300000) return { icon: "🛒", text: "마트 장보기, 걱정 없어요" };
+            if (amount < 500000) return { icon: "✈️", text: "맘 먹으면 언제든 제주도 가능" };
+            return { icon: "🏠", text: "월세/관리비, 숨만 쉬어도 해결" };
+        }
+
         function updateUI() {
             const h = {};
             let totalVal = 0, totalInvest = 0, totalReinvest = 0, totalDiv = 0;
@@ -355,7 +371,6 @@
                 h[ticker].shares += Number(t.shares);
                 h[ticker].cost += amt;
                 
-                // 자금 출처별 누적
                 if (t.category == "1") { totalInvest += amt; h[ticker].cat1 += amt; }
                 else if (t.category == "2") { totalInvest += amt; h[ticker].cat2 += amt; }
                 else if (t.category == "3") { totalReinvest += amt; h[ticker].cat3 += amt; }
@@ -372,7 +387,7 @@
                 const profitRate = d.cost > 0 ? (profit/d.cost)*100 : 0;
                 const profitClass = profit >= 0 ? "text-profit" : "text-loss";
                 const profitSign = profit >= 0 ? "▲" : "▼";
-                const div = val * (yieldPct/100/12);
+                const div = val * (yieldPct/100/12); 
 
                 totalVal += val; totalDiv += div;
                 labels.push(d.name); data.push(val); bg.push(COLORS[i % COLORS.length]);
@@ -407,6 +422,10 @@
             getEl('stat-reinvested').innerText = `₩${Math.round(totalReinvest).toLocaleString()}`;
             getEl('stat-monthly-dividend').innerText = `₩${Math.round(totalDiv).toLocaleString()}`;
             
+            // 배당 레벨 적용
+            const level = getDividendLevel(totalDiv);
+            getEl('dividend-level-text').innerHTML = `${level.icon} ${level.text}`;
+            
             getEl('holdings-list').innerHTML = listHTML || `<div class="text-center p-10 text-slate-400 text-xs">보유 종목이 없습니다.</div>`;
 
             if (assetChart) assetChart.destroy();
@@ -423,7 +442,6 @@
                 </div>
             `).join('');
 
-            // AI Logic
             const pSCHD = marketData["458730"]?.price || 0, pReits = marketData["329200"]?.price || 0;
             const mode = getEl('strategy-selector').value;
             let remain = totalDiv, buySCHD = 0;
@@ -432,21 +450,22 @@
             
             getEl('reinvest-recommendation').innerHTML = `
                 <div class="bg-white/10 p-3 rounded-xl space-y-2">
-                    ${buySCHD ? `<div class="flex justify-between text-xs"><span class="font-bold text-emerald-300">SCHD 1주</span><span class="text-white">₩${pSCHD.toLocaleString()}</span></div>` : ''}
-                    <div class="flex justify-between text-xs"><span class="font-bold text-blue-300">리츠 ${buyReits}주</span><span class="text-white">₩${(buyReits*(pReits||5000)).toLocaleString()}</span></div>
+                    ${buySCHD ? `<div class="flex justify-between text-xs"><span class="font-bold text-emerald-300">SCHD 1주</span><span class="text-slate-300">₩${pSCHD.toLocaleString()}</span></div>` : ''}
+                    <div class="flex justify-between text-xs"><span class="font-bold text-blue-300">리츠 ${buyReits}주</span><span class="text-slate-300">₩${(buyReits*(pReits||5000)).toLocaleString()}</span></div>
                 </div>`;
 
-            // Goal Chart (Circle)
             const pct = Math.min(Math.round((totalDiv / goalAmount) * 100), 100);
+            getEl('goal-circle-bar').style.strokeDasharray = `${pct}, 100`;
             getEl('goal-percent').innerText = pct;
             getEl('display-goal').innerText = goalAmount.toLocaleString();
-            getEl('goal-circle-bar').style.strokeDasharray = `${pct}, 100`;
+            getEl('goal-remaining').innerText = `₩${Math.max(0, goalAmount - totalDiv).toLocaleString()}`;
             
             renderHistoryList('history-list', transactions);
         }
 
         function renderHistoryList(containerId, data) {
             const container = getEl(containerId);
+            if (!container) return;
             container.innerHTML = data.map(t => `
                 <div class="bg-white p-3 rounded-xl border border-slate-100 flex justify-between items-center text-left">
                     <div>
@@ -465,7 +484,6 @@
             `).join('') || `<div class="text-center p-10 text-slate-400 text-xs">내역 없음</div>`;
         }
 
-        // 종목 상세 모달 (3색 바 적용)
         function openDetailModal(ticker) {
             const data = transactions.filter(t => String(t.ticker).trim() === ticker);
             if(data.length === 0) return;
@@ -499,7 +517,6 @@
             getEl('detail-modal').classList.remove('hidden');
         }
 
-        // Quick Select
         function updateQuickSelect() {
             getEl('quick-select-buttons').innerHTML = Object.keys(marketData).map(k => `
                 <button onclick="fillForm('${k}')" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:border-blue-500 hover:text-blue-600 transition card-press">${marketData[k].name}</button>
@@ -520,14 +537,12 @@
             });
         }
 
-        // Actions
         async function saveTransaction() {
             const date = getEl('input-date').value, shares = getEl('input-shares').value, price = getEl('input-price').value, ticker = getEl('input-ticker').value, name = getEl('input-name').value;
             if(!date || !shares || !price) return alert("정보 입력!");
             
             const btn = getEl('save-btn'); btn.innerText = "저장 중..."; btn.disabled = true;
             
-            // 수정 모드일 경우 기존 내역 삭제 후 추가 (GAS 수정 없이 구현)
             if(editingId) {
                 try {
                     await fetch(`${sheetsUrl}?action=delete&id=${editingId}`, {redirect:'follow'});
@@ -537,7 +552,7 @@
             try {
                 await fetch(`${sheetsUrl}?action=add&id=${Date.now()}&date=${date}&ticker=${ticker}&name=${encodeURIComponent(name)}&shares=${shares}&price=${price}&category=${selectedCategory}`, {redirect:'follow'});
                 alert("저장 완료");
-                cancelEdit(); // 초기화
+                cancelEdit(); 
                 syncAllData();
             } catch(e) { alert("실패"); }
             btn.innerText = "기록하기"; btn.disabled = false;
@@ -554,7 +569,6 @@
             getEl('input-name').value = t.name;
             setCategory(t.category);
             
-            // UI 변경
             getEl('form-title').innerText = "내역 수정 모드";
             getEl('save-btn').innerText = "수정 완료";
             getEl('save-btn').className = "w-full py-4 bg-emerald-500 text-white rounded-xl font-bold text-lg shadow-lg active:scale-95 transition";
@@ -579,7 +593,6 @@
             syncAllData(); closeDetailModal();
         };
 
-        // Navigation
         window.showSection = (id) => {
             ['dashboard','history','add'].forEach(s => getEl('section-'+s).classList.add('hidden'));
             getEl('section-'+id).classList.remove('hidden');
@@ -588,6 +601,9 @@
             const activeBtn = getEl('mob-nav-'+id);
             activeBtn.classList.add('active', 'text-blue-600');
             activeBtn.classList.remove('text-slate-300');
+            
+            document.querySelectorAll('.sidebar-item').forEach(btn => btn.classList.remove('bg-blue-50', 'text-blue-600'));
+            getEl('pc-nav-'+id)?.classList.add('bg-blue-50', 'text-blue-600');
         };
         
         window.openSettings = () => { getEl('setting-goal').value = goalAmount; getEl('setting-url').value = sheetsUrl; getEl('settings-modal').classList.remove('hidden'); };
