@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ISA RICH v8.1 - UI 복구 및 안정화</title>
+    <title>ISA RICH v6.1 - UI Fix</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -11,7 +11,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;600;800&display=swap');
         body { font-family: 'Pretendard', sans-serif; background-color: #F2F4F6; color: #191F28; -webkit-tap-highlight-color: transparent; }
         
-        /* UI Components */
         .glass-card { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); border-radius: 20px; }
         .hero-card { background: linear-gradient(135deg, #3182F6 0%, #485EEE 100%); color: white; box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3); border-radius: 24px; position: relative; overflow: hidden; }
         .ai-card { background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%); color: white; border-radius: 20px; position: relative; overflow: hidden; box-shadow: 0 8px 25px rgba(139, 92, 246, 0.25); }
@@ -24,7 +23,8 @@
         .text-profit { color: #F04452; } 
         .text-loss { color: #3182F6; }   
         .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .card-press:active { transform: scale(0.97); transition: transform 0.1s; }
+        .card-press { cursor: pointer; transition: transform 0.1s; }
+        .card-press:active { transform: scale(0.97); }
         .sync-spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
@@ -87,11 +87,10 @@
             </header>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
-                
                 <!-- 왼쪽: 핵심 자산 정보 -->
                 <div class="lg:col-span-2 space-y-5">
                     
-                    <!-- 1. 총 자산 카드 (히어로) -->
+                    <!-- 1. 총 자산 카드 -->
                     <div class="hero-card p-6 text-left">
                         <i class="fa-solid fa-chart-line hero-pattern"></i>
                         <div class="relative z-10">
@@ -119,7 +118,7 @@
                         </div>
                     </div>
 
-                    <!-- 2. AI 어드바이저 (인디고 퍼플) -->
+                    <!-- 2. AI 어드바이저 -->
                     <div class="ai-card p-5 text-left">
                         <i class="fa-solid fa-robot absolute -right-3 -bottom-5 text-8xl text-white/10 pointer-events-none"></i>
                         <div class="relative z-10">
@@ -142,7 +141,6 @@
 
                     <!-- 3. 월 배당 & 목표 달성률 -->
                     <div class="grid grid-cols-2 gap-4">
-                        <!-- 월 배당금 -->
                         <div class="glass-card p-5 flex flex-col justify-between">
                             <div class="flex justify-between items-start mb-1">
                                 <span class="text-[10px] font-bold text-slate-400 uppercase">월 배당금</span>
@@ -156,7 +154,6 @@
                             </div>
                         </div>
 
-                        <!-- 목표 달성률 -->
                         <div class="glass-card p-4 flex items-center justify-between relative overflow-hidden">
                             <div class="z-10 w-full">
                                 <span class="text-[10px] font-bold text-slate-400 uppercase block mb-1">목표 달성</span>
@@ -184,7 +181,9 @@
                             <h3 class="font-bold text-base text-slate-800">보유 자산</h3>
                             <span class="text-[9px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">Auto Sync</span>
                         </div>
-                        <div id="holdings-list" class="space-y-3"></div>
+                        <div id="holdings-list" class="space-y-3">
+                            <!-- JS로 생성 -->
+                        </div>
                     </div>
                     
                     <!-- 도넛 차트 -->
@@ -207,27 +206,11 @@
         <section id="section-history" class="hidden p-4 md:p-8 animate-fade-up">
             <h2 class="text-xl font-bold text-slate-900 mb-4 pl-1">거래 내역</h2>
             <div id="history-list" class="space-y-3">
-                <!-- JS Dynamic (모바일: 슬림 카드, PC: 테이블로 자동 변환) -->
-            </div>
-            <!-- PC용 테이블 (히든 처리) -->
-            <div class="hidden lg:block bg-white rounded-[2rem] border border-slate-200 overflow-hidden">
-                 <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase font-bold">
-                        <tr>
-                            <th class="pl-6 py-4">날짜</th>
-                            <th class="px-4">종목</th>
-                            <th class="px-4">수량</th>
-                            <th class="px-4">단가</th>
-                            <th class="px-4">분류</th>
-                            <th class="pr-6 text-center">관리</th>
-                        </tr>
-                    </thead>
-                    <tbody id="pc-history-table" class="divide-y divide-slate-100 text-slate-700"></tbody>
-                </table>
+                <!-- JS Dynamic -->
             </div>
         </section>
 
-        <!-- [섹션 3] 거래 입력 (UI 복구 완료) -->
+        <!-- [섹션 3] 거래 입력 (UI 수정됨) -->
         <section id="section-add" class="hidden p-4 md:p-8 animate-fade-up max-w-lg mx-auto">
             <h2 class="text-xl font-bold text-slate-900 mb-2 pl-1" id="form-title">거래 기록</h2>
             <p class="text-xs text-slate-500 mb-6 pl-1">새로운 매수/배당 내역을 기록하세요.</p>
@@ -237,27 +220,27 @@
                 <div id="quick-select-buttons" class="flex flex-wrap gap-2"></div>
             </div>
 
-            <div class="glass-card p-5 space-y-4">
-                <!-- 입력 필드 콤팩트하게 조정 -->
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase block pl-1">날짜</label>
-                        <input type="date" id="input-date" class="w-full p-2.5 bg-slate-50 rounded-xl text-sm font-black text-slate-900 outline-none focus:ring-2 focus:ring-blue-500 transition border border-slate-200">
+            <div class="glass-card p-5 space-y-5">
+                <!-- 날짜/수량 칸 줄임 -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1 pl-1">날짜</label>
+                        <input type="date" id="input-date" class="w-full p-2.5 bg-slate-50 rounded-xl text-sm font-black text-slate-950 outline-none focus:ring-2 focus:ring-blue-500 transition border border-slate-200">
                     </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase block pl-1">수량</label>
-                        <input type="number" id="input-shares" placeholder="0" class="w-full p-2.5 bg-slate-50 rounded-xl text-sm font-black text-slate-900 outline-none focus:ring-2 focus:ring-blue-500 transition border border-slate-200">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1 pl-1">수량</label>
+                        <input type="number" id="input-shares" placeholder="0" class="w-full p-2.5 bg-slate-50 rounded-xl text-sm font-black text-slate-950 outline-none focus:ring-2 focus:ring-blue-500 transition border border-slate-200">
                     </div>
                 </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-400 uppercase block pl-1">체결 단가</label>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1 pl-1">체결 단가</label>
                     <div class="relative">
                         <span class="absolute left-3 top-2.5 text-slate-400 font-bold text-xs">₩</span>
-                        <input type="number" id="input-price" class="w-full p-2.5 pl-7 bg-slate-50 rounded-xl text-sm font-black text-slate-900 outline-none focus:ring-2 focus:ring-blue-500 transition border border-slate-200">
+                        <input type="number" id="input-price" class="w-full p-2.5 pl-7 bg-slate-50 rounded-xl text-sm font-black text-slate-950 outline-none focus:ring-2 focus:ring-blue-500 transition border border-slate-200">
                     </div>
                 </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-400 uppercase block pl-1">자금 출처</label>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1 pl-1">자금 출처</label>
                     <div class="grid grid-cols-3 gap-2">
                         <button onclick="setCategory(1)" id="cat-1" class="py-2.5 rounded-xl border border-slate-200 text-xs font-bold transition">원금</button>
                         <button onclick="setCategory(2)" id="cat-2" class="py-2.5 rounded-xl border border-slate-200 text-xs font-bold transition">특별</button>
@@ -292,7 +275,7 @@
                 <button onclick="saveSettings()" class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-sm">저장</button>
             </div>
         </div>
-    </main>
+    </div>
 
     <!-- 종목 상세 모달 -->
     <div id="detail-modal" class="fixed inset-0 z-[100] hidden flex items-end lg:items-center justify-center lg:p-4">
@@ -306,6 +289,7 @@
                 <button onclick="closeDetailModal()" class="p-2 bg-slate-100 rounded-full"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
+            <!-- 자금 출처 그래프 -->
             <div class="bg-slate-50 p-4 rounded-2xl mb-6 border border-slate-100">
                 <div class="flex justify-between text-[10px] font-bold text-slate-400 mb-2 uppercase">
                     <span>자금 출처 비율</span>
@@ -324,13 +308,14 @@
                 </div>
             </div>
 
-            <p class="text-xs font-bold text-slate-400 mb-2">거래 내역 (필터됨)</p>
+            <p class="text-xs font-bold text-slate-400 mb-2">거래 내역</p>
             <div id="modal-history-list" class="flex-1 overflow-y-auto space-y-3 pb-10"></div>
         </div>
     </div>
 
     <script>
         // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+        // ⚠️ 여기에 구글 배포 URL을 꼭 다시 넣어주세요! ⚠️
         const MY_GAS_URL = "https://script.google.com/macros/s/AKfycbxRDE_WPbcE5oDR4Ha460vHt-FsWve8O6W_kjhoWPoPfhF5CSsJIWhtxlksarsd34t6dQ/exec"; 
         // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
@@ -381,11 +366,12 @@
             let totalVal = 0, totalInvest = 0, totalReinvest = 0, totalDiv = 0;
 
             transactions.forEach(t => {
-                const amt = t.shares * t.price;
+                const amt = Number(t.shares) * Number(t.price);
                 const ticker = String(t.ticker).trim();
                 if (!h[ticker]) h[ticker] = { shares: 0, cost: 0, name: t.name, invest: 0, reinvest: 0 };
                 h[ticker].shares += Number(t.shares);
                 h[ticker].cost += amt;
+                
                 if (t.category == "3") { totalReinvest += amt; h[ticker].reinvest += amt; }
                 else { totalInvest += amt; h[ticker].invest += amt; }
             });
@@ -401,15 +387,16 @@
                 const profitRate = d.cost > 0 ? (profit/d.cost)*100 : 0;
                 const profitClass = profit >= 0 ? "text-profit" : "text-loss";
                 const profitSign = profit >= 0 ? "▲" : "▼";
-                const div = val * (yieldPct/100/12);
+                const div = val * (yieldPct/100/12); // 비과세
 
                 totalVal += val; totalDiv += div;
                 labels.push(d.name); data.push(val); bg.push(COLORS[i % COLORS.length]);
 
+                // Holdings Card Item (모바일 & PC 공용) - 클릭 시 상세 팝업 오픈
                 listHTML += `
-                <div class="flex justify-between items-center p-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition cursor-pointer" onclick="openDetailModal('${k}')">
+                <div class="flex justify-between items-center p-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition cursor-pointer card-press" onclick="openDetailModal('${k}')">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm" style="background:${bg[i]}">${d.name[0]}</div>
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm" style="background:${bg[i]}">${d.name ? d.name[0] : '?'}</div>
                         <div>
                             <p class="font-bold text-slate-800 text-sm">${d.name} <span class="text-slate-400 font-normal text-xs ml-1">[${yieldPct.toFixed(1)}%]</span></p>
                             <p class="text-xs text-slate-400">${d.shares}주 · 평단 ₩${Math.round(d.cost/d.shares).toLocaleString()}</p>
@@ -436,6 +423,7 @@
             getEl('stat-reinvested').innerText = `₩${Math.round(totalReinvest).toLocaleString()}`;
             getEl('stat-monthly-dividend').innerText = `₩${Math.round(totalDiv).toLocaleString()}`;
             
+            // 배당 레벨 적용
             const level = getDividendLevel(totalDiv);
             getEl('dividend-level-text').innerHTML = `${level.icon} ${level.text}`;
             
@@ -450,69 +438,57 @@
             
             getEl('chart-legend').innerHTML = labels.map((l, i) => `
                 <div class="flex justify-between text-xs mb-1">
-                    <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background:${bg[i]}"></span><span class="truncate w-24">${l}</span></span>
-                    <span class="font-bold text-slate-600">${((data[i]/totalVal)*100).toFixed(1)}%</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background:${bg[i]}"></span><span class="truncate w-24 font-medium text-slate-600 text-left">${l}</span></span>
+                    <span class="font-bold text-slate-800">${((data[i]/totalVal)*100).toFixed(1)}%</span>
                 </div>
             `).join('');
 
-            const pSCHD = marketData["458730"]?.price || 0, pReits = marketData["329200"]?.price || 0;
+            // AI Logic
+            const pSCHD = (marketData["458730"] && marketData["458730"].price) || 0;
+            const pReits = (marketData["329200"] && marketData["329200"].price) || 0;
             const mode = getEl('strategy-selector').value;
             let remain = totalDiv, buySCHD = 0;
-            if (mode == "2" && remain >= pSCHD) { buySCHD = 1; remain -= pSCHD; }
-            const buyReits = Math.floor(remain / (pReits || 1));
+            
+            if (mode == "2" && remain >= pSCHD && pSCHD > 0) { buySCHD = 1; remain -= pSCHD; }
+            const buyReits = (pReits > 0) ? Math.floor(remain / pReits) : 0;
             
             getEl('reinvest-recommendation').innerHTML = `
                 <div class="bg-white/10 p-3 rounded-xl space-y-2">
                     ${buySCHD ? `<div class="flex justify-between text-xs"><span class="font-bold text-emerald-300">SCHD 1주</span><span class="text-slate-300">₩${pSCHD.toLocaleString()}</span></div>` : ''}
-                    <div class="flex justify-between text-xs"><span class="font-bold text-blue-300">리츠 ${buyReits}주</span><span class="text-slate-300">₩${(buyReits*(pReits||5000)).toLocaleString()}</span></div>
+                    <div class="flex justify-between text-xs"><span class="font-bold text-blue-300">리츠 ${buyReits}주</span><span class="text-slate-300">₩${(buyReits*pReits).toLocaleString()}</span></div>
                 </div>`;
 
+            // Goal
             const pct = Math.min(Math.round((totalDiv / goalAmount) * 100), 100);
             getEl('goal-circle-bar').style.strokeDasharray = `${pct}, 100`;
             getEl('goal-percent').innerText = pct;
             getEl('display-goal').innerText = goalAmount.toLocaleString();
             
-            renderHistoryList('history-list', transactions, true);
-            renderHistoryList('pc-history-table', transactions, false);
+            renderHistoryList('history-list', transactions);
         }
 
-        function renderHistoryList(containerId, data, isMobile) {
+        function renderHistoryList(containerId, data) {
             const container = getEl(containerId);
             if (!container) return;
-            
-            if(isMobile) {
-                container.innerHTML = data.map(t => `
-                    <div class="bg-white p-3 rounded-xl border border-slate-100 flex justify-between items-center">
-                        <div>
-                            <p class="text-[10px] text-slate-400 mb-0.5">${t.date.substring(0,10)} <span class="bg-slate-100 px-1.5 rounded text-slate-500 ml-1">${CAT_NAMES[t.category]}</span></p>
-                            <p class="text-sm font-bold text-slate-800">${t.name}</p>
-                            <p class="text-xs text-slate-500">${t.shares}주 · @${Number(t.price).toLocaleString()}</p>
-                        </div>
-                        <div class="flex flex-col items-end gap-1">
-                            <p class="font-bold text-slate-900 text-sm">₩${(t.shares*t.price).toLocaleString()}</p>
-                            <div class="flex gap-2">
-                                <button onclick="editTransaction('${t.id}')" class="text-xs text-blue-400 hover:text-blue-600"><i class="fa-solid fa-pen"></i></button>
-                                <button onclick="deleteTransaction('${t.id}')" class="text-xs text-red-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>
-                            </div>
+            container.innerHTML = data.map(t => `
+                <div class="bg-white p-3 rounded-xl border border-slate-100 flex justify-between items-center text-left">
+                    <div>
+                        <p class="text-[10px] text-slate-400 mb-0.5">${t.date ? t.date.substring(0,10) : '-'} <span class="bg-slate-100 px-1.5 rounded text-slate-500 ml-1">${CAT_NAMES[t.category]}</span></p>
+                        <p class="text-sm font-bold text-slate-800">${t.name}</p>
+                        <p class="text-xs text-slate-500">${t.shares}주 · @${Number(t.price).toLocaleString()}</p>
+                    </div>
+                    <div class="flex flex-col items-end gap-1">
+                        <p class="font-bold text-slate-900 text-sm">₩${(t.shares*t.price).toLocaleString()}</p>
+                        <div class="flex gap-2">
+                            <button onclick="editTransaction('${t.id}')" class="text-xs text-blue-400 hover:text-blue-600"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteTransaction('${t.id}')" class="text-xs text-red-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
-                `).join('') || `<div class="text-center p-10 text-slate-400 text-xs">내역 없음</div>`;
-            } else {
-                container.innerHTML = data.map(t => `
-                    <tr class="text-xs border-b border-slate-50 hover:bg-slate-50 text-left">
-                        <td class="pl-6 py-3">${t.date.substring(0,10)}</td>
-                        <td class="px-4 py-3 font-bold">${t.name}</td>
-                        <td class="px-4 py-3">${t.shares}</td>
-                        <td class="px-4 py-3">₩${Number(t.price).toLocaleString()}</td>
-                        <td class="px-4 py-3"><span class="px-2 py-0.5 rounded bg-slate-100">${CAT_NAMES[t.category]}</span></td>
-                        <td class="pr-6 py-3 text-center">
-                            <button onclick="deleteTransaction('${t.id}')" class="text-slate-300 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `).join('');
-            }
+                </div>
+            `).join('') || `<div class="text-center p-10 text-slate-400 text-xs">내역 없음</div>`;
         }
 
+        // 종목 상세 모달 (3색 바 적용)
         function openDetailModal(ticker) {
             const data = transactions.filter(t => String(t.ticker).trim() === ticker);
             if(data.length === 0) return;
@@ -542,10 +518,11 @@
             getEl('val-invest-2').innerText = `${Math.round(p2)}%`;
             getEl('val-reinvest').innerText = `${Math.round(p3)}%`;
             
-            renderHistoryList('modal-history-list', data, true);
+            renderHistoryList('modal-history-list', data);
             getEl('detail-modal').classList.remove('hidden');
         }
 
+        // Quick Select
         function updateQuickSelect() {
             getEl('quick-select-buttons').innerHTML = Object.keys(marketData).map(k => `
                 <button onclick="fillForm('${k}')" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:border-blue-500 hover:text-blue-600 transition card-press">${marketData[k].name}</button>
@@ -566,12 +543,14 @@
             });
         }
 
+        // Actions
         async function saveTransaction() {
             const date = getEl('input-date').value, shares = getEl('input-shares').value, price = getEl('input-price').value, ticker = getEl('input-ticker').value, name = getEl('input-name').value;
             if(!date || !shares || !price) return alert("정보 입력!");
             
             const btn = getEl('save-btn'); btn.innerText = "저장 중..."; btn.disabled = true;
             
+            // 수정 모드일 경우 기존 내역 삭제 후 추가
             if(editingId) {
                 try {
                     await fetch(`${sheetsUrl}?action=delete&id=${editingId}`, {redirect:'follow'});
@@ -622,6 +601,7 @@
             syncAllData(); closeDetailModal();
         };
 
+        // Navigation
         window.showSection = (id) => {
             ['dashboard','history','add'].forEach(s => getEl('section-'+s).classList.add('hidden'));
             getEl('section-'+id).classList.remove('hidden');
