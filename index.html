@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ISA RICH v1.0.1</title>
+    <title>ISA RICH v1.0.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -85,12 +85,13 @@
             </header>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
-                <!-- 왼쪽: 핵심 자산 정보 -->
+                
+                <!-- 왼쪽 메인 영역 -->
                 <div class="lg:col-span-2 space-y-5">
                     
                     <!-- 1. 총 자산 카드 -->
-                    <div class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
-                        <i class="fa-solid fa-chart-line absolute -right-6 -bottom-6 text-9xl text-white/10 pointer-events-none"></i>
+                    <div class="hero-card p-6 text-left">
+                        <i class="fa-solid fa-chart-line hero-pattern"></i>
                         <div class="relative z-10">
                             <span class="opacity-80 text-xs font-medium tracking-wide">총 평가 자산</span>
                             <h1 class="text-3xl font-black mt-1 mb-4 tracking-tight" id="stat-total-value">₩0</h1>
@@ -117,7 +118,7 @@
                     </div>
 
                     <!-- 2. AI 어드바이저 -->
-                    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-3xl p-5 text-white shadow-lg relative overflow-hidden">
+                    <div class="ai-card p-5 text-left">
                         <i class="fa-solid fa-robot absolute -right-3 -bottom-5 text-8xl text-white/10 pointer-events-none"></i>
                         <div class="relative z-10">
                             <div class="flex justify-between items-center mb-3">
@@ -127,7 +128,7 @@
                                 </div>
                                 <select id="strategy-selector" onchange="updateUI()" class="bg-black/20 border-none text-[10px] rounded px-2 py-1 text-white outline-none cursor-pointer">
                                     <option value="1">1년차 (리츠 올인)</option>
-                                    <option value="2">2년차 (SCHD+)</option>
+                                    <option value="2">2년차 (SCHD+리츠)</option>
                                 </select>
                             </div>
                             <p class="text-white/70 text-[10px] mb-2">이번 달 예상 배당금으로 살 수 있어요!</p>
@@ -204,8 +205,8 @@
             <div id="history-list" class="space-y-3"></div>
         </section>
 
-        <!-- [섹션 3] 거래 입력 (UI 수정됨: 간격 줄임) -->
-        <section id="section-add" class="hidden p-4 md:p-8 animate-fade-up max-w-lg mx-auto">
+        <!-- [섹션 3] 거래 기록 (모바일 겹침 방지 수정됨) -->
+        <section id="section-add" class="hidden p-4 md:p-8 animate-fade-up max-w-lg mx-auto text-left">
             <h2 class="text-xl font-bold text-slate-900 mb-2 pl-1" id="form-title">거래 기록</h2>
             <p class="text-xs text-slate-500 mb-6 pl-1">새로운 매수/배당 내역을 기록하세요.</p>
 
@@ -215,47 +216,48 @@
             </div>
 
             <div class="card-shadow p-5 space-y-4">
-                <div class="grid grid-cols-2 gap-2"> <!-- 간격 좁힘 -->
+                <!-- 날짜와 수량 칸의 간격을 gap-2로 줄이고, 내부 패딩을 p-2로, 글자 크기를 text-xs로 조정하여 좁은 화면 최적화 -->
+                <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1 pl-1">날짜</label>
-                        <input type="date" id="input-date" class="w-full p-2 bg-slate-50 rounded-lg text-sm font-black text-slate-950 outline-none focus:ring-2 focus:ring-blue-500 transition border border-slate-200">
+                        <label class="text-[10px] font-bold text-slate-500 mb-1 block pl-1">날짜</label>
+                        <input type="date" id="input-date" class="w-full p-2 bg-slate-50 rounded-xl text-xs font-black text-slate-950 outline-none focus:ring-2 focus:ring-blue-500 transition border border-slate-200">
                     </div>
                     <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1 pl-1">수량</label>
-                        <input type="number" id="input-shares" placeholder="0" class="w-full p-2 bg-slate-50 rounded-lg text-sm font-black text-slate-950 outline-none focus:ring-2 focus:ring-blue-500 transition border border-slate-200">
+                        <label class="text-[10px] font-bold text-slate-500 mb-1 block pl-1">수량</label>
+                        <input type="number" id="input-shares" placeholder="0" class="w-full p-2 bg-slate-50 rounded-xl text-xs font-black text-slate-950 outline-none focus:ring-2 focus:ring-blue-500 transition border border-slate-200">
                     </div>
                 </div>
                 <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1 pl-1">체결 단가</label>
+                    <label class="text-[10px] font-bold text-slate-500 mb-1 block pl-1">체결 단가</label>
                     <div class="relative">
-                        <span class="absolute left-3 top-2.5 text-slate-400 font-bold text-xs">₩</span>
-                        <input type="number" id="input-price" class="w-full p-2.5 pl-7 bg-slate-50 rounded-lg text-sm font-black text-slate-950 outline-none focus:ring-2 focus:ring-blue-500 transition border border-slate-200">
+                        <span class="absolute left-3 top-2 text-slate-400 font-bold text-xs">₩</span>
+                        <input type="number" id="input-price" class="w-full p-2.5 pl-7 bg-slate-50 rounded-xl text-sm font-black text-slate-950 outline-none focus:ring-2 focus:ring-blue-500 transition border border-slate-200">
                     </div>
                 </div>
                 <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1 pl-1">자금 출처</label>
+                    <label class="text-[10px] font-bold text-slate-500 mb-1 block pl-1">자금 출처</label>
                     <div class="grid grid-cols-3 gap-2">
-                        <button onclick="setCategory(1)" id="cat-1" class="py-2.5 rounded-lg border border-slate-200 text-xs font-bold transition">원금</button>
-                        <button onclick="setCategory(2)" id="cat-2" class="py-2.5 rounded-lg border border-slate-200 text-xs font-bold transition">특별</button>
-                        <button onclick="setCategory(3)" id="cat-3" class="py-2.5 rounded-lg border border-slate-200 text-xs font-bold transition">재투자</button>
+                        <button onclick="setCategory(1)" id="cat-1" class="py-2.5 rounded-xl border border-slate-200 text-xs font-bold transition">원금</button>
+                        <button onclick="setCategory(2)" id="cat-2" class="py-2.5 rounded-xl border border-slate-200 text-xs font-bold transition">특별</button>
+                        <button onclick="setCategory(3)" id="cat-3" class="py-2.5 rounded-xl border border-slate-200 text-xs font-bold transition">재투자</button>
                     </div>
                 </div>
 
                 <input type="hidden" id="input-ticker"><input type="hidden" id="input-name">
                 
                 <div class="flex gap-2 pt-2">
-                    <button onclick="cancelEdit()" id="cancel-btn" class="hidden w-1/3 py-3 bg-slate-100 text-slate-500 rounded-xl font-bold text-sm">취소</button>
+                    <button onclick="cancelEdit()" id="cancel-btn" class="hidden w-1/3 py-3 bg-slate-100 text-slate-500 rounded-xl font-bold text-xs">취소</button>
                     <button onclick="saveTransaction()" id="save-btn" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-200 active:scale-95 transition">기록하기</button>
                 </div>
             </div>
         </section>
     </main>
 
-    <!-- 설정 모달 (버전 v1.0.1) -->
-    <div id="settings-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6">
+    <!-- 설정 모달 -->
+    <div id="settings-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6 text-left">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeSettings()"></div>
         <div class="relative bg-white w-full max-w-sm p-6 rounded-3xl shadow-2xl animate-fade-up">
-            <h3 class="text-lg font-bold mb-4">설정</h3>
+            <h3 class="text-lg font-bold mb-4 text-slate-900">설정</h3>
             <div class="space-y-4">
                 <div>
                     <label class="text-xs font-bold text-slate-500 block mb-1">목표 월 배당금</label>
@@ -268,7 +270,7 @@
                  <div>
                     <label class="text-xs font-bold text-slate-500 block mb-1">현재 버전</label>
                     <div class="w-full p-3 bg-slate-50 rounded-xl text-xs text-slate-400 font-mono border border-slate-200">
-                        v1.0.1
+                        v1.0.2
                     </div>
                 </div>
                 <button onclick="saveSettings()" class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-sm">저장</button>
@@ -277,7 +279,7 @@
     </div>
 
     <!-- 종목 상세 모달 -->
-    <div id="detail-modal" class="fixed inset-0 z-[100] hidden flex items-end lg:items-center justify-center lg:p-4">
+    <div id="detail-modal" class="fixed inset-0 z-[100] hidden flex items-end lg:items-center justify-center lg:p-4 text-left">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeDetailModal()"></div>
         <div class="relative bg-white w-full lg:max-w-md p-6 rounded-t-3xl lg:rounded-3xl shadow-2xl h-[85vh] lg:h-auto flex flex-col animate-fade-up">
             <div class="flex justify-between items-start mb-6">
@@ -285,7 +287,7 @@
                     <h3 id="modal-name" class="text-2xl font-black text-slate-900">종목명</h3>
                     <p id="modal-ticker" class="text-sm text-slate-400 font-bold">000000</p>
                 </div>
-                <button onclick="closeDetailModal()" class="p-2 bg-slate-100 rounded-full"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="closeDetailModal()" class="p-2 bg-slate-100 rounded-full text-slate-400"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
             <div class="bg-slate-50 p-4 rounded-2xl mb-6 border border-slate-100">
@@ -318,7 +320,7 @@
 
         const COLORS = ["#3B82F6", "#F59E0B", "#10B981", "#EF4444", "#8B5CF6"];
         const CAT_NAMES = { "1": "원금", "2": "특별", "3": "재투자" };
-        const TAX_RATE = 0; // ISA 비과세 혜택 (세금 0원)
+        const TAX_RATE = 0;
 
         let transactions = [];
         let marketData = {};
@@ -331,10 +333,8 @@
         function getEl(id) { return document.getElementById(id); }
 
         async function syncAllData() {
-            // 저장된 URL 우선 사용, 없으면 코드 상단 주소 사용
             if(!sheetsUrl) sheetsUrl = MY_GAS_URL;
-
-            // 주소 없으면 경고창 없이 리턴 (UI 먼저 띄우기 위함)
+            if(localStorage.getItem('isa_sheets_url')) sheetsUrl = localStorage.getItem('isa_sheets_url');
             if(!sheetsUrl) return;
 
             const icon = getEl('sync-icon');
@@ -347,7 +347,6 @@
                     fetch(`${sheetsUrl}?action=get_history&_t=${ts}`, { redirect: 'follow' })
                 ]);
                 
-                // 데이터 방어 로직 (빈 값 처리)
                 const pText = await pRes.text();
                 marketData = pText ? JSON.parse(pText) : {};
 
@@ -363,145 +362,25 @@
         }
 
         async function saveTransaction() {
-            const date = getEl('input-date').value;
-            const shares = getEl('input-shares').value;
-            const price = getEl('input-price').value;
-            const ticker = getEl('input-ticker').value;
-            const name = getEl('input-name').value;
-
-            if (!date || !shares || !price || !ticker) { alert("입력 확인"); return; }
+            const date = getEl('input-date').value, shares = getEl('input-shares').value, price = getEl('input-price').value, ticker = getEl('input-ticker').value, name = getEl('input-name').value;
+            if(!date || !shares || !price) return;
             
             const btn = getEl('save-btn');
             btn.innerText = "저장 중..."; btn.disabled = true;
 
-            const url = `${sheetsUrl}?action=add&id=${Date.now()}&date=${date}&ticker=${ticker}&name=${encodeURIComponent(name)}&shares=${shares}&price=${price}&category=${selectedCategory}`;
-            
+            if(editingId) {
+                try { await fetch(`${sheetsUrl}?action=delete&id=${editingId}`, {redirect:'follow'}); } catch(e) {}
+            }
+
             try {
-                await fetch(url, { method: "GET", redirect: "follow" });
-                alert("저장 완료");
-                getEl('input-shares').value = ""; getEl('input-price').value = "";
-                syncAllData(); // 저장 후 즉시 동기화
+                await fetch(`${sheetsUrl}?action=add&id=${Date.now()}&date=${date}&ticker=${ticker}&name=${encodeURIComponent(name)}&shares=${shares}&price=${price}&category=${selectedCategory}`, {redirect:'follow'});
+                cancelEdit(); 
+                syncAllData();
                 showSection('dashboard');
-            } catch(e) { alert("저장 실패"); }
-            
+            } catch(e) {}
             btn.innerText = "기록하기"; btn.disabled = false;
         }
 
-        async function deleteTransaction(id) {
-            if(!confirm("삭제하시겠습니까?")) return;
-            try {
-                await fetch(`${sheetsUrl}?action=delete&id=${id}`, { method: "GET", redirect: "follow" });
-                syncAllData();
-                closeDetailModal();
-            } catch(e) { alert("삭제 실패"); }
-        }
-
-        function updateUI() {
-            const h = {};
-            let totalVal = 0, totalInvest = 0, totalReinvest = 0, totalDiv = 0;
-
-            transactions.forEach(t => {
-                const amt = Number(t.shares) * Number(t.price);
-                const ticker = String(t.ticker).trim();
-                if (!h[ticker]) h[ticker] = { shares: 0, cost: 0, name: t.name, cat1: 0, cat2: 0, cat3: 0 };
-                h[ticker].shares += Number(t.shares);
-                h[ticker].cost += amt;
-                
-                if (t.category == "1") { totalInvest += amt; h[ticker].cat1 += amt; }
-                else if (t.category == "2") { totalInvest += amt; h[ticker].cat2 += amt; }
-                else if (t.category == "3") { totalReinvest += amt; h[ticker].cat3 += amt; }
-            });
-
-            let listHTML = "", labels = [], data = [], bg = [];
-            Object.keys(h).forEach((k, i) => {
-                const d = h[k]; if (d.shares <= 0) return;
-                const m = marketData[k] || { price: 0, yield: 0 };
-                let yieldPct = m.yield < 1 && m.yield > 0 ? m.yield * 100 : m.yield;
-                
-                const val = d.shares * m.price;
-                const profit = val - d.cost;
-                const profitRate = d.cost > 0 ? (profit/d.cost)*100 : 0;
-                const profitClass = profit >= 0 ? "text-profit" : "text-loss";
-                const profitSign = profit >= 0 ? "▲" : "▼";
-                const div = val * (yieldPct/100/12); // 비과세
-
-                totalVal += val; totalDiv += div;
-                labels.push(d.name); data.push(val); bg.push(COLORS[i % COLORS.length]);
-
-                listHTML += `
-                <div class="flex justify-between items-center p-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition cursor-pointer card-press" onclick="openDetailModal('${k}')">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm" style="background:${bg[i]}">${d.name ? d.name[0] : '?'}</div>
-                        <div>
-                            <p class="font-bold text-slate-800 text-sm">${d.name} <span class="text-slate-400 font-normal text-xs ml-1">[${yieldPct.toFixed(1)}%]</span></p>
-                            <p class="text-xs text-slate-400">${d.shares}주 · 평단 ₩${Math.round(d.cost/d.shares).toLocaleString()}</p>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <p class="font-bold text-slate-900 text-sm">₩${Math.round(val).toLocaleString()}</p>
-                        <p class="text-[10px] font-bold ${profitClass}">${profitSign} ${Math.abs(profitRate).toFixed(1)}%</p>
-                    </div>
-                </div>`;
-            });
-
-            getEl('stat-total-value').innerText = `₩${Math.round(totalVal).toLocaleString()}`;
-            const totProfit = totalVal - (totalInvest + totalReinvest);
-            const totRate = (totalInvest+totalReinvest) > 0 ? (totProfit/(totalInvest+totalReinvest))*100 : 0;
-            const totColor = totProfit >= 0 ? "text-profit" : "text-loss";
-            
-            getEl('stat-profit-amount').innerText = `₩${Math.round(Math.abs(totProfit)).toLocaleString()}`;
-            getEl('stat-profit-pct').innerText = `${totProfit>=0?'+':''}${totRate.toFixed(1)}%`;
-            getEl('stat-profit-pct').className = `text-sm font-bold ${totColor}`;
-            getEl('stat-profit-icon').innerText = totProfit >= 0 ? "🚀" : "💧";
-
-            getEl('stat-total-invested').innerText = `₩${Math.round(totalInvest).toLocaleString()}`;
-            getEl('stat-reinvested').innerText = `₩${Math.round(totalReinvest).toLocaleString()}`;
-            getEl('stat-monthly-dividend').innerText = `₩${Math.round(totalDiv).toLocaleString()}`;
-            
-            // 배당 레벨 적용
-            const level = getDividendLevel(totalDiv);
-            getEl('dividend-level-text').innerHTML = `${level.icon} ${level.text}`;
-            
-            getEl('holdings-list').innerHTML = listHTML || `<div class="text-center p-10 text-slate-400 text-xs">보유 종목이 없습니다.</div>`;
-
-            if (assetChart) assetChart.destroy();
-            const ctx = getEl('assetChart').getContext('2d');
-            assetChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: { labels, datasets: [{ data, backgroundColor: bg, borderWidth: 0 }] },
-                options: { cutout: '75%', plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false }
-            });
-            
-            getEl('chart-legend').innerHTML = labels.map((l, i) => `
-                <div class="flex justify-between text-xs mb-1">
-                    <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background:${bg[i]}"></span><span class="truncate w-24 font-medium text-slate-600 text-left">${l}</span></span>
-                    <span class="font-bold text-slate-800 text-right">${((data[i]/totalVal)*100).toFixed(1)}%</span>
-                </div>
-            `).join('');
-
-            // AI Logic
-            const pSCHD = marketData["458730"]?.price || 0, pReits = marketData["329200"]?.price || 0;
-            const mode = getEl('strategy-selector').value;
-            let remain = totalDiv, buySCHD = 0;
-            if (mode == "2" && remain >= pSCHD && pSCHD > 0) { buySCHD = 1; remain -= pSCHD; }
-            const buyReits = (pReits > 0) ? Math.floor(remain / pReits) : 0;
-            
-            getEl('reinvest-recommendation').innerHTML = `
-                <div class="bg-white/10 p-3 rounded-xl space-y-2">
-                    ${buySCHD ? `<div class="flex justify-between text-xs"><span class="font-bold text-emerald-300">SCHD 1주</span><span class="text-slate-300">₩${pSCHD.toLocaleString()}</span></div>` : ''}
-                    <div class="flex justify-between text-xs"><span class="font-bold text-blue-300">리츠 ${buyReits}주</span><span class="text-slate-300">₩${(buyReits*(pReits||5000)).toLocaleString()}</span></div>
-                </div>`;
-
-            // Goal
-            const pct = Math.min(Math.round((totalDiv / goalAmount) * 100), 100);
-            getEl('goal-circle-bar').style.strokeDasharray = `${pct}, 100`;
-            getEl('goal-percent').innerText = pct;
-            getEl('display-goal').innerText = goalAmount.toLocaleString();
-            
-            renderHistoryList('history-list', transactions);
-        }
-
-        // 배당 레벨 계산기
         function getDividendLevel(amount) {
             if (amount < 5000) return { icon: "🌱", text: "아직은 귀여운 새싹" };
             if (amount < 10000) return { icon: "☕", text: "매달 스벅 공짜" };
@@ -513,35 +392,75 @@
             return { icon: "🏠", text: "월세/관리비 해결" };
         }
 
+        function updateUI() {
+            const h = {};
+            let totalVal = 0, totalInvest = 0, totalReinvest = 0, totalDiv = 0;
+
+            transactions.forEach(t => {
+                const amt = Number(t.shares) * Number(t.price);
+                const ticker = String(t.ticker).trim();
+                if (!h[ticker]) h[ticker] = { shares: 0, cost: 0, name: t.name, invest: 0, reinvest: 0 };
+                h[ticker].shares += Number(t.shares);
+                h[ticker].cost += amt;
+                if (t.category == "1" || t.category == "2") { totalInvest += amt; h[ticker].invest += amt; }
+                else if (t.category == "3") { totalReinvest += amt; h[ticker].reinvest += amt; }
+            });
+
+            let listHTML = "", labels = [], data = [], bg = [];
+            Object.keys(h).forEach((k, i) => {
+                const d = h[k]; if (d.shares <= 0) return;
+                const m = marketData[k] || { price: 0, yield: 0 };
+                let yieldPct = m.yield < 1 && m.yield > 0 ? m.yield * 100 : m.yield;
+                const val = d.shares * m.price;
+                const profit = val - d.cost;
+                const profitRate = d.cost > 0 ? (profit/d.cost)*100 : 0;
+                const div = val * (yieldPct/100/12);
+                totalVal += val; totalDiv += div;
+                labels.push(d.name); data.push(val); bg.push(COLORS[i % COLORS.length]);
+
+                listHTML += `<div class="flex justify-between items-center p-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition cursor-pointer" onclick="openDetailModal('${k}')"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm" style="background:${bg[i]}">${d.name ? d.name[0] : '?'}</div><div><p class="font-bold text-slate-800 text-sm">${d.name} <span class="text-slate-400 font-normal text-xs ml-1">[${yieldPct.toFixed(1)}%]</span></p><p class="text-xs text-slate-400">${d.shares}주 · 평단 ₩${Math.round(d.cost/d.shares).toLocaleString()}</p></div></div><div class="text-right"><p class="font-bold text-slate-900 text-sm">₩${Math.round(val).toLocaleString()}</p><p class="text-[10px] font-bold ${profit>=0?'text-red-500':'text-blue-500'}">${profit>=0?'▲':'▼'} ${Math.abs(profitRate).toFixed(1)}%</p></div></div>`;
+            });
+
+            getEl('stat-total-value').innerText = `₩${Math.round(totalVal).toLocaleString()}`;
+            const totProfit = totalVal - (totalInvest + totalReinvest);
+            const totRate = (totalInvest+totalReinvest) > 0 ? (totProfit/(totalInvest+totalReinvest))*100 : 0;
+            getEl('stat-profit-amount').innerText = `₩${Math.round(Math.abs(totProfit)).toLocaleString()}`;
+            getEl('stat-profit-pct').innerText = `${totProfit>=0?'+':''}${totRate.toFixed(1)}%`;
+            getEl('stat-profit-pct').className = `text-sm font-bold ${totProfit>=0?'text-red-500':'text-blue-500'}`;
+            getEl('stat-profit-icon').innerText = totProfit >= 0 ? "🚀" : "💧";
+            getEl('stat-total-invested').innerText = `₩${Math.round(totalInvest).toLocaleString()}`;
+            getEl('stat-reinvested').innerText = `₩${Math.round(totalReinvest).toLocaleString()}`;
+            getEl('stat-monthly-dividend').innerText = `₩${Math.round(totalDiv).toLocaleString()}`;
+            const level = getDividendLevel(totalDiv);
+            getEl('dividend-level-text').innerHTML = `${level.icon} ${level.text}`;
+            getEl('holdings-list').innerHTML = listHTML || `<div class="text-center p-10 text-slate-400 text-xs text-left">보유 종목이 없습니다.</div>`;
+            if (assetChart) assetChart.destroy();
+            assetChart = new Chart(getEl('assetChart').getContext('2d'), { type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: bg, borderWidth: 0 }] }, options: { cutout: '75%', plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false } });
+            getEl('chart-legend').innerHTML = labels.map((l, i) => `<div class="flex justify-between text-xs mb-1 text-left"><span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background:${bg[i]}"></span><span class="truncate w-24 font-medium text-slate-600 text-left">${l}</span></span><span class="font-bold text-slate-800 text-right">${((data[i]/totalVal)*100).toFixed(1)}%</span></div>`).join('');
+            const pSCHD = marketData["458730"]?.price || 0, pReits = marketData["329200"]?.price || 0;
+            const mode = getEl('strategy-selector').value;
+            let remain = totalDiv, buySCHD = 0;
+            if (mode == "2" && remain >= pSCHD && pSCHD > 0) { buySCHD = 1; remain -= pSCHD; }
+            const buyReits = (pReits > 0) ? Math.floor(remain / pReits) : 0;
+            getEl('reinvest-recommendation').innerHTML = `<div class="bg-white/10 p-3 rounded-xl space-y-2 text-left">${buySCHD ? `<div class="flex justify-between text-xs"><span class="font-bold text-emerald-300">SCHD 1주</span><span class="text-slate-300">₩${pSCHD.toLocaleString()}</span></div>` : ''}<div class="flex justify-between text-xs"><span class="font-bold text-blue-300">리츠 ${buyReits}주</span><span class="text-slate-300">₩${(buyReits*(pReits||5000)).toLocaleString()}</span></div></div>`;
+            const pct = Math.min(Math.round((totalDiv / goalAmount) * 100), 100);
+            getEl('goal-circle-bar').style.strokeDasharray = `${pct}, 100`;
+            getEl('goal-percent').innerText = pct;
+            getEl('display-goal').innerText = goalAmount.toLocaleString();
+            renderHistoryList('history-list', transactions);
+        }
+
         function renderHistoryList(containerId, data) {
             const container = getEl(containerId);
             if (!container) return;
-            container.innerHTML = data.map(t => `
-                <div class="bg-white p-3 rounded-xl border border-slate-100 flex justify-between items-center text-left">
-                    <div>
-                        <p class="text-[10px] text-slate-400 mb-0.5">${t.date ? t.date.substring(0,10) : '-'} <span class="bg-slate-100 px-1.5 rounded text-slate-500 ml-1">${CAT_NAMES[t.category]}</span></p>
-                        <p class="text-sm font-bold text-slate-800">${t.name}</p>
-                        <p class="text-xs text-slate-500">${t.shares}주 · @${Number(t.price).toLocaleString()}</p>
-                    </div>
-                    <div class="flex flex-col items-end gap-1">
-                        <p class="font-bold text-slate-900 text-sm">₩${(t.shares*t.price).toLocaleString()}</p>
-                        <div class="flex gap-2">
-                            <button onclick="editTransaction('${t.id}')" class="text-xs text-blue-400 hover:text-blue-600"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="deleteTransaction('${t.id}')" class="text-xs text-red-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                    </div>
-                </div>
-            `).join('') || `<div class="text-center p-10 text-slate-400 text-xs">내역 없음</div>`;
+            container.innerHTML = data.map(t => `<div class="bg-white p-3 rounded-xl border border-slate-100 flex justify-between items-center text-left"><div><p class="text-[10px] text-slate-400 mb-0.5">${t.date ? t.date.substring(0,10) : '-'} <span class="bg-slate-100 px-1.5 rounded text-slate-500 ml-1">${CAT_NAMES[t.category]}</span></p><p class="text-sm font-bold text-slate-800">${t.name}</p><p class="text-xs text-slate-500">${t.shares}주 · @${Number(t.price).toLocaleString()}</p></div><div class="flex flex-col items-end gap-1"><p class="font-bold text-slate-900 text-sm text-left">₩${(t.shares*t.price).toLocaleString()}</p><div class="flex gap-2"><button onclick="editTransaction('${t.id}')" class="text-xs text-blue-400 text-left"><i class="fa-solid fa-pen"></i></button><button onclick="deleteTransaction('${t.id}')" class="text-xs text-red-400 text-left"><i class="fa-solid fa-trash"></i></button></div></div></div>`).join('') || `<div class="text-center p-10 text-slate-400 text-xs text-left">내역 없음</div>`;
         }
 
         function openDetailModal(ticker) {
             const data = transactions.filter(t => String(t.ticker).trim() === ticker);
             if(data.length === 0) return;
-            
-            const name = data[0].name;
-            getEl('modal-name').innerText = name;
+            getEl('modal-name').innerText = data[0].name;
             getEl('modal-ticker').innerText = ticker;
-            
             let c1 = 0, c2 = 0, c3 = 0;
             data.forEach(t => { 
                 const a = t.shares*t.price; 
@@ -550,19 +469,9 @@
                 else c3+=a; 
             });
             const tot = c1+c2+c3;
-            
-            const p1 = tot>0 ? (c1/tot)*100 : 0;
-            const p2 = tot>0 ? (c2/tot)*100 : 0;
-            const p3 = tot>0 ? (c3/tot)*100 : 0;
-            
-            getEl('bar-invest-1').style.width = p1+"%";
-            getEl('bar-invest-2').style.width = p2+"%";
-            getEl('bar-reinvest').style.width = p3+"%";
-            
-            getEl('val-invest-1').innerText = `${Math.round(p1)}%`;
-            getEl('val-invest-2').innerText = `${Math.round(p2)}%`;
-            getEl('val-reinvest').innerText = `${Math.round(p3)}%`;
-            
+            const p1 = tot>0 ? (c1/tot)*100 : 0, p2 = tot>0 ? (c2/tot)*100 : 0, p3 = tot>0 ? (c3/tot)*100 : 0;
+            getEl('bar-invest-1').style.width = p1+"%"; getEl('bar-invest-2').style.width = p2+"%"; getEl('bar-reinvest').style.width = p3+"%";
+            getEl('val-invest-1').innerText = `${Math.round(p1)}%`; getEl('val-invest-2').innerText = `${Math.round(p2)}%`; getEl('val-reinvest').innerText = `${Math.round(p3)}%`;
             renderHistoryList('modal-history-list', data);
             getEl('detail-modal').classList.remove('hidden');
         }
@@ -570,12 +479,8 @@
         function updateQuickSelect() {
             const box = getEl('quick-select-buttons');
             if(marketData && Object.keys(marketData).length > 0) {
-                box.innerHTML = Object.keys(marketData).map(k => `
-                    <button onclick="fillForm('${k}')" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:border-blue-500 hover:text-blue-600 transition card-press">${marketData[k].name}</button>
-                `).join('');
-            } else {
-                box.innerHTML = `<div class="text-xs text-slate-400">동기화 후 종목이 표시됩니다.</div>`;
-            }
+                box.innerHTML = Object.keys(marketData).map(k => `<button onclick="fillForm('${k}')" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:border-blue-500 hover:text-blue-600 transition text-left">${marketData[k].name}</button>`).join('');
+            } else { box.innerHTML = `<div class="text-xs text-slate-400 text-left">동기화 후 종목이 표시됩니다.</div>`; }
         }
 
         window.fillForm = (k) => {
@@ -588,29 +493,8 @@
             selectedCategory = n;
             [1,2,3].forEach(i => {
                 const btn = getEl('cat-'+i);
-                btn.className = `py-2.5 rounded-xl text-xs font-bold transition flex-1 ${i==n ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white border border-slate-200 text-slate-400 hover:bg-slate-50'}`;
+                btn.className = `py-2.5 rounded-xl border border-slate-200 text-xs font-bold transition flex-1 ${i==n ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white text-slate-400 hover:bg-slate-50 text-left'}`;
             });
-        }
-
-        async function saveTransaction() {
-            const date = getEl('input-date').value, shares = getEl('input-shares').value, price = getEl('input-price').value, ticker = getEl('input-ticker').value, name = getEl('input-name').value;
-            if(!date || !shares || !price) return alert("정보 입력!");
-            
-            const btn = getEl('save-btn'); btn.innerText = "저장 중..."; btn.disabled = true;
-            
-            if(editingId) {
-                try {
-                    await fetch(`${sheetsUrl}?action=delete&id=${editingId}`, {redirect:'follow'});
-                } catch(e) { console.error("삭제 실패", e); }
-            }
-
-            try {
-                await fetch(`${sheetsUrl}?action=add&id=${Date.now()}&date=${date}&ticker=${ticker}&name=${encodeURIComponent(name)}&shares=${shares}&price=${price}&category=${selectedCategory}`, {redirect:'follow'});
-                alert("저장 완료");
-                cancelEdit(); 
-                syncAllData();
-            } catch(e) { alert("실패"); }
-            btn.innerText = "기록하기"; btn.disabled = false;
         }
 
         window.editTransaction = (id) => {
@@ -618,19 +502,13 @@
             if(!t) return;
             editingId = id;
             getEl('input-date').value = t.date.substring(0,10);
-            getEl('input-shares').value = t.shares;
-            getEl('input-price').value = t.price;
-            getEl('input-ticker').value = t.ticker;
-            getEl('input-name').value = t.name;
+            getEl('input-shares').value = t.shares; getEl('input-price').value = t.price;
+            getEl('input-ticker').value = t.ticker; getEl('input-name').value = t.name;
             setCategory(t.category);
-            
             getEl('form-title').innerText = "내역 수정 모드";
             getEl('save-btn').innerText = "수정 완료";
-            getEl('save-btn').className = "w-full py-3.5 bg-emerald-500 text-white rounded-xl font-bold text-sm shadow-lg active:scale-95 transition";
             getEl('cancel-btn').classList.remove('hidden');
-            
-            closeDetailModal();
-            showSection('add');
+            closeDetailModal(); showSection('add');
         };
 
         window.cancelEdit = () => {
@@ -638,7 +516,6 @@
             getEl('input-shares').value = ""; getEl('input-price').value = "";
             getEl('form-title').innerText = "거래 기록";
             getEl('save-btn').innerText = "기록하기";
-            getEl('save-btn').className = "w-full py-3.5 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-200 active:scale-95 transition";
             getEl('cancel-btn').classList.add('hidden');
         };
 
@@ -651,32 +528,24 @@
         window.showSection = (id) => {
             ['dashboard','history','add'].forEach(s => getEl('section-'+s).classList.add('hidden'));
             getEl('section-'+id).classList.remove('hidden');
-            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active', 'text-blue-600'));
-            document.querySelectorAll('.nav-item').forEach(b => b.classList.add('text-slate-300'));
+            document.querySelectorAll('.nav-item').forEach(b => { b.classList.remove('text-blue-600'); b.classList.add('text-slate-300'); });
             const activeBtn = getEl('mob-nav-'+id);
-            activeBtn.classList.add('active', 'text-blue-600');
-            activeBtn.classList.remove('text-slate-300');
-            
-            document.querySelectorAll('.sidebar-item').forEach(btn => btn.classList.remove('bg-blue-50', 'text-blue-600'));
-            getEl('pc-nav-'+id)?.classList.add('bg-blue-50', 'text-blue-600');
+            if(activeBtn) { activeBtn.classList.add('text-blue-600'); activeBtn.classList.remove('text-slate-300'); }
         };
         
-        window.openSettings = () => { getEl('setting-goal').value = goalAmount; getEl('setting-url').value = localStorage.getItem('isa_sheets_url') || MY_GAS_URL; getEl('settings-modal').classList.remove('hidden'); };
+        window.openSettings = () => { getEl('setting-goal').value = goalAmount; getEl('setting-url').value = sheetsUrl; getEl('settings-modal').classList.remove('hidden'); };
         window.closeSettings = () => getEl('settings-modal').classList.add('hidden');
         window.saveSettings = () => {
             goalAmount = parseInt(getEl('setting-goal').value) || 250000;
             sheetsUrl = getEl('setting-url').value.trim();
-            localStorage.setItem('isa_goal', goalAmount);
-            localStorage.setItem('isa_sheets_url', sheetsUrl);
+            localStorage.setItem('isa_goal', goalAmount); localStorage.setItem('isa_sheets_url', sheetsUrl);
             closeSettings(); syncAllData();
         };
 
         window.closeDetailModal = () => getEl('detail-modal').classList.add('hidden');
-
         window.onload = () => {
             getEl('input-date').value = new Date().toISOString().split('T')[0];
-            setCategory(1);
-            if(sheetsUrl) syncAllData();
+            setCategory(1); syncAllData();
         };
     </script>
 </body>
