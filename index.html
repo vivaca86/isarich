@@ -326,7 +326,7 @@
     <!-- [Modal] 종목 상세 -->
     <div id="detail-modal" class="fixed inset-0 z-[100] hidden flex items-end lg:items-center justify-center lg:p-4 text-left font-sans">
         <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-xl" onclick="closeDetailModal()"></div>
-        <div class="relative bg-white w-full lg:max-w-md p-8 rounded-t-[3rem] lg:rounded-[3rem] shadow-2xl animate-fade-up text-left font-sans">
+        <div class="relative bg-white w-full lg:max-w-md p-8 rounded-t-[3rem] lg:rounded-[3rem] shadow-2xl modal-animate text-left font-sans">
             <div class="flex justify-between items-start mb-6 text-left">
                 <div class="text-left font-sans">
                     <h3 id="modal-name" class="text-2xl font-black text-slate-900 leading-tight tracking-tighter">종목명</h3>
@@ -358,7 +358,7 @@
     <!-- [Modal] 현금 잔고 -->
     <div id="cash-modal" class="fixed inset-0 z-[100] hidden flex items-end lg:items-center justify-center lg:p-4 text-left font-sans font-sans">
         <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-md font-sans" onclick="closeCashModal()"></div>
-        <div class="relative bg-white w-full lg:max-w-md p-8 rounded-t-[3rem] lg:rounded-[3rem] shadow-2xl animate-fade-up font-sans font-sans">
+        <div class="relative bg-white w-full lg:max-w-md p-8 rounded-t-[3rem] lg:rounded-[3rem] shadow-2xl modal-animate font-sans font-sans">
             <div class="flex justify-between items-start mb-8 font-sans text-left font-sans">
                 <div class="text-left font-sans">
                     <h3 class="text-2xl font-black text-slate-900 tracking-tighter text-left">현금 잔고 상세</h3>
@@ -423,6 +423,22 @@
         let transactions = [];
         let marketData = {};
         let assetChart = null;
+
+// ===== Chart Center Text Plugin =====
+const centerTextPlugin = {
+    id: 'centerText',
+    beforeDraw(chart) {
+        const {ctx, chartArea:{width, height}} = chart;
+        ctx.save();
+        ctx.font = 'bold 16px Pretendard';
+        ctx.fillStyle = '#0f172a';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const total = chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
+        ctx.fillText('₩' + Math.round(total).toLocaleString(), width/2, height/2);
+    }
+};
+
         let selectedTicker = "";
 
         // 감성 명칭 복구
@@ -550,9 +566,15 @@
                 labels.push(d.name); data.push(val); bg.push(COLORS[i % COLORS.length]);
                 listHTML += `<div class="flex justify-between items-center p-4 hover:bg-white/50 transition rounded-2xl cursor-pointer group text-left" onclick="openDetailModal('${k}')"><div class="flex items-center gap-4 text-left"><div class="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-bold text-xs" style="background:${bg[i]}">${String(d.name)[0] || '?'}</div><div class="text-left font-sans"><p class="font-black text-slate-800 text-[15px] font-sans">${d.name} <span class="text-blue-500 font-bold text-[10px] ml-0.5 font-sans">[${yieldPct.toFixed(2)}%]</span></p><p class="text-[11px] text-slate-400 font-black mt-0.5 font-sans">${d.shares.toFixed(2)}주 · ₩${Math.round(d.cost/d.shares).toLocaleString()}</p></div></div><div class="text-right font-sans"><p class="font-black text-slate-900 text-sm text-right font-sans">₩${Math.round(val).toLocaleString()}</p><p class="text-[9px] font-black ${profit>=0?'text-red-500':'text-blue-500'} uppercase mt-0.5 text-right font-sans">${profit>=0?'▲':'▼'} ${Math.abs(prate).toFixed(1)}%</p></div></div>`;
             });
-            safeSetText('stat-total-value', `₩${Math.round(totalV).toLocaleString()}`);
+            animateValue('stat-total-value', 0, Math.round(totalV), 900);
             const totProfit = totalV - totalC, totRate = totalC > 0 ? (totProfit/totalC)*100 : 0;
             safeSetText('stat-profit-amount', `₩${Math.round(Math.abs(totProfit)).toLocaleString()}`);
+            
+            const pctBox = document.getElementById('stat-profit-pct');
+            if(pctBox){
+                pctBox.classList.remove('stat-profit-positive','stat-profit-negative');
+                pctBox.classList.add(totProfit >= 0 ? 'stat-profit-positive' : 'stat-profit-negative');
+            }
             safeSetHTML('stat-profit-pct', `${totProfit>=0?'+':''}${totRate.toFixed(1)}%`);
             safeSetText('stat-profit-icon', totProfit >= 0 ? "🚀" : "💧");
             safeSetText('stat-cash-balance', `₩${Math.round(curCash).toLocaleString()}`);
@@ -563,8 +585,21 @@
             safeSetText('modal-cash-div', `₩${bDiv.toLocaleString()}`); safeSetText('modal-cash-spec', `₩${bSpec.toLocaleString()}`); safeSetText('modal-cash-base', `₩${bBase.toLocaleString()}`);
             safeSetHTML('holdings-list', listHTML || `<div class="text-center p-12 text-slate-300 font-black text-[10px] uppercase font-sans">데이터 없음</div>`);
             if (getEl('assetChart')) {
-                if (assetChart) assetChart.destroy();
-                assetChart = new Chart(getEl('assetChart').getContext('2d'), { type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: bg, borderWidth: 3, borderColor: '#ffffff' }] }, options: { cutout: '82%', plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false } });
+                
+                
+if(assetChart){
+    assetChart.data.labels = labels;
+    assetChart.data.datasets[0].data = data;
+    assetChart.update();
+} else {
+    assetChart = new Chart(getEl('assetChart').getContext('2d'), {
+        plugins:[centerTextPlugin],
+ type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: bg, borderWidth: 3, borderColor: '#ffffff' }] }, options: { cutout: '82%', plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false,
+                animation: {
+                    animateRotate: true,
+                    duration: 1500
+                }
+            } }); }
             }
             safeSetHTML('chart-legend', labels.map((l, i) => `<div class="flex justify-between text-[10px] mb-2 font-black transition hover:translate-x-1 text-left font-sans"><span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full" style="background:${bg[i]}"></span><span class="truncate w-24 text-slate-500 font-sans">${l}</span></span><span class="text-slate-800 text-right font-sans">${((data[i]/totalV)*100).toFixed(1)}%</span></div>`).join(''));
             renderHistoryList('history-list', transactions);
@@ -651,7 +686,25 @@
         window.closeDetailModal = () => getEl('detail-modal')?.classList.add('hidden');
         window.closeDetailModal = () => getEl('detail-modal')?.classList.add('hidden');
 
-        window.onload = () => {
+        
+// ===== Count Up Animation =====
+function animateValue(id, start, end, duration) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const range = end - start;
+    const startTime = performance.now();
+
+    function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const value = Math.floor(start + range * progress);
+        el.innerText = '₩' + value.toLocaleString();
+        if (progress < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+}
+
+window.onload = () => {
             const today = new Date().toISOString().split('T')[0];
             if(getEl('input-date')) getEl('input-date').value = today;
             if(getEl('div-date')) getEl('div-date').value = today;
