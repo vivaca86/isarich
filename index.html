@@ -68,7 +68,18 @@
         ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.1); border-radius: 10px; }
 
         .input-group-row { display: flex; gap: 12px; align-items: flex-end; width: 100%; }
-        .input-group-item { display: flex; flex-direction: column; gap: 8px; }
+        .input-group-item { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+        .input-group-item .premium-input { min-width: 0; }
+
+        @media (max-width: 420px) {
+            .input-group-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .input-group-item {
+                width: 100%;
+            }
+        }
         
         .won-input-wrapper {
             position: relative;
