@@ -222,6 +222,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                                 <p id="dividend-level-text" class="text-base md:text-xl font-black text-slate-900 tracking-tight leading-none font-sans text-left">데이터 수신 대기 중</p>
                             </div>
                         </div>
+		</div>
 <div class="glass-card p-6 text-left font-sans">
     <div class="flex justify-between items-center mb-4">
         <h3 class="font-black text-base text-slate-900 tracking-tighter uppercase">
@@ -234,7 +235,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     <div id="auto-buy-result" class="space-y-2 text-slate-700">
     </div>
-</div>
 
                         <div class="text-right font-sans">
                             <p class="text-[10px] font-black text-slate-400 uppercase mb-1 text-right font-sans">Expected</p>
@@ -473,7 +473,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         <div class="relative bg-white w-full max-w-sm p-8 rounded-[2.5rem] shadow-2xl animate-fade-up text-left font-sans">
             <h3 class="text-2xl font-black mb-8 tracking-tighter text-left font-sans font-sans">System Config</h3>
 <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-6">
-    Version : ver.1.0.2
+    Version : ver.1.0.3
 </p>
 
             <div class="space-y-6 text-left font-sans">
@@ -899,38 +899,7 @@ function animateValue(id, start, end, duration) {
     }
     requestAnimationFrame(update);
 }
-// 현재 현금 저장용
-let currentCash = 0;
 
-// 6:4 자동매수 계산
-function calculateAutoBuy() {
-
-    if (currentCash <= 0) {
-        document.getElementById("auto-buy-result").innerHTML = "";
-        return;
-    }
-
-    const priceMain = marketData["486290"]?.price || 0;
-    const priceSub  = marketData["474220"]?.price || 0;
-
-    if (!priceMain || !priceSub) return;
-
-    const allocMain = currentCash * 0.6;
-    const allocSub  = currentCash * 0.4;
-
-    const sharesMain = Math.floor(allocMain / priceMain);
-    const sharesSub  = Math.floor(allocSub  / priceSub);
-
-    document.getElementById("auto-buy-result").innerHTML =
-        `<div class="flex justify-between text-sm font-black">
-            <span>486290 (6)</span>
-            <span>${sharesMain}주</span>
-        </div>
-        <div class="flex justify-between text-sm font-black mt-2">
-            <span>474220 (4)</span>
-            <span>${sharesSub}주</span>
-        </div>`;
-}
 
 
 window.onload = () => {
