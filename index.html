@@ -113,14 +113,22 @@ input[type="date"] {
 
         .icon-svg { width: 22px; height: 22px; flex-shrink: 0; stroke-width: 2.5; }
         .icon-btn { width: 16px; height: 16px; stroke-width: 2.5; }
-/* 날짜 input 강제 고정 */
+
+/* ===== 날짜 안정화 ===== */
 input[type="date"] {
     appearance: none;
     -webkit-appearance: none;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding-right: 10px;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    margin: 0;
+    padding: 0;
+    opacity: 0.7;
 }
 
     </style>
@@ -303,13 +311,14 @@ input[type="date"] {
 
 <div class="grid grid-cols-1 gap-4">
 
-    <div>
+    <div class="overflow-hidden">
         <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left">
             거래 날짜
         </label>
         <input type="date"
                id="input-date"
-               class="premium-input px-4 font-black text-sm">
+               class="premium-input px-4 font-black text-sm"
+ style="overflow:hidden;">
     </div>
 
     <div>
@@ -333,24 +342,7 @@ input[type="date"] {
                             <input type="number" id="input-price" class="premium-input pr-4 font-black text-sm text-left tracking-tight">
                         </div>
                     </div>
-<div class="glass-card p-6 space-y-4 mt-6">
-    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-        4 : 6 비율 자동 매수 계산
-    </label>
 
-    <input type="number"
-           id="ratio-budget"
-           placeholder="총 투자금 입력"
-           class="premium-input px-4 font-black text-sm">
-
-    <button onclick="calculateRatioBuy()"
-            class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm">
-        계산하기
-    </button>
-
-    <div id="ratio-result"
-         class="text-sm font-black text-slate-700"></div>
-</div>
 
                     <input type="hidden" id="input-ticker"><input type="hidden" id="input-name">
                     <input type="hidden" id="edit-id" value="">
@@ -481,7 +473,7 @@ input[type="date"] {
         <div class="relative bg-white w-full max-w-sm p-8 rounded-[2.5rem] shadow-2xl animate-fade-up text-left font-sans">
             <h3 class="text-2xl font-black mb-8 tracking-tighter text-left font-sans font-sans">System Config</h3>
 <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-6">
-    Version : ver.1.0.1
+    Version : ver.1.0.2
 </p>
 
             <div class="space-y-6 text-left font-sans">
@@ -710,7 +702,7 @@ const centerTextPlugin = {
             let usedSpec = Math.min(remCost, cashD["2"]); remCost -= usedSpec;
             let usedBase = remCost; 
             let curCash = (cashD["1"] + cashD["2"] + cashD["3"]) - totalC;
-currentCash = curCash;
+
 
             let reinvestRate = totalC > 0 ? (usedDiv / totalC * 100) : 0;
             if(Math.round(cashD["3"] - usedDiv) > 0) getEl('cash-card-area')?.classList.add('reinvest-highlight');
@@ -764,7 +756,7 @@ if(assetChart){
             }
             safeSetHTML('chart-legend', labels.map((l, i) => `<div class="flex justify-between text-[10px] mb-2 font-black transition hover:translate-x-1 text-left font-sans"><span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full" style="background:${bg[i]}"></span><span class="truncate w-24 text-slate-500 font-sans">${l}</span></span><span class="text-slate-800 text-right font-sans">${((data[i]/totalV)*100).toFixed(1)}%</span></div>`).join(''));
             renderHistoryList('history-list', transactions);
-calculateAutoBuy();
+
 
         }
 
