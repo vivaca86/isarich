@@ -105,7 +105,6 @@
 </head>
 <body class="pb-24 lg:pb-0 lg:pl-20 text-left font-sans">
 
-    <div class="fixed top-3 right-3 z-50 text-[10px] font-bold px-2 py-1 rounded-full bg-slate-900 text-white">ver1.0.0</div>
 
     <!-- PC 사이드바 -->
     <aside id="main-sidebar" class="hidden lg:flex fixed left-0 top-0 h-full w-20 bg-white/80 backdrop-blur-xl border-r border-slate-200/50 flex-col items-center py-10 z-50">
@@ -266,16 +265,22 @@
                         <div id="quick-select-buttons" class="flex flex-wrap gap-2.5 text-left font-sans"></div>
                     </div>
 
-                    <div class="input-group-row">
-                        <div class="input-group-item flex-[6]">
-                            <label class="text-[10px] font-black text-slate-400 uppercase block tracking-widest text-left">거래 날짜</label>
-                            <input type="date" id="input-date" class="premium-input px-4 font-black text-sm text-left">
-                        </div>
-                        <div class="input-group-item flex-[4]">
-                            <label class="text-[10px] font-black text-slate-400 uppercase block tracking-widest text-left">수량</label>
-                            <input type="number" id="input-shares" placeholder="0" class="premium-input px-4 font-black text-sm text-left tracking-tight">
-                        </div>
-                    </div>
+<div>
+    <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left">
+        거래 날짜
+    </label>
+    <input type="date" id="input-date"
+        class="premium-input px-4 font-black text-sm text-left mb-6">
+</div>
+
+<div>
+    <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left">
+        수량
+    </label>
+    <input type="number" id="input-shares" placeholder="0"
+        class="premium-input px-4 font-black text-sm text-left tracking-tight">
+</div>
+
                     
                     <div class="text-left font-sans">
                         <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left">체결 단가</label>
@@ -413,6 +418,10 @@
         <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-xl" onclick="closeSettings()"></div>
         <div class="relative bg-white w-full max-w-sm p-8 rounded-[2.5rem] shadow-2xl animate-fade-up text-left font-sans">
             <h3 class="text-2xl font-black mb-8 tracking-tighter text-left font-sans font-sans">System Config</h3>
+<p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-6">
+    Version : ver.1.0.1
+</p>
+
             <div class="space-y-6 text-left font-sans">
                 <div class="text-left font-sans">
                     <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-[0.2em] text-left font-sans">Google Script API URL</label>
