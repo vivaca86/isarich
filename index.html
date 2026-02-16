@@ -50,6 +50,18 @@
             width: 100%;
             outline: none;
         }
+/* ===== 날짜 input 튀어나옴 완전 차단 ===== */
+input[type="date"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.premium-input {
+    box-sizing: border-box;
+}
+
         .premium-input:focus {
             border-color: #3b82f6 !important;
             background: #ffffff !important;
@@ -265,21 +277,29 @@
                         <div id="quick-select-buttons" class="flex flex-wrap gap-2.5 text-left font-sans"></div>
                     </div>
 
-<div>
-    <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left">
-        거래 날짜
-    </label>
-    <input type="date" id="input-date"
-        class="premium-input px-4 font-black text-sm text-left mb-6">
+<div class="grid grid-cols-1 gap-4">
+
+    <div>
+        <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left">
+            거래 날짜
+        </label>
+        <input type="date"
+               id="input-date"
+               class="premium-input px-4 font-black text-sm">
+    </div>
+
+    <div>
+        <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left">
+            수량
+        </label>
+        <input type="number"
+               id="input-shares"
+               placeholder="0"
+               class="premium-input px-4 font-black text-sm tracking-tight">
+    </div>
+
 </div>
 
-<div>
-    <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left">
-        수량
-    </label>
-    <input type="number" id="input-shares" placeholder="0"
-        class="premium-input px-4 font-black text-sm text-left tracking-tight">
-</div>
 
                     
                     <div class="text-left font-sans">
@@ -289,6 +309,24 @@
                             <input type="number" id="input-price" class="premium-input pr-4 font-black text-sm text-left tracking-tight">
                         </div>
                     </div>
+<div class="glass-card p-6 space-y-4 mt-6">
+    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+        4 : 6 비율 자동 매수 계산
+    </label>
+
+    <input type="number"
+           id="ratio-budget"
+           placeholder="총 투자금 입력"
+           class="premium-input px-4 font-black text-sm">
+
+    <button onclick="calculateRatioBuy()"
+            class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm">
+        계산하기
+    </button>
+
+    <div id="ratio-result"
+         class="text-sm font-black text-slate-700"></div>
+</div>
 
                     <input type="hidden" id="input-ticker"><input type="hidden" id="input-name">
                     <input type="hidden" id="edit-id" value="">
@@ -840,6 +878,32 @@ function animateValue(id, start, end, duration) {
         if (progress < 1) requestAnimationFrame(update);
     }
     requestAnimationFrame(update);
+}
+// ===== 4:6 비율 자동 매수 계산 =====
+function calculateRatioBuy() {
+
+    const budget = Number(document.getElementById('ratio-budget')?.value);
+    if (!budget) return;
+
+    const priceA = marketData["474220"]?.price || 0;
+    const priceB = marketData["486290"]?.price || 0;
+
+    if (!priceA || !priceB) {
+        alert("가격 데이터 없음");
+        return;
+    }
+
+    // 474220 = 4
+    // 486290 = 6
+    const allocA = budget * 0.4;
+    const allocB = budget * 0.6;
+
+    const sharesA = Math.floor(allocA / priceA);
+    const sharesB = Math.floor(allocB / priceB);
+
+    document.getElementById("ratio-result").innerHTML =
+        `474220 → ${sharesA}주<br>
+         486290 → ${sharesB}주`;
 }
 
 window.onload = () => {
