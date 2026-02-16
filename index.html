@@ -6,6 +6,8 @@
     <title>ISA RICH Premium ver1.0.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <style>
@@ -462,13 +464,27 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         <div class="relative bg-white w-full max-w-sm p-8 rounded-[2.5rem] shadow-2xl animate-fade-up text-left font-sans">
             <h3 class="text-2xl font-black mb-8 tracking-tighter text-left font-sans font-sans">System Config</h3>
 <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-6">
-    Version : ver.1.0.1
+    Version : ver.1.0.2
 </p>
 
             <div class="space-y-6 text-left font-sans">
                 <div class="text-left font-sans">
                     <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-[0.2em] text-left font-sans">Google Script API URL</label>
                     <input type="text" id="setting-url" class="w-full px-4 premium-input font-black truncate outline-none focus:ring-4 focus:ring-blue-500/10 transition text-left font-sans">
+                </div>
+                <div class="text-left font-sans">
+                    <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-[0.2em] text-left font-sans">파이어베이스 설정값 (그대로 붙여넣기)</label>
+                    <textarea id="setting-firebase-config" rows="4" placeholder='{"apiKey":"...","authDomain":"...","projectId":"..."}' class="w-full px-4 py-3 bg-white/90 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:ring-4 focus:ring-blue-500/10 transition"></textarea>
+                </div>
+                <div class="text-left font-sans">
+                    <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-[0.2em] text-left font-sans">저장 폴더 이름(컬렉션)</label>
+                    <input type="text" id="setting-firebase-collection" placeholder="isa_history" class="w-full px-4 premium-input font-black truncate outline-none focus:ring-4 focus:ring-blue-500/10 transition text-left font-sans">
+                </div>
+                <div class="text-[11px] leading-relaxed text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-3">
+                    <p class="font-bold mb-1">HTML 환경에서도 그대로 사용 가능합니다.</p>
+                    <p>1) Firebase 프로젝트 생성 → Firestore 활성화</p>
+                    <p>2) 프로젝트 설정의 웹 앱 Config JSON을 그대로 붙여넣기</p>
+                    <p>3) 저장하면 입금(DEPOSIT)만 Firebase로 저장되고, 미설정 시 기존 시트 방식이 유지됩니다.</p>
                 </div>
                 <button onclick="saveSettings()" class="w-full py-5 bg-slate-900 text-white rounded-[1.5rem] font-black text-sm shadow-xl active:scale-95 transition mt-4 text-center font-sans font-sans font-sans">환경 설정 저장</button>
             </div>
@@ -515,7 +531,19 @@ const centerTextPlugin = {
             return { icon: "✈️", text: "경제적 자유 엔진" };
         }
 
+        const DEFAULT_FIREBASE_CONFIG = {
+            apiKey: "AIzaSyDSM1J3EJyS7RLsbKsoGOeRwWKD_zrFvIY",
+            authDomain: "isa-rich.firebaseapp.com",
+            projectId: "isa-rich",
+            storageBucket: "isa-rich.firebasestorage.app",
+            messagingSenderId: "939183113968",
+            appId: "1:939183113968:web:84a9773b3fdda76529a435"
+        };
+
         let sheetsUrl = localStorage.getItem('isa_sheets_url') || MY_GAS_URL;
+        let firebaseConfigRaw = localStorage.getItem('isa_firebase_config') || JSON.stringify(DEFAULT_FIREBASE_CONFIG, null, 2);
+        let firebaseCollection = localStorage.getItem('isa_firebase_collection') || 'isa_history';
+        let firestoreDb = null;
 
         function isValidSheetsUrl(url) {
             if (!url) return false;
@@ -525,6 +553,73 @@ const centerTextPlugin = {
             } catch (e) {
                 return false;
             }
+        }
+
+        function parseFirebaseConfig(raw) {
+            if(!raw) return null;
+            try {
+                const parsed = JSON.parse(raw);
+                if(!parsed || typeof parsed !== 'object' || !parsed.projectId) return null;
+                return parsed;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function initFirebase() {
+            const config = parseFirebaseConfig(firebaseConfigRaw);
+            if(!config) { firestoreDb = null; return false; }
+            try {
+                const appName = `isa-rich-${config.projectId}`;
+                const app = firebase.apps.find(a => a.name === appName) || firebase.initializeApp(config, appName);
+                firestoreDb = app.firestore();
+                return true;
+            } catch (e) {
+                console.error(e);
+                firestoreDb = null;
+                return false;
+            }
+        }
+
+        function toHistoryRecord(item, source = 'firebase') {
+            return {
+                id: String(item.id ?? Date.now()),
+                date: String(item.date || '').substring(0, 10),
+                ticker: String(item.ticker || ''),
+                name: String(item.name || ''),
+                shares: Number(item.shares || 0),
+                price: Number(item.price || 0),
+                category: String(item.category ?? 0),
+                source
+            };
+        }
+
+        async function loadTransactionsFromFirebase() {
+            if(!firestoreDb) throw new Error('파이어베이스 설정이 필요합니다.');
+            const snap = await firestoreDb.collection(firebaseCollection).get();
+            return snap.docs.map(doc => toHistoryRecord({ id: doc.id, ...(doc.data() || {}) }, 'firebase'));
+        }
+
+        async function addTransactionToFirebase(payload) {
+            if(!firestoreDb) throw new Error('파이어베이스 설정이 필요합니다.');
+            const id = String(payload.id ?? Date.now());
+            const doc = {
+                date: payload.date,
+                ticker: String(payload.ticker || ''),
+                name: String(payload.name || ''),
+                shares: Number(payload.shares || 0),
+                price: Number(payload.price || 0),
+                category: String(payload.category ?? 0),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            await firestoreDb.collection(firebaseCollection).doc(id).set(doc);
+            return id;
+        }
+
+        async function deleteTransactionFromFirebase(id) {
+            if(!firestoreDb) throw new Error('파이어베이스 설정이 필요합니다.');
+            await firestoreDb.collection(firebaseCollection).doc(String(id)).delete();
+            return 'ok';
         }
 
         function escapeHtml(value) {
@@ -578,15 +673,13 @@ const centerTextPlugin = {
 
         async function syncAllData() {
             if(!isValidSheetsUrl(sheetsUrl)) { safeSetText('sync-time', "URL 미설정"); return; }
+            if(!firestoreDb) { safeSetText('sync-time', "파이어베이스 미연결"); return; }
             const icon = getEl('sync-icon'); if(icon) icon.classList.add('sync-spin');
             try {
                 const ts = Date.now();
-                const [pRes, hRes] = await Promise.all([
-                    fetchWithTimeout(`${sheetsUrl}?action=prices&_t=${ts}`, { redirect: 'follow' }),
-                    fetchWithTimeout(`${sheetsUrl}?action=get_history&_t=${ts}`, { redirect: 'follow' })
-                ]);
+                const pRes = await fetchWithTimeout(`${sheetsUrl}?action=prices&_t=${ts}`, { redirect: 'follow' });
                 marketData = JSON.parse(await pRes.text() || "{}");
-                transactions = JSON.parse(await hRes.text() || "[]");
+                transactions = await loadTransactionsFromFirebase();
                 updateUI(); updateQuickSelectUI();
                 safeSetText('sync-time', "최근 업데이트: " + new Date().toLocaleTimeString());
             } catch(e) { console.error(e); safeSetText('sync-time', "연결 실패"); }
@@ -594,26 +687,14 @@ const centerTextPlugin = {
         }
 
 async function postMutation(action, payload = {}) {
-
-  if(!isValidSheetsUrl(sheetsUrl)) {
-    throw new Error('유효한 Google Script URL이 필요합니다.');
+  if(!firestoreDb) {
+    throw new Error('파이어베이스 설정 후 다시 시도해 주세요.');
   }
 
-  const body = new URLSearchParams({ action, ...payload });
+  if(action === 'add') return await addTransactionToFirebase(payload);
+  if(action === 'delete') return await deleteTransactionFromFirebase(payload.id);
 
-  const res = await fetch(sheetsUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body: body.toString()
-  });
-
-  if (!res.ok) {
-    throw new Error('서버 응답 오류');
-  }
-
-  return await res.text();
+  throw new Error('처리할 수 없는 파이어베이스 작업입니다.');
 }
 
 
@@ -795,6 +876,8 @@ if(assetChart){
         window.deleteTransaction = async (id) => {
             if(!confirm("정말로 이 기록을 삭제하시겠습니까?")) return;
             try {
+                const target = transactions.find(x => String(x.id) === String(id));
+                if(!target) return;
                 await postMutation('delete', { id });
                 await syncAllData();
             } catch(e) {
@@ -853,18 +936,41 @@ if(assetChart){
             if(id === 'transaction') updateQuickSelectUI();
         };
         
-        window.openSettings = () => { const m = getEl('settings-modal'); if(m) { if(getEl('setting-url')) getEl('setting-url').value = sheetsUrl; m.classList.remove('hidden'); } };
+        window.openSettings = () => { const m = getEl('settings-modal'); if(!m) return; if(getEl('setting-url')) getEl('setting-url').value = sheetsUrl; if(getEl('setting-firebase-config')) getEl('setting-firebase-config').value = firebaseConfigRaw; if(getEl('setting-firebase-collection')) getEl('setting-firebase-collection').value = firebaseCollection; m.classList.remove('hidden'); };
         window.closeSettings = () => getEl('settings-modal')?.classList.add('hidden');
         window.saveSettings = () => {
             const urlInput = getEl('setting-url');
-            if(!urlInput) return;
+            const firebaseInput = getEl('setting-firebase-config');
+            const collectionInput = getEl('setting-firebase-collection');
+            if(!urlInput || !firebaseInput || !collectionInput) return;
+
             const candidate = urlInput.value.trim();
             if(!isValidSheetsUrl(candidate)) {
-                alert('유효한 Google Script URL을 입력하세요.');
+                alert('구글 스크립트 URL을 다시 확인해 주세요.');
                 return;
             }
+
+            const nextFirebaseConfigRaw = firebaseInput.value.trim();
+            const parsedFirebase = parseFirebaseConfig(nextFirebaseConfigRaw);
+            if(nextFirebaseConfigRaw && !parsedFirebase) {
+                alert('파이어베이스 설정값 형식이 잘못됐어요.\n프로젝트 설정 > 웹 앱 구성값(JSON)을 그대로 붙여넣어 주세요.');
+                return;
+            }
+
+            const nextCollection = (collectionInput.value.trim() || 'isa_history').replace(/\s+/g, '_');
+
             sheetsUrl = candidate;
+            firebaseConfigRaw = nextFirebaseConfigRaw;
+            firebaseCollection = nextCollection;
+
             localStorage.setItem('isa_sheets_url', sheetsUrl);
+            localStorage.setItem('isa_firebase_config', firebaseConfigRaw);
+            localStorage.setItem('isa_firebase_collection', firebaseCollection);
+
+            if(!initFirebase()) {
+                alert('파이어베이스 연결 실패: 설정값을 다시 확인해 주세요.');
+                return;
+            }
             closeSettings();
             syncAllData();
         };
@@ -896,6 +1002,7 @@ window.onload = () => {
             const today = new Date().toISOString().split('T')[0];
             if(getEl('input-date')) getEl('input-date').value = today;
             if(getEl('div-date')) getEl('div-date').value = today;
+            initFirebase();
             setDepositCat(3); if(sheetsUrl) syncAllData();
         };
     </script>
