@@ -233,6 +233,45 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                         </div>
                     </div>
 
+                    <div class="glass-card p-4 md:p-4.5 text-left font-sans bg-gradient-to-br from-white/80 to-slate-50/80 border border-slate-100/70">
+                        <div class="flex items-center justify-between gap-3 mb-3">
+                            <div>
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Smart Allocation</p>
+                                <h3 class="font-black text-sm text-slate-900 tracking-tight">Cash Auto Buy Guide</h3>
+                            </div>
+                            <span class="text-[9px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">60 : 40</span>
+                        </div>
+
+                        <div class="rounded-xl bg-white/80 border border-slate-100 px-3 py-2.5 mb-3">
+                            <p class="text-[10px] text-slate-500 font-bold" id="cash-buy-summary">Liquid Cash 기준 자동 계산 대기중...</p>
+                        </div>
+
+                        <div id="cash-buy-empty" class="hidden rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-2.5 text-[10px] font-bold text-slate-500">
+                            지금은 매수 가능한 수량이 없어요. (또는 현재가 데이터 수신 대기중)
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5" id="cash-buy-plans">
+                            <div id="plan-a-card" class="rounded-xl p-3 border border-blue-100 bg-gradient-to-br from-blue-50 to-white shadow-sm">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <p class="text-[9px] font-black text-blue-500 uppercase tracking-widest">Plan A</p>
+                                    <span class="text-[9px] font-black text-blue-600">60%</span>
+                                </div>
+                                <p class="text-[10px] font-bold text-slate-500 mb-0.5" id="buy-plan-a-price">티커 486290 · 가격 대기중</p>
+                                <p class="text-[12px] font-black text-slate-900" id="buy-plan-a">0주 매수 (₩0)</p>
+                                <p class="text-[9px] text-slate-500 mt-1" id="buy-plan-a-meta">예산 ₩0</p>
+                            </div>
+                            <div id="plan-b-card" class="rounded-xl p-3 border border-violet-100 bg-gradient-to-br from-violet-50 to-white shadow-sm">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <p class="text-[9px] font-black text-violet-500 uppercase tracking-widest">Plan B</p>
+                                    <span class="text-[9px] font-black text-violet-600">40%</span>
+                                </div>
+                                <p class="text-[10px] font-bold text-slate-500 mb-0.5" id="buy-plan-b-price">티커 474220 · 가격 대기중</p>
+                                <p class="text-[12px] font-black text-slate-900" id="buy-plan-b">0주 매수 (₩0)</p>
+                                <p class="text-[9px] text-slate-500 mt-1" id="buy-plan-b-meta">예산 ₩0</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="glass-card overflow-hidden text-left font-sans">
                         <div class="p-6 border-b border-slate-100/50 flex justify-between items-center bg-white/30 text-left">
                             <h3 class="font-black text-base text-slate-900 tracking-tighter uppercase text-left font-sans">Asset List</h3>
@@ -464,7 +503,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         <div class="relative bg-white w-full max-w-sm p-8 rounded-[2.5rem] shadow-2xl animate-fade-up text-left font-sans">
             <h3 class="text-2xl font-black mb-8 tracking-tighter text-left font-sans font-sans">System Config</h3>
 <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-6">
-    Version : ver.1.0.2
+    Version : ver.1.0.3
 </p>
 
             <div class="space-y-6 text-left font-sans">
@@ -500,6 +539,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             "2": '<svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
             "3": '<svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18.06"/><path d="M7 6h1v4"/></svg>'
         };
+
+        const BUY_PLAN_TICKERS = ['486290', '474220'];
+        const BUY_PLAN_WEIGHTS = [0.6, 0.4];
 
         let transactions = [];
         let marketData = {};
@@ -802,6 +844,39 @@ async function postMutation(action, payload = {}) {
             safeSetHTML('stat-profit-pct', `${totProfit>=0?'+':''}${totRate.toFixed(1)}%`);
             safeSetText('stat-profit-icon', totProfit >= 0 ? "🚀" : "💧");
             safeSetText('stat-cash-balance', `₩${Math.round(curCash).toLocaleString()}`);
+            const usableCash = Math.max(0, Math.floor(curCash));
+            const budgetA = Math.floor(usableCash * BUY_PLAN_WEIGHTS[0]);
+            const budgetB = Math.floor(usableCash * BUY_PLAN_WEIGHTS[1]);
+
+            const tickerA = BUY_PLAN_TICKERS[0], tickerB = BUY_PLAN_TICKERS[1];
+            const priceA = Number(marketData[tickerA]?.price || 0);
+            const priceB = Number(marketData[tickerB]?.price || 0);
+
+            const qtyA = priceA > 0 ? Math.floor(budgetA / priceA) : 0;
+            const qtyB = priceB > 0 ? Math.floor(budgetB / priceB) : 0;
+            const spendA = qtyA * priceA;
+            const spendB = qtyB * priceB;
+            const remainCash = usableCash - spendA - spendB;
+
+            safeSetText('buy-plan-a-price', `티커 ${tickerA} · 현재가 ${priceA > 0 ? '₩' + Math.round(priceA).toLocaleString() : '대기중'}`);
+            safeSetText('buy-plan-b-price', `티커 ${tickerB} · 현재가 ${priceB > 0 ? '₩' + Math.round(priceB).toLocaleString() : '대기중'}`);
+            safeSetText('cash-buy-summary', `현재 현금 ₩${usableCash.toLocaleString()} · 예상 잔액 ₩${Math.max(0, Math.round(remainCash)).toLocaleString()}`);
+            safeSetText('buy-plan-a', `${qtyA.toLocaleString()}주 매수 (₩${Math.round(spendA).toLocaleString()})`);
+            safeSetText('buy-plan-b', `${qtyB.toLocaleString()}주 매수 (₩${Math.round(spendB).toLocaleString()})`);
+            safeSetText('buy-plan-a-meta', priceA > 0 ? `예산 ₩${budgetA.toLocaleString()}` : '가격 데이터 수신중');
+            safeSetText('buy-plan-b-meta', priceB > 0 ? `예산 ₩${budgetB.toLocaleString()}` : '가격 데이터 수신중');
+
+            const planAEl = getEl('plan-a-card');
+            const planBEl = getEl('plan-b-card');
+            const plansWrap = getEl('cash-buy-plans');
+            const emptyBox = getEl('cash-buy-empty');
+            const canBuyA = qtyA > 0;
+            const canBuyB = qtyB > 0;
+            if(planAEl) planAEl.classList.toggle('hidden', !canBuyA);
+            if(planBEl) planBEl.classList.toggle('hidden', !canBuyB);
+            const noPlan = !canBuyA && !canBuyB;
+            if(plansWrap) plansWrap.classList.toggle('hidden', noPlan);
+            if(emptyBox) emptyBox.classList.toggle('hidden', !noPlan);
             safeSetText('stat-reinvest-rate', `${reinvestRate.toFixed(1)}%`);
             safeSetText('stat-monthly-dividend', `₩${Math.round(totalD).toLocaleString()}`);
             const level = getDividendLevel(totalD); safeSetText('div-level-icon', level.icon); safeSetText('dividend-level-text', level.text);
