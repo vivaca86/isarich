@@ -1082,9 +1082,36 @@ window.onload = () => {
             setDepositCat(3); if(sheetsUrl) syncAllData();
 
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('./service-worker.js').catch((err) => {
-                    console.warn('Service worker registration failed:', err);
+                let refreshing = false;
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (refreshing) return;
+                    refreshing = true;
+                    window.location.reload();
                 });
+
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then((registration) => {
+                        const requestImmediateActivation = (worker) => {
+                            if (!worker) return;
+                            worker.postMessage({ type: 'SKIP_WAITING' });
+                        };
+
+                        requestImmediateActivation(registration.waiting);
+
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            if (!newWorker) return;
+
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    requestImmediateActivation(newWorker);
+                                }
+                            });
+                        });
+                    })
+                    .catch((err) => {
+                        console.warn('Service worker registration failed:', err);
+                    });
             }
         };
     </script>
