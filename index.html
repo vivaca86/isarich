@@ -1089,7 +1089,8 @@ window.onload = () => {
                     window.location.reload();
                 });
 
-                navigator.serviceWorker.register('./service-worker.js')
+                const swScriptUrl = './service-worker.js?v=20260219b';
+                navigator.serviceWorker.register(swScriptUrl, { updateViaCache: 'none' })
                     .then((registration) => {
                         const requestImmediateActivation = (worker) => {
                             if (!worker) return;
