@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ISA RICH">
-    <title>ISA RICH Premium ver1.0.11</title>
+    <title>ISA RICH Premium ver1.0.12</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/svg+xml" href="icons/app-icon.svg">
     <link rel="apple-touch-icon" href="icons/app-icon.svg">
@@ -186,7 +186,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         <section id="section-dashboard" class="animate-fade-up space-y-6 text-left font-sans">
             <header class="flex justify-between items-end mb-2 text-left">
                 <div class="text-left font-sans">
-                    <div class="flex items-center gap-2"><h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">나의 엔진</h2><span id="app-version-badge" class="text-[9px] font-black px-2 py-1 rounded-md bg-slate-900 text-white">v1.0.11</span></div>
+                    <div class="flex items-center gap-2"><h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">나의 엔진</h2><span id="app-version-badge" class="text-[9px] font-black px-2 py-1 rounded-md bg-slate-900 text-white">v1.0.12</span></div>
                     <p class="text-[10px] text-blue-600 mt-1.5 flex items-center gap-1.5 font-black uppercase tracking-widest text-left" id="sync-time">
                         <i class="fa-solid fa-rotate-right"></i> 동기화 대기 중
                     </p>
@@ -680,29 +680,6 @@ const centerTextPlugin = {
         }
 
         function getEl(id) { return document.getElementById(id); }
-
-        function removeMergeArtifactsFromDOM() {
-            const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-            const targets = [];
-            while (walker.nextNode()) {
-                const node = walker.currentNode;
-                const text = String(node.nodeValue || '');
-                if (!text.trim()) continue;
-                if (/<<<<<<<|=======|>>>>>>>|codex\/create-test-connection|main/.test(text)) {
-                    const cleaned = text
-                        .split(/
-?
-/)
-                        .filter((line) => !/(<<<<<<<|=======|>>>>>>>|codex\/create-test-connection|^\s*main\s*$)/.test(line))
-                        .join('
-')
-                        .trim();
-                    targets.push({ node, cleaned });
-                }
-            }
-            targets.forEach(({ node, cleaned }) => { node.nodeValue = cleaned; });
-        }
-
         function safeSetText(id, text) { const el = getEl(id); if (el) el.innerText = text; }
         function safeSetHTML(id, html) { const el = getEl(id); if (el) el.innerHTML = html; }
 
@@ -1134,7 +1111,6 @@ function animateValue(id, start, end, duration) {
 
 
 window.onload = () => {
-            removeMergeArtifactsFromDOM();
             const today = new Date().toISOString().split('T')[0];
             if(getEl('input-date')) getEl('input-date').value = today;
             if(getEl('div-date')) getEl('div-date').value = today;
@@ -1149,7 +1125,7 @@ window.onload = () => {
                     window.location.reload();
                 });
 
-                const swScriptUrl = './service-worker.js?v=20260222f';
+                const swScriptUrl = './service-worker.js?v=20260222g';
                 navigator.serviceWorker.register(swScriptUrl, { updateViaCache: 'none' })
                     .then((registration) => {
                         const requestImmediateActivation = (worker) => {
