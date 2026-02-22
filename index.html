@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ISA RICH">
-    <title>ISA RICH Premium ver1.0.8</title>
+    <title>ISA RICH Premium ver1.0.9</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/svg+xml" href="icons/app-icon.svg">
     <link rel="apple-touch-icon" href="icons/app-icon.svg">
@@ -186,7 +186,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         <section id="section-dashboard" class="animate-fade-up space-y-6 text-left font-sans">
             <header class="flex justify-between items-end mb-2 text-left">
                 <div class="text-left font-sans">
-                    <div class="flex items-center gap-2"><h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">나의 엔진</h2><span id="app-version-badge" class="text-[9px] font-black px-2 py-1 rounded-md bg-slate-900 text-white">v1.0.8</span></div>
+                    <div class="flex items-center gap-2"><h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">나의 엔진</h2><span id="app-version-badge" class="text-[9px] font-black px-2 py-1 rounded-md bg-slate-900 text-white">v1.0.9</span></div>
                     <p class="text-[10px] text-blue-600 mt-1.5 flex items-center gap-1.5 font-black uppercase tracking-widest text-left" id="sync-time">
                         <i class="fa-solid fa-rotate-right"></i> 동기화 대기 중
                     </p>
@@ -690,7 +690,8 @@ const centerTextPlugin = {
                 if (!text.trim()) continue;
                 if (/<<<<<<<|=======|>>>>>>>|codex\/create-test-connection|main/.test(text)) {
                     const cleaned = text
-                        .split(/?
+                        .split(/
+?
 /)
                         .filter((line) => !/(<<<<<<<|=======|>>>>>>>|codex\/create-test-connection|^\s*main\s*$)/.test(line))
                         .join('
@@ -733,8 +734,9 @@ const centerTextPlugin = {
         async function syncAllData() {
             if(!firestoreDb) { safeSetText('sync-time', "파이어베이스 미연결"); return; }
             const icon = getEl('sync-icon'); if(icon) icon.classList.add('sync-spin');
+            const hasPriceUrl = isValidSheetsUrl(sheetsUrl);
             try {
-                if(isValidSheetsUrl(sheetsUrl)) {
+                if(hasPriceUrl) {
                     const ts = Date.now();
                     const pRes = await fetchWithTimeout(`${sheetsUrl}?action=prices&_t=${ts}`, { redirect: 'follow' });
                     marketData = JSON.parse(await pRes.text() || "{}");
@@ -743,7 +745,7 @@ const centerTextPlugin = {
                 transactions = await loadTransactionsFromFirebase();
                 updateUI(); updateQuickSelectUI();
 
-                if(!isValidSheetsUrl(sheetsUrl)) safeSetText('sync-time', "가격 URL 미설정 · 기록만 동기화됨");
+                if(!hasPriceUrl) safeSetText('sync-time', "가격 URL 미설정 · 기록만 동기화됨");
                 else safeSetText('sync-time', "최근 업데이트: " + new Date().toLocaleTimeString());
             } catch(e) { console.error(e); safeSetText('sync-time', "연결 실패"); }
             if(icon) icon.classList.remove('sync-spin');
@@ -1147,7 +1149,7 @@ window.onload = () => {
                     window.location.reload();
                 });
 
-                const swScriptUrl = './service-worker.js?v=20260222c';
+                const swScriptUrl = './service-worker.js?v=20260222d';
                 navigator.serviceWorker.register(swScriptUrl, { updateViaCache: 'none' })
                     .then((registration) => {
                         const requestImmediateActivation = (worker) => {
@@ -1175,4 +1177,5 @@ window.onload = () => {
         };
     </script>
 </body>
+</html>
 </html>
