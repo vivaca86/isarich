@@ -1,5 +1,6 @@
-# Reduce cross-platform merge noise (especially in PR web conflict editor)
-*.html text eol=crlf
+# Normalize text files to LF to reduce cross-platform merge conflicts
+* text=auto eol=lf
+*.html text eol=lf
 *.js text eol=lf
 *.webmanifest text eol=lf
 *.svg text eol=lf
