@@ -7,7 +7,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ISA RICH">
+<<<<<<< codex/create-test-connection.txt-in-isarich-repo-10ery6
     <title>ISA RICH Premium ver1.0.7</title>
+=======
+    <title>ISA RICH Premium ver1.0.6</title>
+>>>>>>> main
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/svg+xml" href="icons/app-icon.svg">
     <link rel="apple-touch-icon" href="icons/app-icon.svg">
@@ -186,7 +190,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         <section id="section-dashboard" class="animate-fade-up space-y-6 text-left font-sans">
             <header class="flex justify-between items-end mb-2 text-left">
                 <div class="text-left font-sans">
+<<<<<<< codex/create-test-connection.txt-in-isarich-repo-10ery6
                     <div class="flex items-center gap-2"><h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">나의 엔진</h2><span id="app-version-badge" class="text-[9px] font-black px-2 py-1 rounded-md bg-slate-900 text-white">v1.0.7</span></div>
+=======
+                    <div class="flex items-center gap-2"><h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">나의 엔진</h2><span id="app-version-badge" class="text-[9px] font-black px-2 py-1 rounded-md bg-slate-900 text-white">v1.0.6</span></div>
+>>>>>>> main
                     <p class="text-[10px] text-blue-600 mt-1.5 flex items-center gap-1.5 font-black uppercase tracking-widest text-left" id="sync-time">
                         <i class="fa-solid fa-rotate-right"></i> 동기화 대기 중
                     </p>
@@ -596,12 +604,16 @@ const centerTextPlugin = {
         }
 
         function isDepositTransaction(tx) {
+<<<<<<< codex/create-test-connection.txt-in-isarich-repo-10ery6
             const ticker = String(tx?.ticker || '').trim().toUpperCase();
             if (['DEPOSIT', 'CASH', 'CASH_DEPOSIT', '입금'].includes(ticker)) return true;
 
             const name = String(tx?.name || '').trim();
             const cat = normalizeCashCategory(tx?.category);
             return ['1', '2', '3'].includes(cat) && (name.includes('입금') || name.includes('충전'));
+=======
+            return String(tx?.ticker || '').trim().toUpperCase() === 'DEPOSIT';
+>>>>>>> main
         }
 
         function initFirebase() {
@@ -1125,7 +1137,11 @@ window.onload = () => {
                     window.location.reload();
                 });
 
+<<<<<<< codex/create-test-connection.txt-in-isarich-repo-10ery6
                 const swScriptUrl = './service-worker.js?v=20260222b';
+=======
+                const swScriptUrl = './service-worker.js?v=20260222a';
+>>>>>>> main
                 navigator.serviceWorker.register(swScriptUrl, { updateViaCache: 'none' })
                     .then((registration) => {
                         const requestImmediateActivation = (worker) => {
