@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ISA RICH">
-    <title>ISA RICH Premium ver1.0.0</title>
+    <title>ISA RICH Premium ver1.0.5</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/svg+xml" href="icons/app-icon.svg">
     <link rel="apple-touch-icon" href="icons/app-icon.svg">
@@ -580,10 +580,23 @@ const centerTextPlugin = {
 
         function normalizeCashCategory(raw) {
             const value = String(raw ?? '').trim();
-            if (value === '1' || value === '원금' || value.toLowerCase() === 'base') return '1';
-            if (value === '2' || value === '특별' || value === '특별금' || value.toLowerCase() === 'special') return '2';
-            if (value === '3' || value === '배당' || value === '배당금' || value.toLowerCase() === 'dividend') return '3';
+            const lower = value.toLowerCase();
+            const numeric = Number(value);
+
+            if (!Number.isNaN(numeric)) {
+                if (numeric === 1) return '1';
+                if (numeric === 2) return '2';
+                if (numeric === 3) return '3';
+            }
+
+            if (value === '1' || value === '원금' || lower === 'base' || lower === 'principal') return '1';
+            if (value === '2' || value === '특별' || value === '특별금' || lower === 'special' || lower === 'bonus') return '2';
+            if (value === '3' || value === '배당' || value === '배당금' || lower === 'dividend' || lower === 'reinvest' || value === '재투자') return '3';
             return '3';
+        }
+
+        function isDepositTransaction(tx) {
+            return String(tx?.ticker || '').trim().toUpperCase() === 'DEPOSIT';
         }
 
         function initFirebase() {
@@ -781,7 +794,7 @@ async function postMutation(action, payload = {}) {
             const h = {}; let totalV = 0, totalC = 0, totalD = 0, cashD = { "1": 0, "2": 0, "3": 0 };
             transactions.forEach(t => {
                 const amt = Number(t.shares || 0) * Number(t.price || 0);
-                if(t.ticker === 'DEPOSIT') { const cat = normalizeCashCategory(t.category); cashD[cat] += amt; return; }
+                if(isDepositTransaction(t)) { const cat = normalizeCashCategory(t.category); cashD[cat] += amt; return; }
                 const ticker = String(t.ticker || '').trim();
                 if(!ticker) return;
                 if (!h[ticker]) h[ticker] = { shares: 0, cost: 0, name: t.name || ticker };
@@ -925,7 +938,7 @@ if(assetChart){
             const container = getEl(containerId); if (!container) return;
             const sortedData = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
             container.innerHTML = sortedData.map(t => {
-                const isDeposit = t.ticker === 'DEPOSIT';
+                const isDeposit = isDepositTransaction(t);
                 const iconCode = isDeposit ? CAT_ICONS[normalizedCategory] || '' : '<svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 11 4-7"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4"/><path d="m9 11 1 9"/><path d="m15 11-1 9"/></svg>';
                 const themeColor = isDeposit ? 'blue-600' : 'slate-600';
                 const safeName = escapeHtml(t.name);
@@ -950,7 +963,7 @@ if(assetChart){
 
         window.editTransaction = (id) => {
             const t = transactions.find(x => x.id == id); if(!t) return;
-            const isDeposit = t.ticker === 'DEPOSIT';
+            const isDeposit = isDepositTransaction(t);
             if(isDeposit) {
                 showSection('transaction'); switchTab('deposit');
                 getEl('div-date').value = String(t.date).substring(0,10); getEl('div-amount').value = t.price;
