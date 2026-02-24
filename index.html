@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ISA RICH">
-    <title>ISA RICH Premium ver1.0.15</title>
+    <title>ISA RICH Premium ver1.0.16</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/svg+xml" href="icons/app-icon.svg">
     <link rel="apple-touch-icon" href="icons/app-icon.svg">
@@ -191,7 +191,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         <section id="section-dashboard" class="animate-fade-up space-y-6 text-left font-sans">
             <header class="flex justify-between items-end mb-2 text-left">
                 <div class="text-left font-sans">
-                    <div id="app-title-row" class="flex items-center gap-2"><h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">나의 엔진</h2><span id="app-version-badge" class="text-[9px] font-black px-2 py-1 rounded-md bg-slate-900 text-white">v1.0.15</span></div>
+                    <div id="app-title-row" class="flex items-center gap-2"><h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">나의 엔진</h2><span id="app-version-badge" class="text-[9px] font-black px-2 py-1 rounded-md bg-slate-900 text-white">v1.0.16</span></div>
                     <p class="text-[10px] text-blue-600 mt-1.5 flex items-center gap-1.5 font-black uppercase tracking-widest text-left" id="sync-time">
                         <i class="fa-solid fa-rotate-right"></i> 동기화 대기 중
                     </p>
@@ -610,22 +610,27 @@ const centerTextPlugin = {
         }
 
         function initFirebase() {
-            let config = parseFirebaseConfig(firebaseConfigRaw);
-            if(!config) {
-                config = DEFAULT_FIREBASE_CONFIG;
-                firebaseConfigRaw = JSON.stringify(DEFAULT_FIREBASE_CONFIG, null, 2);
-                localStorage.setItem('isa_firebase_config', firebaseConfigRaw);
+            const parsed = parseFirebaseConfig(firebaseConfigRaw);
+            const candidates = [parsed, DEFAULT_FIREBASE_CONFIG].filter(Boolean);
+
+            for (const config of candidates) {
+                try {
+                    const appName = `isa-rich-${config.projectId}`;
+                    const app = firebase.apps.find(a => a.name === appName) || firebase.initializeApp(config, appName);
+                    firestoreDb = app.firestore();
+
+                    if (!parsed || parsed.projectId !== config.projectId) {
+                        firebaseConfigRaw = JSON.stringify(config, null, 2);
+                        localStorage.setItem('isa_firebase_config', firebaseConfigRaw);
+                    }
+                    return true;
+                } catch (e) {
+                    console.error(e);
+                }
             }
-            try {
-                const appName = `isa-rich-${config.projectId}`;
-                const app = firebase.apps.find(a => a.name === appName) || firebase.initializeApp(config, appName);
-                firestoreDb = app.firestore();
-                return true;
-            } catch (e) {
-                console.error(e);
-                firestoreDb = null;
-                return false;
-            }
+
+            firestoreDb = null;
+            return false;
         }
 
         function toHistoryRecord(item, source = 'firebase') {
@@ -731,6 +736,7 @@ const centerTextPlugin = {
             const icon = getEl('sync-icon'); if(icon) icon.classList.add('sync-spin');
             const hasPriceUrl = isValidSheetsUrl(sheetsUrl);
             let priceSyncFailed = false;
+            let historyRecoveredWithFallback = false;
 
             if(hasPriceUrl) {
                 try {
@@ -745,15 +751,34 @@ const centerTextPlugin = {
 
             try {
                 transactions = await loadTransactionsFromFirebase();
-                updateUI(); updateQuickSelectUI();
-
-                if(!hasPriceUrl) safeSetText('sync-time', "가격 URL 미설정 · 기록만 동기화됨");
-                else if(priceSyncFailed) safeSetText('sync-time', "가격 연결 실패 · 기록은 동기화됨");
-                else safeSetText('sync-time', "최근 업데이트: " + new Date().toLocaleTimeString());
             } catch(e) {
                 console.error(e);
-                safeSetText('sync-time', "기록 연결 실패");
+                const fallbackCollection = 'isa_history';
+                if(firebaseCollection !== fallbackCollection) {
+                    try {
+                        firebaseCollection = fallbackCollection;
+                        localStorage.setItem('isa_firebase_collection', firebaseCollection);
+                        transactions = await loadTransactionsFromFirebase();
+                        historyRecoveredWithFallback = true;
+                    } catch (retryError) {
+                        console.error(retryError);
+                        safeSetText('sync-time', "기록 연결 실패");
+                        if(icon) icon.classList.remove('sync-spin');
+                        return;
+                    }
+                } else {
+                    safeSetText('sync-time', "기록 연결 실패");
+                    if(icon) icon.classList.remove('sync-spin');
+                    return;
+                }
             }
+
+            updateUI(); updateQuickSelectUI();
+
+            if(historyRecoveredWithFallback) safeSetText('sync-time', "컬렉션 자동 복구 · 기록 동기화됨");
+            else if(!hasPriceUrl) safeSetText('sync-time', "가격 URL 미설정 · 기록만 동기화됨");
+            else if(priceSyncFailed) safeSetText('sync-time', "가격 연결 실패 · 기록은 동기화됨");
+            else safeSetText('sync-time', "최근 업데이트: " + new Date().toLocaleTimeString());
 
             if(icon) icon.classList.remove('sync-spin');
         }
