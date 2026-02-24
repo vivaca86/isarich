@@ -445,7 +445,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                     <div class="text-left font-sans">
                         <span class="text-[8px] font-black text-blue-500 uppercase tracking-widest text-left">Level 1: Reinvestment</span>
                         <p class="text-lg font-black text-slate-900 text-left uppercase">배당금 잔고</p>
-                        <p class="text-[10px] font-bold text-blue-400 mt-1" id="modal-cash-div-total">누적 입금 ₩0</p>
                     </div>
                     <p class="text-xl font-black text-blue-600 text-right tracking-tight font-sans" id="modal-cash-div">₩0</p>
                 </div>
@@ -453,7 +452,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                     <div class="text-left font-sans">
                         <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest text-left">Level 2: Special</span>
                         <p class="text-lg font-black text-slate-900 text-left uppercase">특별금 잔고</p>
-                        <p class="text-[10px] font-bold text-slate-400 mt-1" id="modal-cash-spec-total">누적 입금 ₩0</p>
                     </div>
                     <p class="text-xl font-black text-slate-500 text-right tracking-tight font-sans" id="modal-cash-spec">₩0</p>
                 </div>
@@ -461,7 +459,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                     <div class="text-left font-sans">
                         <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest text-left">Level 3: Base</span>
                         <p class="text-lg font-black text-slate-900 text-left uppercase font-sans">원금 잔고</p>
-                        <p class="text-[10px] font-bold text-slate-400 mt-1" id="modal-cash-base-total">누적 입금 ₩0</p>
                     </div>
                     <p class="text-xl font-black text-slate-500 text-right tracking-tight font-sans" id="modal-cash-base">₩0</p>
                 </div>
@@ -971,9 +968,6 @@ async function postMutation(action, payload = {}) {
             const level = getDividendLevel(totalD); safeSetText('div-level-icon', level.icon); safeSetText('dividend-level-text', level.text);
             const bDiv = Math.round(cashD["3"] - usedDiv), bSpec = Math.round(cashD["2"] - usedSpec), bBase = Math.round(cashD["1"] - usedBase);
             safeSetText('modal-cash-div', `₩${bDiv.toLocaleString()}`); safeSetText('modal-cash-spec', `₩${bSpec.toLocaleString()}`); safeSetText('modal-cash-base', `₩${bBase.toLocaleString()}`);
-            safeSetText('modal-cash-div-total', `누적 입금 ₩${Math.round(cashD["3"]).toLocaleString()}`);
-            safeSetText('modal-cash-spec-total', `누적 입금 ₩${Math.round(cashD["2"]).toLocaleString()}`);
-            safeSetText('modal-cash-base-total', `누적 입금 ₩${Math.round(cashD["1"]).toLocaleString()}`);
             safeSetHTML('holdings-list', listHTML || `<div class="text-center p-12 text-slate-300 font-black text-[10px] uppercase font-sans">데이터 없음</div>`);
             if (getEl('assetChart')) {
                 
