@@ -8,6 +8,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ISA RICH">
     <title>ISA RICH Premium ver1.0.14</title>
+    <title>ISA RICH Premium ver1.0.14</title>
+
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/svg+xml" href="icons/app-icon.svg">
     <link rel="apple-touch-icon" href="icons/app-icon.svg">
@@ -192,6 +194,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             <header class="flex justify-between items-end mb-2 text-left">
                 <div class="text-left font-sans">
                     <div class="flex items-center gap-2"><h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">나의 엔진</h2><span id="app-version-badge" class="text-[9px] font-black px-2 py-1 rounded-md bg-slate-900 text-white">v1.0.14</span></div>
+                    <div class="flex items-center gap-2"><h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">나의 엔진</h2><span id="app-version-badge" class="text-[9px] font-black px-2 py-1 rounded-md bg-slate-900 text-white">v1.0.14</span></div>
+
                     <p class="text-[10px] text-blue-600 mt-1.5 flex items-center gap-1.5 font-black uppercase tracking-widest text-left" id="sync-time">
                         <i class="fa-solid fa-rotate-right"></i> 동기화 대기 중
                     </p>
@@ -446,6 +450,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                         <span class="text-[8px] font-black text-blue-500 uppercase tracking-widest text-left">Level 1: Reinvestment</span>
                         <p class="text-lg font-black text-slate-900 text-left uppercase">배당금 잔고</p>
                         <p class="text-[10px] font-bold text-blue-400 mt-1" id="modal-cash-div-total">누적 입금 ₩0</p>
+                        <p class="text-[10px] font-bold text-blue-300 mt-1" id="modal-cash-div-used">사용 ₩0</p>
+
                     </div>
                     <p class="text-xl font-black text-blue-600 text-right tracking-tight font-sans" id="modal-cash-div">₩0</p>
                 </div>
@@ -454,6 +460,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                         <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest text-left">Level 2: Special</span>
                         <p class="text-lg font-black text-slate-900 text-left uppercase">특별금 잔고</p>
                         <p class="text-[10px] font-bold text-slate-400 mt-1" id="modal-cash-spec-total">누적 입금 ₩0</p>
+                        <p class="text-[10px] font-bold text-slate-400 mt-1" id="modal-cash-spec-used">사용 ₩0</p>
+
                     </div>
                     <p class="text-xl font-black text-slate-500 text-right tracking-tight font-sans" id="modal-cash-spec">₩0</p>
                 </div>
@@ -462,6 +470,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                         <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest text-left">Level 3: Base</span>
                         <p class="text-lg font-black text-slate-900 text-left uppercase font-sans">원금 잔고</p>
                         <p class="text-[10px] font-bold text-slate-400 mt-1" id="modal-cash-base-total">누적 입금 ₩0</p>
+                        <p class="text-[10px] font-bold text-slate-400 mt-1" id="modal-cash-base-used">사용 ₩0</p>
+
                     </div>
                     <p class="text-xl font-black text-slate-500 text-right tracking-tight font-sans" id="modal-cash-base">₩0</p>
                 </div>
@@ -561,6 +571,8 @@ const centerTextPlugin = {
         let firebaseConfigRaw = localStorage.getItem('isa_firebase_config') || JSON.stringify(DEFAULT_FIREBASE_CONFIG, null, 2);
         let firebaseCollection = localStorage.getItem('isa_firebase_collection') || 'isa_history';
         let firestoreDb = null;
+        const TX_CACHE_KEY = 'isa_transactions_cache_v1';
+
 
         function isValidSheetsUrl(url) {
             if (!url) return false;
@@ -636,6 +648,28 @@ const centerTextPlugin = {
                 source
             };
         }
+
+        function saveTransactionsCache(list) {
+            try {
+                localStorage.setItem(TX_CACHE_KEY, JSON.stringify((list || []).slice(0, 3000)));
+            } catch (e) {
+                console.warn('cache save failed', e);
+            }
+        }
+
+        function loadTransactionsCache() {
+            try {
+                const raw = localStorage.getItem(TX_CACHE_KEY);
+                if(!raw) return [];
+                const parsed = JSON.parse(raw);
+                if(!Array.isArray(parsed)) return [];
+                return parsed.map((item) => toHistoryRecord(item, 'cache'));
+            } catch (e) {
+                console.warn('cache load failed', e);
+                return [];
+            }
+        }
+
 
         async function loadTransactionsFromFirebase() {
             if(!firestoreDb) throw new Error('파이어베이스 설정이 필요합니다.');
@@ -751,6 +785,8 @@ const centerTextPlugin = {
 
             try {
                 transactions = await loadTransactionsFromFirebase();
+                saveTransactionsCache(transactions);
+
                 updateUI(); updateQuickSelectUI();
 
                 if(!hasPriceUrl) safeSetText('sync-time', "가격 URL 미설정 · 기록만 동기화됨");
@@ -759,6 +795,15 @@ const centerTextPlugin = {
             } catch(e) {
                 console.error(e);
                 safeSetText('sync-time', "기록 연결 실패");
+                const cached = loadTransactionsCache();
+                if(cached.length > 0) {
+                    transactions = cached;
+                    updateUI(); updateQuickSelectUI();
+                    safeSetText('sync-time', "기록 연결 실패 · 저장된 기록 표시중");
+                } else {
+                    safeSetText('sync-time', "기록 연결 실패");
+                }
+
             }
 
             if(icon) icon.classList.remove('sync-spin');
@@ -955,6 +1000,10 @@ async function postMutation(action, payload = {}) {
             safeSetText('modal-cash-div-total', `누적 입금 ₩${Math.round(cashD["3"]).toLocaleString()}`);
             safeSetText('modal-cash-spec-total', `누적 입금 ₩${Math.round(cashD["2"]).toLocaleString()}`);
             safeSetText('modal-cash-base-total', `누적 입금 ₩${Math.round(cashD["1"]).toLocaleString()}`);
+            safeSetText('modal-cash-div-used', `사용 ₩${Math.round(usedDiv).toLocaleString()}`);
+            safeSetText('modal-cash-spec-used', `사용 ₩${Math.round(usedSpec).toLocaleString()}`);
+            safeSetText('modal-cash-base-used', `사용 ₩${Math.round(usedBase).toLocaleString()}`);
+
             safeSetHTML('holdings-list', listHTML || `<div class="text-center p-12 text-slate-300 font-black text-[10px] uppercase font-sans">데이터 없음</div>`);
             if (getEl('assetChart')) {
                 
@@ -1152,6 +1201,9 @@ window.onload = () => {
             if(getEl('input-date')) getEl('input-date').value = today;
             if(getEl('div-date')) getEl('div-date').value = today;
             initFirebase();
+            const cached = loadTransactionsCache();
+            if(cached.length > 0) { transactions = cached; updateUI(); updateQuickSelectUI(); }
+
             setDepositCat(3); syncAllData();
 
             if ('serviceWorker' in navigator) {
@@ -1163,6 +1215,8 @@ window.onload = () => {
                 });
 
                 const swScriptUrl = './service-worker.js?v=20260224a';
+                const swScriptUrl = './service-worker.js?v=20260224a';
+
                 navigator.serviceWorker.register(swScriptUrl, { updateViaCache: 'none' })
                     .then((registration) => {
                         const requestImmediateActivation = (worker) => {
