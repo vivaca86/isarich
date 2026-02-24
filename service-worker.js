@@ -1,6 +1,5 @@
 const CACHE_PREFIX = 'isa-rich-cache-';
 const CACHE_VERSION = 'v12';
-const CACHE_VERSION = 'v12';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const OFFLINE_URLS = [
   './',
