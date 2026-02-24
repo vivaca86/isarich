@@ -33,6 +33,11 @@
             animation: bgMove 12s ease-in-out infinite;
             color: #334155; 
             -webkit-tap-highlight-color: transparent; 
+            padding-top: max(8px, env(safe-area-inset-top));
+        }
+
+        @media (min-width: 1024px) {
+            body { padding-top: 0; }
         }
 
         .glass-card { 
@@ -597,22 +602,11 @@ const centerTextPlugin = {
 
         function isDepositTransaction(tx) {
             const ticker = String(tx?.ticker || '').trim().toUpperCase();
-            if (ticker === 'DEPOSIT' || ticker.includes('CASH') || ticker === '입금') return true;
+            if (['DEPOSIT', 'CASH', 'CASH_DEPOSIT', '입금'].includes(ticker)) return true;
 
             const name = String(tx?.name || '').trim();
             const cat = normalizeCashCategory(tx?.category);
             return ['1', '2', '3'].includes(cat) && (name.includes('입금') || name.includes('충전'));
-        }
-
-        function resolveDepositCategory(tx) {
-            const raw = String(tx?.category ?? '').trim();
-            if (raw === '' || raw === '0' || raw.toLowerCase() === 'null') {
-                const name = String(tx?.name || '').trim();
-                if (name.includes('배당')) return '3';
-                if (name.includes('특별')) return '2';
-                if (name.includes('원금')) return '1';
-            }
-            return normalizeCashCategory(raw);
         }
 
         function initFirebase() {
@@ -723,19 +717,31 @@ const centerTextPlugin = {
             if(!firestoreDb) { safeSetText('sync-time', "파이어베이스 미연결"); return; }
             const icon = getEl('sync-icon'); if(icon) icon.classList.add('sync-spin');
             const hasPriceUrl = isValidSheetsUrl(sheetsUrl);
-            try {
-                if(hasPriceUrl) {
+            let priceSyncFailed = false;
+
+            if(hasPriceUrl) {
+                try {
                     const ts = Date.now();
                     const pRes = await fetchWithTimeout(`${sheetsUrl}?action=prices&_t=${ts}`, { redirect: 'follow' });
                     marketData = JSON.parse(await pRes.text() || "{}");
+                } catch (e) {
+                    console.error(e);
+                    priceSyncFailed = true;
                 }
+            }
 
+            try {
                 transactions = await loadTransactionsFromFirebase();
                 updateUI(); updateQuickSelectUI();
 
                 if(!hasPriceUrl) safeSetText('sync-time', "가격 URL 미설정 · 기록만 동기화됨");
+                else if(priceSyncFailed) safeSetText('sync-time', "가격 연결 실패 · 기록은 동기화됨");
                 else safeSetText('sync-time', "최근 업데이트: " + new Date().toLocaleTimeString());
-            } catch(e) { console.error(e); safeSetText('sync-time', "연결 실패"); }
+            } catch(e) {
+                console.error(e);
+                safeSetText('sync-time', "기록 연결 실패");
+            }
+
             if(icon) icon.classList.remove('sync-spin');
         }
 
@@ -814,7 +820,7 @@ async function postMutation(action, payload = {}) {
             const h = {}; let totalV = 0, totalC = 0, totalD = 0, cashD = { "1": 0, "2": 0, "3": 0 };
             transactions.forEach(t => {
                 const amt = Number(t.shares || 0) * Number(t.price || 0);
-                if(isDepositTransaction(t)) { const cat = resolveDepositCategory(t); cashD[cat] += amt; return; }
+                if(isDepositTransaction(t)) { const cat = normalizeCashCategory(t.category); cashD[cat] += amt; return; }
                 const ticker = String(t.ticker || '').trim();
                 if(!ticker) return;
                 if (!h[ticker]) h[ticker] = { shares: 0, cost: 0, name: t.name || ticker };
@@ -987,7 +993,7 @@ if(assetChart){
             if(isDeposit) {
                 showSection('transaction'); switchTab('deposit');
                 getEl('div-date').value = String(t.date).substring(0,10); getEl('div-amount').value = t.price;
-                setDepositCat(resolveDepositCategory(t)); getEl('edit-id').value = id; getEl('save-div-btn').innerText = "수정 저장"; getEl('cancel-edit-btn-deposit').classList.remove('hidden');
+                setDepositCat(normalizeCashCategory(t.category)); getEl('edit-id').value = id; getEl('save-div-btn').innerText = "수정 저장"; getEl('cancel-edit-btn-deposit').classList.remove('hidden');
             } else {
                 showSection('transaction'); switchTab('purchase');
                 getEl('input-date').value = String(t.date).substring(0,10); getEl('input-ticker').value = t.ticker; getEl('input-name').value = t.name; getEl('input-shares').value = t.shares; getEl('input-price').value = t.price;
