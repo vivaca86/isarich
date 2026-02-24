@@ -852,25 +852,49 @@ async function postMutation(action, payload = {}) {
         }
 
         function updateUI() {
-            const h = {}; let totalV = 0, totalC = 0, totalD = 0, cashD = { "1": 0, "2": 0, "3": 0 };
-            transactions.forEach(t => {
+            const h = {}; let totalV = 0, totalC = 0, totalD = 0;
+            const cashD = { "1": 0, "2": 0, "3": 0 };
+            const usedByCat = { "1": 0, "2": 0, "3": 0 };
+            const sortedTx = [...transactions].sort((a, b) => {
+                const dateDiff = new Date(a.date) - new Date(b.date);
+                if (dateDiff !== 0) return dateDiff;
+                return String(a.id || '').localeCompare(String(b.id || ''));
+            });
+
+            sortedTx.forEach(t => {
                 const amt = Number(t.shares || 0) * Number(t.price || 0);
-                if(isDepositTransaction(t)) { const cat = normalizeCashCategory(t.category); cashD[cat] += amt; return; }
+                if(isDepositTransaction(t)) {
+                    const cat = normalizeCashCategory(t.category);
+                    cashD[cat] += amt;
+                    return;
+                }
+
                 const ticker = String(t.ticker || '').trim();
                 if(!ticker) return;
-                if (!h[ticker]) h[ticker] = { shares: 0, cost: 0, name: t.name || ticker };
-                h[ticker].shares += Number(t.shares || 0); h[ticker].cost += amt;
-                totalC += amt;
-            });
-            let remCost = totalC;
-            let usedDiv = Math.min(remCost, cashD["3"]); remCost -= usedDiv;
-            let usedSpec = Math.min(remCost, cashD["2"]); remCost -= usedSpec;
-            let usedBase = Math.min(remCost, cashD["1"]); remCost -= usedBase; 
-            let curCash = (cashD["1"] + cashD["2"] + cashD["3"]) - totalC;
 
+                if (!h[ticker]) h[ticker] = { shares: 0, cost: 0, name: t.name || ticker };
+                h[ticker].shares += Number(t.shares || 0);
+                h[ticker].cost += amt;
+                totalC += amt;
+
+                let remain = amt;
+                ['3', '2', '1'].forEach(cat => {
+                    if (remain <= 0) return;
+                    const usable = Math.max(0, cashD[cat]);
+                    const used = Math.min(usable, remain);
+                    cashD[cat] -= used;
+                    usedByCat[cat] += used;
+                    remain -= used;
+                });
+
+                if (remain > 0) cashD['1'] -= remain;
+            });
+
+            const usedDiv = usedByCat['3'];
+            const curCash = cashD["1"] + cashD["2"] + cashD["3"];
 
             let reinvestRate = totalC > 0 ? (usedDiv / totalC * 100) : 0;
-            if(Math.round(cashD["3"] - usedDiv) > 0) getEl('cash-card-area')?.classList.add('reinvest-highlight');
+            if(Math.round(cashD["3"]) > 0) getEl('cash-card-area')?.classList.add('reinvest-highlight');
             else getEl('cash-card-area')?.classList.remove('reinvest-highlight');
 
             let listHTML = "", labels = [], data = [], bg = [];
