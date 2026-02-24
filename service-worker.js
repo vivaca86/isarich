@@ -1,5 +1,9 @@
 const CACHE_PREFIX = 'isa-rich-cache-';
+<<<<<<< codex/create-test-connection.txt-in-isarich-repo-l0t6qx
 const CACHE_VERSION = 'v12';
+=======
+const CACHE_VERSION = 'v11';
+>>>>>>> main
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const OFFLINE_URLS = [
   './',
