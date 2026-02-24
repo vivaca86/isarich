@@ -966,7 +966,7 @@ async function postMutation(action, payload = {}) {
             safeSetText('stat-reinvest-rate', `${reinvestRate.toFixed(1)}%`);
             safeSetText('stat-monthly-dividend', `₩${Math.round(totalD).toLocaleString()}`);
             const level = getDividendLevel(totalD); safeSetText('div-level-icon', level.icon); safeSetText('dividend-level-text', level.text);
-            const bDiv = Math.round(cashD["3"] - usedDiv), bSpec = Math.round(cashD["2"] - usedSpec), bBase = Math.round(cashD["1"] - usedBase);
+            const bDiv = Math.round(cashD["3"]), bSpec = Math.round(cashD["2"]), bBase = Math.round(cashD["1"]);
             safeSetText('modal-cash-div', `₩${bDiv.toLocaleString()}`); safeSetText('modal-cash-spec', `₩${bSpec.toLocaleString()}`); safeSetText('modal-cash-base', `₩${bBase.toLocaleString()}`);
             safeSetHTML('holdings-list', listHTML || `<div class="text-center p-12 text-slate-300 font-black text-[10px] uppercase font-sans">데이터 없음</div>`);
             if (getEl('assetChart')) {
