@@ -7,11 +7,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ISA RICH">
-<<<<<<< codex/create-test-connection.txt-in-isarich-repo-l0t6qx
     <title>ISA RICH Premium ver1.0.14</title>
-=======
-    <title>ISA RICH Premium ver1.0.13</title>
->>>>>>> main
+    <title>ISA RICH Premium ver1.0.14</title>
+
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/svg+xml" href="icons/app-icon.svg">
     <link rel="apple-touch-icon" href="icons/app-icon.svg">
@@ -195,11 +193,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         <section id="section-dashboard" class="animate-fade-up space-y-6 text-left font-sans">
             <header class="flex justify-between items-end mb-2 text-left">
                 <div class="text-left font-sans">
-<<<<<<< codex/create-test-connection.txt-in-isarich-repo-l0t6qx
                     <div class="flex items-center gap-2"><h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">나의 엔진</h2><span id="app-version-badge" class="text-[9px] font-black px-2 py-1 rounded-md bg-slate-900 text-white">v1.0.14</span></div>
-=======
-                    <div class="flex items-center gap-2"><h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">나의 엔진</h2><span id="app-version-badge" class="text-[9px] font-black px-2 py-1 rounded-md bg-slate-900 text-white">v1.0.13</span></div>
->>>>>>> main
+                    <div class="flex items-center gap-2"><h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">나의 엔진</h2><span id="app-version-badge" class="text-[9px] font-black px-2 py-1 rounded-md bg-slate-900 text-white">v1.0.14</span></div>
+
                     <p class="text-[10px] text-blue-600 mt-1.5 flex items-center gap-1.5 font-black uppercase tracking-widest text-left" id="sync-time">
                         <i class="fa-solid fa-rotate-right"></i> 동기화 대기 중
                     </p>
@@ -454,10 +450,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                         <span class="text-[8px] font-black text-blue-500 uppercase tracking-widest text-left">Level 1: Reinvestment</span>
                         <p class="text-lg font-black text-slate-900 text-left uppercase">배당금 잔고</p>
                         <p class="text-[10px] font-bold text-blue-400 mt-1" id="modal-cash-div-total">누적 입금 ₩0</p>
-<<<<<<< codex/create-test-connection.txt-in-isarich-repo-l0t6qx
                         <p class="text-[10px] font-bold text-blue-300 mt-1" id="modal-cash-div-used">사용 ₩0</p>
-=======
->>>>>>> main
+
                     </div>
                     <p class="text-xl font-black text-blue-600 text-right tracking-tight font-sans" id="modal-cash-div">₩0</p>
                 </div>
@@ -466,10 +460,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                         <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest text-left">Level 2: Special</span>
                         <p class="text-lg font-black text-slate-900 text-left uppercase">특별금 잔고</p>
                         <p class="text-[10px] font-bold text-slate-400 mt-1" id="modal-cash-spec-total">누적 입금 ₩0</p>
-<<<<<<< codex/create-test-connection.txt-in-isarich-repo-l0t6qx
                         <p class="text-[10px] font-bold text-slate-400 mt-1" id="modal-cash-spec-used">사용 ₩0</p>
-=======
->>>>>>> main
+
                     </div>
                     <p class="text-xl font-black text-slate-500 text-right tracking-tight font-sans" id="modal-cash-spec">₩0</p>
                 </div>
@@ -478,10 +470,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                         <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest text-left">Level 3: Base</span>
                         <p class="text-lg font-black text-slate-900 text-left uppercase font-sans">원금 잔고</p>
                         <p class="text-[10px] font-bold text-slate-400 mt-1" id="modal-cash-base-total">누적 입금 ₩0</p>
-<<<<<<< codex/create-test-connection.txt-in-isarich-repo-l0t6qx
                         <p class="text-[10px] font-bold text-slate-400 mt-1" id="modal-cash-base-used">사용 ₩0</p>
-=======
->>>>>>> main
+
                     </div>
                     <p class="text-xl font-black text-slate-500 text-right tracking-tight font-sans" id="modal-cash-base">₩0</p>
                 </div>
@@ -581,10 +571,8 @@ const centerTextPlugin = {
         let firebaseConfigRaw = localStorage.getItem('isa_firebase_config') || JSON.stringify(DEFAULT_FIREBASE_CONFIG, null, 2);
         let firebaseCollection = localStorage.getItem('isa_firebase_collection') || 'isa_history';
         let firestoreDb = null;
-<<<<<<< codex/create-test-connection.txt-in-isarich-repo-l0t6qx
         const TX_CACHE_KEY = 'isa_transactions_cache_v1';
-=======
->>>>>>> main
+
 
         function isValidSheetsUrl(url) {
             if (!url) return false;
@@ -661,7 +649,6 @@ const centerTextPlugin = {
             };
         }
 
-<<<<<<< codex/create-test-connection.txt-in-isarich-repo-l0t6qx
         function saveTransactionsCache(list) {
             try {
                 localStorage.setItem(TX_CACHE_KEY, JSON.stringify((list || []).slice(0, 3000)));
@@ -683,8 +670,7 @@ const centerTextPlugin = {
             }
         }
 
-=======
->>>>>>> main
+
         async function loadTransactionsFromFirebase() {
             if(!firestoreDb) throw new Error('파이어베이스 설정이 필요합니다.');
             const snap = await firestoreDb.collection(firebaseCollection).get();
@@ -733,6 +719,25 @@ const centerTextPlugin = {
         }
 
         function getEl(id) { return document.getElementById(id); }
+
+        function removeConflictMarkerTexts() {
+            const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+            const tokens = ['<<<<<<<', '=======', '>>>>>>>', 'codex/create-test-connection'];
+
+            while (walker.nextNode()) {
+                const node = walker.currentNode;
+                let value = String(node.nodeValue || '');
+                let changed = false;
+                tokens.forEach((token) => {
+                    if (value.includes(token)) {
+                        value = value.split(token).join('');
+                        changed = true;
+                    }
+                });
+                if (changed) node.nodeValue = value;
+            }
+        }
+
         function safeSetText(id, text) { const el = getEl(id); if (el) el.innerText = text; }
         function safeSetHTML(id, html) { const el = getEl(id); if (el) el.innerHTML = html; }
 
@@ -780,10 +785,8 @@ const centerTextPlugin = {
 
             try {
                 transactions = await loadTransactionsFromFirebase();
-<<<<<<< codex/create-test-connection.txt-in-isarich-repo-l0t6qx
                 saveTransactionsCache(transactions);
-=======
->>>>>>> main
+
                 updateUI(); updateQuickSelectUI();
 
                 if(!hasPriceUrl) safeSetText('sync-time', "가격 URL 미설정 · 기록만 동기화됨");
@@ -791,7 +794,7 @@ const centerTextPlugin = {
                 else safeSetText('sync-time', "최근 업데이트: " + new Date().toLocaleTimeString());
             } catch(e) {
                 console.error(e);
-<<<<<<< codex/create-test-connection.txt-in-isarich-repo-l0t6qx
+                safeSetText('sync-time', "기록 연결 실패");
                 const cached = loadTransactionsCache();
                 if(cached.length > 0) {
                     transactions = cached;
@@ -800,9 +803,7 @@ const centerTextPlugin = {
                 } else {
                     safeSetText('sync-time', "기록 연결 실패");
                 }
-=======
-                safeSetText('sync-time', "기록 연결 실패");
->>>>>>> main
+
             }
 
             if(icon) icon.classList.remove('sync-spin');
@@ -994,17 +995,15 @@ async function postMutation(action, payload = {}) {
             safeSetText('stat-reinvest-rate', `${reinvestRate.toFixed(1)}%`);
             safeSetText('stat-monthly-dividend', `₩${Math.round(totalD).toLocaleString()}`);
             const level = getDividendLevel(totalD); safeSetText('div-level-icon', level.icon); safeSetText('dividend-level-text', level.text);
-            const bDiv = Math.round(cashD["3"] - usedDiv), bSpec = Math.round(cashD["2"] - usedSpec), bBase = Math.round(cashD["1"] - usedBase);
+            const bDiv = Math.round(cashD["3"]), bSpec = Math.round(cashD["2"]), bBase = Math.round(cashD["1"]);
             safeSetText('modal-cash-div', `₩${bDiv.toLocaleString()}`); safeSetText('modal-cash-spec', `₩${bSpec.toLocaleString()}`); safeSetText('modal-cash-base', `₩${bBase.toLocaleString()}`);
             safeSetText('modal-cash-div-total', `누적 입금 ₩${Math.round(cashD["3"]).toLocaleString()}`);
             safeSetText('modal-cash-spec-total', `누적 입금 ₩${Math.round(cashD["2"]).toLocaleString()}`);
             safeSetText('modal-cash-base-total', `누적 입금 ₩${Math.round(cashD["1"]).toLocaleString()}`);
-<<<<<<< codex/create-test-connection.txt-in-isarich-repo-l0t6qx
             safeSetText('modal-cash-div-used', `사용 ₩${Math.round(usedDiv).toLocaleString()}`);
             safeSetText('modal-cash-spec-used', `사용 ₩${Math.round(usedSpec).toLocaleString()}`);
             safeSetText('modal-cash-base-used', `사용 ₩${Math.round(usedBase).toLocaleString()}`);
-=======
->>>>>>> main
+
             safeSetHTML('holdings-list', listHTML || `<div class="text-center p-12 text-slate-300 font-black text-[10px] uppercase font-sans">데이터 없음</div>`);
             if (getEl('assetChart')) {
                 
@@ -1197,15 +1196,14 @@ function animateValue(id, start, end, duration) {
 
 
 window.onload = () => {
+            removeConflictMarkerTexts();
             const today = new Date().toISOString().split('T')[0];
             if(getEl('input-date')) getEl('input-date').value = today;
             if(getEl('div-date')) getEl('div-date').value = today;
             initFirebase();
-<<<<<<< codex/create-test-connection.txt-in-isarich-repo-l0t6qx
             const cached = loadTransactionsCache();
             if(cached.length > 0) { transactions = cached; updateUI(); updateQuickSelectUI(); }
-=======
->>>>>>> main
+
             setDepositCat(3); syncAllData();
 
             if ('serviceWorker' in navigator) {
@@ -1216,11 +1214,9 @@ window.onload = () => {
                     window.location.reload();
                 });
 
-<<<<<<< codex/create-test-connection.txt-in-isarich-repo-l0t6qx
                 const swScriptUrl = './service-worker.js?v=20260224a';
-=======
-                const swScriptUrl = './service-worker.js?v=20260222h';
->>>>>>> main
+                const swScriptUrl = './service-worker.js?v=20260224a';
+
                 navigator.serviceWorker.register(swScriptUrl, { updateViaCache: 'none' })
                     .then((registration) => {
                         const requestImmediateActivation = (worker) => {
