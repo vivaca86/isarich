@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ISA RICH">
-    <title>ISA RICH Premium ver1.0.14</title>
+    <title>ISA RICH Premium ver1.0.15</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/svg+xml" href="icons/app-icon.svg">
     <link rel="apple-touch-icon" href="icons/app-icon.svg">
@@ -191,7 +191,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         <section id="section-dashboard" class="animate-fade-up space-y-6 text-left font-sans">
             <header class="flex justify-between items-end mb-2 text-left">
                 <div class="text-left font-sans">
-                    <div id="app-title-row" class="flex items-center gap-2"><h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">나의 엔진</h2><span id="app-version-badge" class="text-[9px] font-black px-2 py-1 rounded-md bg-slate-900 text-white">v1.0.14</span></div>
+                    <div id="app-title-row" class="flex items-center gap-2"><h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">나의 엔진</h2><span id="app-version-badge" class="text-[9px] font-black px-2 py-1 rounded-md bg-slate-900 text-white">v1.0.15</span></div>
                     <p class="text-[10px] text-blue-600 mt-1.5 flex items-center gap-1.5 font-black uppercase tracking-widest text-left" id="sync-time">
                         <i class="fa-solid fa-rotate-right"></i> 동기화 대기 중
                     </p>
@@ -727,7 +727,7 @@ const centerTextPlugin = {
         }
 
         async function syncAllData() {
-            if(!firestoreDb) { safeSetText('sync-time', "파이어베이스 미연결"); return; }
+            if(!firestoreDb && !initFirebase()) { safeSetText('sync-time', "파이어베이스 미연결"); return; }
             const icon = getEl('sync-icon'); if(icon) icon.classList.add('sync-spin');
             const hasPriceUrl = isValidSheetsUrl(sheetsUrl);
             let priceSyncFailed = false;
@@ -1087,10 +1087,7 @@ if(assetChart){
             if(!urlInput || !firebaseInput || !collectionInput) return;
 
             const candidate = urlInput.value.trim();
-            if(!isValidSheetsUrl(candidate)) {
-                alert('구글 스크립트 URL을 다시 확인해 주세요.');
-                return;
-            }
+            const nextSheetsUrl = isValidSheetsUrl(candidate) ? candidate : '';
 
             const nextFirebaseConfigRaw = firebaseInput.value.trim();
             const parsedFirebase = parseFirebaseConfig(nextFirebaseConfigRaw);
@@ -1101,11 +1098,14 @@ if(assetChart){
 
             const nextCollection = (collectionInput.value.trim() || 'isa_history').replace(/\s+/g, '_');
 
-            sheetsUrl = candidate;
+            sheetsUrl = nextSheetsUrl;
             firebaseConfigRaw = nextFirebaseConfigRaw;
             firebaseCollection = nextCollection;
 
             localStorage.setItem('isa_sheets_url', sheetsUrl);
+            if(candidate && !nextSheetsUrl) {
+                alert('가격 URL이 유효하지 않아 가격 동기화는 비활성화되고, 기록만 동기화됩니다.');
+            }
             localStorage.setItem('isa_firebase_config', firebaseConfigRaw);
             localStorage.setItem('isa_firebase_collection', firebaseCollection);
 
