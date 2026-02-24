@@ -3,7 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ISA RICH Premium ver1.0.0</title>
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ISA RICH">
+    <title>ISA RICH Premium ver1.0.16</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/svg+xml" href="icons/app-icon.svg">
+    <link rel="apple-touch-icon" href="icons/app-icon.svg">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
@@ -26,6 +33,11 @@
             animation: bgMove 12s ease-in-out infinite;
             color: #334155; 
             -webkit-tap-highlight-color: transparent; 
+            padding-top: max(8px, env(safe-area-inset-top));
+        }
+
+        @media (min-width: 1024px) {
+            body { padding-top: 0; }
         }
 
         .glass-card { 
@@ -179,7 +191,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         <section id="section-dashboard" class="animate-fade-up space-y-6 text-left font-sans">
             <header class="flex justify-between items-end mb-2 text-left">
                 <div class="text-left font-sans">
-                    <h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">나의 엔진</h2>
+                    <div id="app-title-row" class="flex items-center gap-2"><h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">나의 엔진</h2><span id="app-version-badge" class="text-[9px] font-black px-2 py-1 rounded-md bg-slate-900 text-white">v1.0.16</span></div>
                     <p class="text-[10px] text-blue-600 mt-1.5 flex items-center gap-1.5 font-black uppercase tracking-widest text-left" id="sync-time">
                         <i class="fa-solid fa-rotate-right"></i> 동기화 대기 중
                     </p>
@@ -233,19 +245,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                         </div>
                     </div>
 
-                    <div class="glass-card p-4 text-left font-sans bg-gradient-to-br from-slate-100/90 via-indigo-50/60 to-white text-slate-900 border border-slate-200/70 shadow-lg">
-                        <h3 class="font-black text-sm tracking-tight mb-2 text-slate-800">추천 매수</h3>
-                        <div id="cash-buy-empty" class="hidden rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-[11px] font-bold text-slate-500">
+                    <div class="p-4 text-left font-sans bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 text-white border border-indigo-400/20 shadow-2xl rounded-[1.75rem]">
+                        <div id="cash-buy-empty" class="hidden rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-[11px] font-bold text-white/80">
                             지금 현금으로는 매수 가능한 수량이 없어요.
                         </div>
                         <div class="space-y-1.5" id="cash-buy-plans">
-                            <div id="plan-a-card" class="rounded-lg px-3 py-2 border border-cyan-200/70 bg-gradient-to-r from-cyan-50 to-white flex items-center justify-between gap-3">
-                                <p class="text-[11px] font-black text-slate-700 truncate" id="buy-plan-a-title">종목 A</p>
-                                <p class="text-[11px] font-black text-cyan-700 text-right whitespace-nowrap" id="buy-plan-a">0주 매수 (₩0)</p>
+                            <div id="plan-a-card" class="rounded-lg px-3 py-2 border border-cyan-200/40 bg-white/10 flex items-center justify-between gap-3">
+                                <p class="text-[11px] font-black text-white truncate" id="buy-plan-a-title">종목 A</p>
+                                <p class="text-[11px] font-black text-cyan-200 text-right whitespace-nowrap" id="buy-plan-a">0주 매수 (₩0)</p>
                             </div>
-                            <div id="plan-b-card" class="rounded-lg px-3 py-2 border border-violet-200/70 bg-gradient-to-r from-violet-50 to-white flex items-center justify-between gap-3">
-                                <p class="text-[11px] font-black text-slate-700 truncate" id="buy-plan-b-title">종목 B</p>
-                                <p class="text-[11px] font-black text-violet-700 text-right whitespace-nowrap" id="buy-plan-b">0주 매수 (₩0)</p>
+                            <div id="plan-b-card" class="rounded-lg px-3 py-2 border border-violet-200/40 bg-white/10 flex items-center justify-between gap-3">
+                                <p class="text-[11px] font-black text-white truncate" id="buy-plan-b-title">종목 B</p>
+                                <p class="text-[11px] font-black text-violet-200 text-right whitespace-nowrap" id="buy-plan-b">0주 매수 (₩0)</p>
                             </div>
                         </div>
                     </div>
@@ -260,23 +271,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                 </div>
 
                 <div class="lg:col-span-4 space-y-6 text-left font-sans">
-                    <div class="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 p-7 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group text-left font-sans">
-                        <div class="relative z-10 text-left font-sans">
-                            <div class="flex justify-between items-center mb-8 text-left">
-                                <div class="flex items-center gap-3 text-left">
-                                    <span class="bg-white/20 p-2.5 rounded-2xl text-xs text-center font-sans"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></span>
-                                    <h3 class="font-black text-sm uppercase tracking-widest text-left">Rich AI</h3>
-                                </div>
-                                <select id="strategy-selector" onchange="updateUI()" class="bg-white/10 border border-white/10 text-[10px] rounded-xl px-3 py-2 text-white outline-none cursor-pointer font-bold backdrop-blur-md text-left">
-                                    <option value="1">1년차 (리츠)</option>
-                                    <option value="2">2년차 (SCHD+)</option>
-                                </select>
-                            </div>
-                            <p class="text-white/60 text-[10px] mb-3 uppercase font-black tracking-widest text-left font-sans">Strategic Suggestion</p>
-                            <div id="reinvest-recommendation" class="space-y-3 text-left font-sans"></div>
-                        </div>
-                    </div>
-                    
                     <div class="glass-card p-8 flex flex-col items-center justify-center min-h-[340px] text-left font-sans font-sans">
                         <h3 class="font-black text-[10px] text-slate-400 uppercase tracking-[0.25em] mb-8 w-full text-left font-sans">Allocation Mix</h3>
                         <div class="relative w-44 h-44 mb-8 text-center font-sans">
@@ -586,19 +580,54 @@ const centerTextPlugin = {
             }
         }
 
-        function initFirebase() {
-            const config = parseFirebaseConfig(firebaseConfigRaw);
-            if(!config) { firestoreDb = null; return false; }
-            try {
-                const appName = `isa-rich-${config.projectId}`;
-                const app = firebase.apps.find(a => a.name === appName) || firebase.initializeApp(config, appName);
-                firestoreDb = app.firestore();
-                return true;
-            } catch (e) {
-                console.error(e);
-                firestoreDb = null;
-                return false;
+        function normalizeCashCategory(raw) {
+            const value = String(raw ?? '').trim();
+            const lower = value.toLowerCase();
+            const numeric = Number(value);
+
+            if (!Number.isNaN(numeric)) {
+                if (numeric === 1) return '1';
+                if (numeric === 2) return '2';
+                if (numeric === 3) return '3';
             }
+
+            if (value === '1' || value === '원금' || lower === 'base' || lower === 'principal') return '1';
+            if (value === '2' || value === '특별' || value === '특별금' || lower === 'special' || lower === 'bonus') return '2';
+            if (value === '3' || value === '배당' || value === '배당금' || lower === 'dividend' || lower === 'reinvest' || value === '재투자') return '3';
+            return '3';
+        }
+
+        function isDepositTransaction(tx) {
+            const ticker = String(tx?.ticker || '').trim().toUpperCase();
+            if (['DEPOSIT', 'CASH', 'CASH_DEPOSIT', '입금'].includes(ticker)) return true;
+
+            const name = String(tx?.name || '').trim();
+            const cat = normalizeCashCategory(tx?.category);
+            return ['1', '2', '3'].includes(cat) && (name.includes('입금') || name.includes('충전'));
+        }
+
+        function initFirebase() {
+            const parsed = parseFirebaseConfig(firebaseConfigRaw);
+            const candidates = [parsed, DEFAULT_FIREBASE_CONFIG].filter(Boolean);
+
+            for (const config of candidates) {
+                try {
+                    const appName = `isa-rich-${config.projectId}`;
+                    const app = firebase.apps.find(a => a.name === appName) || firebase.initializeApp(config, appName);
+                    firestoreDb = app.firestore();
+
+                    if (!parsed || parsed.projectId !== config.projectId) {
+                        firebaseConfigRaw = JSON.stringify(config, null, 2);
+                        localStorage.setItem('isa_firebase_config', firebaseConfigRaw);
+                    }
+                    return true;
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            firestoreDb = null;
+            return false;
         }
 
         function toHistoryRecord(item, source = 'firebase') {
@@ -609,7 +638,7 @@ const centerTextPlugin = {
                 name: String(item.name || ''),
                 shares: Number(item.shares || 0),
                 price: Number(item.price || 0),
-                category: String(item.category ?? 0),
+                category: normalizeCashCategory(item.category),
                 source
             };
         }
@@ -629,7 +658,7 @@ const centerTextPlugin = {
                 name: String(payload.name || ''),
                 shares: Number(payload.shares || 0),
                 price: Number(payload.price || 0),
-                category: String(payload.category ?? 0),
+                category: normalizeCashCategory(payload.category),
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
             await firestoreDb.collection(firebaseCollection).doc(id).set(doc);
@@ -663,6 +692,14 @@ const centerTextPlugin = {
 
         function getEl(id) { return document.getElementById(id); }
 
+        function dedupeAppTitleRow() {
+            const rows = document.querySelectorAll('#section-dashboard header #app-title-row');
+            if (rows.length <= 1) return;
+            rows.forEach((row, idx) => {
+                if (idx > 0) row.remove();
+            });
+        }
+
         function safeSetText(id, text) { const el = getEl(id); if (el) el.innerText = text; }
         function safeSetHTML(id, html) { const el = getEl(id); if (el) el.innerHTML = html; }
 
@@ -692,17 +729,54 @@ const centerTextPlugin = {
         }
 
         async function syncAllData() {
-            if(!isValidSheetsUrl(sheetsUrl)) { safeSetText('sync-time', "URL 미설정"); return; }
-            if(!firestoreDb) { safeSetText('sync-time', "파이어베이스 미연결"); return; }
+            if(!firestoreDb && !initFirebase()) { safeSetText('sync-time', "파이어베이스 미연결"); return; }
             const icon = getEl('sync-icon'); if(icon) icon.classList.add('sync-spin');
+            const hasPriceUrl = isValidSheetsUrl(sheetsUrl);
+            let priceSyncFailed = false;
+            let historyRecoveredWithFallback = false;
+
+            if(hasPriceUrl) {
+                try {
+                    const ts = Date.now();
+                    const pRes = await fetchWithTimeout(`${sheetsUrl}?action=prices&_t=${ts}`, { redirect: 'follow' });
+                    marketData = JSON.parse(await pRes.text() || "{}");
+                } catch (e) {
+                    console.error(e);
+                    priceSyncFailed = true;
+                }
+            }
+
             try {
-                const ts = Date.now();
-                const pRes = await fetchWithTimeout(`${sheetsUrl}?action=prices&_t=${ts}`, { redirect: 'follow' });
-                marketData = JSON.parse(await pRes.text() || "{}");
                 transactions = await loadTransactionsFromFirebase();
-                updateUI(); updateQuickSelectUI();
-                safeSetText('sync-time', "최근 업데이트: " + new Date().toLocaleTimeString());
-            } catch(e) { console.error(e); safeSetText('sync-time', "연결 실패"); }
+            } catch(e) {
+                console.error(e);
+                const fallbackCollection = 'isa_history';
+                if(firebaseCollection !== fallbackCollection) {
+                    try {
+                        firebaseCollection = fallbackCollection;
+                        localStorage.setItem('isa_firebase_collection', firebaseCollection);
+                        transactions = await loadTransactionsFromFirebase();
+                        historyRecoveredWithFallback = true;
+                    } catch (retryError) {
+                        console.error(retryError);
+                        safeSetText('sync-time', "기록 연결 실패");
+                        if(icon) icon.classList.remove('sync-spin');
+                        return;
+                    }
+                } else {
+                    safeSetText('sync-time', "기록 연결 실패");
+                    if(icon) icon.classList.remove('sync-spin');
+                    return;
+                }
+            }
+
+            updateUI(); updateQuickSelectUI();
+
+            if(historyRecoveredWithFallback) safeSetText('sync-time', "컬렉션 자동 복구 · 기록 동기화됨");
+            else if(!hasPriceUrl) safeSetText('sync-time', "가격 URL 미설정 · 기록만 동기화됨");
+            else if(priceSyncFailed) safeSetText('sync-time', "가격 연결 실패 · 기록은 동기화됨");
+            else safeSetText('sync-time', "최근 업데이트: " + new Date().toLocaleTimeString());
+
             if(icon) icon.classList.remove('sync-spin');
         }
 
@@ -755,7 +829,7 @@ async function postMutation(action, payload = {}) {
         }
 
         async function saveWalletDeposit() {
-            const date = getEl('div-date').value, amount = Number(getEl('div-amount').value), cat = getEl('wallet-category').value, editId = getEl('edit-id').value;
+            const date = getEl('div-date').value, amount = Number(getEl('div-amount').value), cat = normalizeCashCategory(getEl('wallet-category').value), editId = getEl('edit-id').value;
             if(!date || !amount) return;
             const btn = getEl('save-div-btn'); if(btn) { btn.innerText = "처리 중..."; btn.disabled = true; }
             try {
@@ -781,7 +855,7 @@ async function postMutation(action, payload = {}) {
             const h = {}; let totalV = 0, totalC = 0, totalD = 0, cashD = { "1": 0, "2": 0, "3": 0 };
             transactions.forEach(t => {
                 const amt = Number(t.shares || 0) * Number(t.price || 0);
-                if(t.ticker === 'DEPOSIT') { cashD[t.category] += amt; return; }
+                if(isDepositTransaction(t)) { const cat = normalizeCashCategory(t.category); cashD[cat] += amt; return; }
                 const ticker = String(t.ticker || '').trim();
                 if(!ticker) return;
                 if (!h[ticker]) h[ticker] = { shares: 0, cost: 0, name: t.name || ticker };
@@ -791,7 +865,7 @@ async function postMutation(action, payload = {}) {
             let remCost = totalC;
             let usedDiv = Math.min(remCost, cashD["3"]); remCost -= usedDiv;
             let usedSpec = Math.min(remCost, cashD["2"]); remCost -= usedSpec;
-            let usedBase = remCost; 
+            let usedBase = Math.min(remCost, cashD["1"]); remCost -= usedBase; 
             let curCash = (cashD["1"] + cashD["2"] + cashD["3"]) - totalC;
 
 
@@ -922,13 +996,17 @@ if(assetChart){
             const container = getEl(containerId); if (!container) return;
             const sortedData = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
             container.innerHTML = sortedData.map(t => {
-                const isDeposit = t.ticker === 'DEPOSIT';
-                const iconCode = isDeposit ? CAT_ICONS[t.category] || '' : '<svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 11 4-7"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4"/><path d="m9 11 1 9"/><path d="m15 11-1 9"/></svg>';
+                const isDeposit = isDepositTransaction(t);
+                const normalizedCategory = normalizeCashCategory(t.category);
+                const depositLabel = CAT_NAMES[normalizedCategory] || '기본';
+                const iconCode = isDeposit ? CAT_ICONS[normalizedCategory] || '💳' : '<svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 11 4-7"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4"/><path d="m9 11 1 9"/><path d="m15 11-1 9"/></svg>';
                 const themeColor = isDeposit ? 'blue-600' : 'slate-600';
                 const safeName = escapeHtml(t.name);
                 const safeId = escapeHtml(t.id);
                 const safeDate = escapeHtml(String(t.date || '').substring(0, 10));
-                return `<div class="glass-card p-4 md:p-5 flex justify-between items-center transition hover:shadow-xl border-l-4 ${isDeposit ? 'border-l-blue-500' : 'border-l-slate-800'} text-left font-sans"><div class="flex items-center gap-4 text-left font-sans"><div class="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-sm border border-slate-100 shadow-sm text-center"><span class="text-${themeColor} flex items-center justify-center">${iconCode}</span></div><div class="text-left font-sans font-sans"><p class="text-[9px] text-slate-400 font-black mb-0.5 uppercase tracking-widest text-left font-sans">${safeDate} · ${isDeposit ? CAT_NAMES[t.category] + ' 입금' : '매수'}</p><p class="text-sm font-black text-slate-800 text-left font-sans">${safeName}</p><p class="text-[9px] text-slate-400 font-black uppercase mt-0.5 text-left font-sans">${isDeposit ? 'CASH_LOADED' : Number(t.shares).toFixed(2) + '주 · @₩' + Number(t.price).toLocaleString()}</p></div></div><div class="flex flex-col items-end gap-2 text-right font-sans"><p class="font-black text-${isDeposit?'blue-600':'slate-900'} text-base tracking-tighter text-right font-sans">₩${Math.round(t.shares*t.price).toLocaleString()}</p><div class="flex gap-2 font-sans"><button type="button" data-action="edit" data-id="${safeId}" class="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 text-slate-400 transition hover:bg-indigo-500 hover:text-white active:scale-90"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button><button type="button" data-action="delete" data-id="${safeId}" class="w-7 h-7 flex items-center justify-center rounded-lg bg-rose-50 text-rose-400 transition hover:bg-rose-500 hover:text-white active:scale-90"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button></div></div></div>`;
+                const shares = Number(t.shares || 0);
+                const price = Number(t.price || 0);
+                return `<div class="glass-card p-4 md:p-5 flex justify-between items-center transition hover:shadow-xl border-l-4 ${isDeposit ? 'border-l-blue-500' : 'border-l-slate-800'} text-left font-sans"><div class="flex items-center gap-4 text-left font-sans"><div class="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-sm border border-slate-100 shadow-sm text-center"><span class="text-${themeColor} flex items-center justify-center">${iconCode}</span></div><div class="text-left font-sans font-sans"><p class="text-[9px] text-slate-400 font-black mb-0.5 uppercase tracking-widest text-left font-sans">${safeDate} · ${isDeposit ? depositLabel + ' 입금' : '매수'}</p><p class="text-sm font-black text-slate-800 text-left font-sans">${safeName}</p><p class="text-[9px] text-slate-400 font-black uppercase mt-0.5 text-left font-sans">${isDeposit ? 'CASH_LOADED' : shares.toFixed(2) + '주 · @₩' + price.toLocaleString()}</p></div></div><div class="flex flex-col items-end gap-2 text-right font-sans"><p class="font-black text-${isDeposit?'blue-600':'slate-900'} text-base tracking-tighter text-right font-sans">₩${Math.round(shares*price).toLocaleString()}</p><div class="flex gap-2 font-sans"><button type="button" data-action="edit" data-id="${safeId}" class="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 text-slate-400 transition hover:bg-indigo-500 hover:text-white active:scale-90"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button><button type="button" data-action="delete" data-id="${safeId}" class="w-7 h-7 flex items-center justify-center rounded-lg bg-rose-50 text-rose-400 transition hover:bg-rose-500 hover:text-white active:scale-90"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button></div></div></div>`;
             }).join('') || `<div class="text-center p-24 text-slate-300 font-black text-[10px] uppercase font-sans">기록 없음</div>`;
         }
 
@@ -947,11 +1025,11 @@ if(assetChart){
 
         window.editTransaction = (id) => {
             const t = transactions.find(x => x.id == id); if(!t) return;
-            const isDeposit = t.ticker === 'DEPOSIT';
+            const isDeposit = isDepositTransaction(t);
             if(isDeposit) {
                 showSection('transaction'); switchTab('deposit');
                 getEl('div-date').value = String(t.date).substring(0,10); getEl('div-amount').value = t.price;
-                setDepositCat(t.category); getEl('edit-id').value = id; getEl('save-div-btn').innerText = "수정 저장"; getEl('cancel-edit-btn-deposit').classList.remove('hidden');
+                setDepositCat(normalizeCashCategory(t.category)); getEl('edit-id').value = id; getEl('save-div-btn').innerText = "수정 저장"; getEl('cancel-edit-btn-deposit').classList.remove('hidden');
             } else {
                 showSection('transaction'); switchTab('purchase');
                 getEl('input-date').value = String(t.date).substring(0,10); getEl('input-ticker').value = t.ticker; getEl('input-name').value = t.name; getEl('input-shares').value = t.shares; getEl('input-price').value = t.price;
@@ -1032,10 +1110,7 @@ if(assetChart){
             if(!urlInput || !firebaseInput || !collectionInput) return;
 
             const candidate = urlInput.value.trim();
-            if(!isValidSheetsUrl(candidate)) {
-                alert('구글 스크립트 URL을 다시 확인해 주세요.');
-                return;
-            }
+            const nextSheetsUrl = isValidSheetsUrl(candidate) ? candidate : '';
 
             const nextFirebaseConfigRaw = firebaseInput.value.trim();
             const parsedFirebase = parseFirebaseConfig(nextFirebaseConfigRaw);
@@ -1046,11 +1121,14 @@ if(assetChart){
 
             const nextCollection = (collectionInput.value.trim() || 'isa_history').replace(/\s+/g, '_');
 
-            sheetsUrl = candidate;
+            sheetsUrl = nextSheetsUrl;
             firebaseConfigRaw = nextFirebaseConfigRaw;
             firebaseCollection = nextCollection;
 
             localStorage.setItem('isa_sheets_url', sheetsUrl);
+            if(candidate && !nextSheetsUrl) {
+                alert('가격 URL이 유효하지 않아 가격 동기화는 비활성화되고, 기록만 동기화됩니다.');
+            }
             localStorage.setItem('isa_firebase_config', firebaseConfigRaw);
             localStorage.setItem('isa_firebase_collection', firebaseCollection);
 
@@ -1089,8 +1167,15 @@ window.onload = () => {
             const today = new Date().toISOString().split('T')[0];
             if(getEl('input-date')) getEl('input-date').value = today;
             if(getEl('div-date')) getEl('div-date').value = today;
+            dedupeAppTitleRow();
             initFirebase();
-            setDepositCat(3); if(sheetsUrl) syncAllData();
+            setDepositCat(3); syncAllData();
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations()
+                    .then((regs) => regs.forEach((reg) => reg.unregister()))
+                    .catch((err) => console.warn('Service worker unregister failed:', err));
+            }
         };
     </script>
 </body>
