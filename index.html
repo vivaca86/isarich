@@ -197,6 +197,25 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             background: radial-gradient(circle, rgba(100, 116, 139, 0.22), transparent 70%);
         }
 
+
+        .hero-balance-card {
+            background: linear-gradient(160deg, #1f2a44 0%, #2d3f6b 55%, #314b86 100%);
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            box-shadow: 0 20px 38px -24px rgba(15, 23, 42, 0.72);
+        }
+
+        .hero-balance-art {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.9;
+        }
+
+        .hero-balance-art svg {
+            width: 100%;
+            height: 100%;
+        }
+
     </style>
 </head>
 <body class="pb-24 lg:pb-0 lg:pl-20 text-left font-sans">
@@ -240,7 +259,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     <main class="max-w-screen-xl mx-auto p-4 lg:p-12 text-left min-h-screen">
         
         <!-- 대시보드 -->
-        <section id="section-dashboard" class="animate-fade-up space-y-6 text-left font-sans">
+        <section id="section-dashboard" class="animate-fade-up space-y-4 text-left font-sans">
             <header class="flex justify-between items-end mb-2 text-left">
                 <div class="text-left font-sans">
                     <div id="app-title-row" class="flex items-center gap-2"><h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">나의 엔진</h2><span id="app-version-badge" class="text-[9px] font-black px-2 py-1 rounded-md bg-slate-900 text-white">v1.0.16</span></div>
@@ -254,27 +273,42 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             </header>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start font-sans text-left">
-                <div class="lg:col-span-8 space-y-6 text-left">
-                    <div class="bg-slate-900 rounded-[2.5rem] p-7 md:p-10 text-white shadow-2xl relative overflow-hidden group text-left">
-                        <div class="absolute -right-20 -top-20 w-80 h-80 bg-blue-500/10 rounded-full blur-[100px] group-hover:bg-blue-500/20 transition-all duration-1000"></div>
+                <div class="lg:col-span-8 space-y-4 text-left">
+                    <div class="hero-balance-card rounded-[2.5rem] p-6 md:p-8 text-white shadow-2xl relative overflow-hidden group text-left">
+                        <div class="hero-balance-art" aria-hidden="true">
+                            <svg viewBox="0 0 1200 420" xmlns="http://www.w3.org/2000/svg" fill="none">
+                                <defs>
+                                    <linearGradient id="heroLine" x1="0" y1="0" x2="1" y2="0">
+                                        <stop offset="0%" stop-color="#9CCBFF" stop-opacity="0.15"/>
+                                        <stop offset="60%" stop-color="#93C5FD" stop-opacity="0.5"/>
+                                        <stop offset="100%" stop-color="#60A5FA" stop-opacity="0.2"/>
+                                    </linearGradient>
+                                </defs>
+                                <rect x="58" y="178" width="1084" height="182" rx="64" fill="#BFDBFE" fill-opacity="0.16"/>
+                                <path d="M110 255 C 230 210, 360 292, 505 245 C 650 200, 790 266, 1090 220" stroke="url(#heroLine)" stroke-width="6" stroke-linecap="round"/>
+                                <circle cx="930" cy="184" r="44" stroke="#60A5FA" stroke-opacity="0.72" stroke-width="6"/>
+                                <circle cx="930" cy="184" r="25" fill="#93C5FD" fill-opacity="0.18"/>
+                            </svg>
+                        </div>
+                        <div class="absolute -right-24 -top-24 w-80 h-80 bg-blue-400/10 rounded-full blur-[110px] group-hover:bg-blue-400/20 transition-all duration-1000"></div>
                         <div class="relative z-10 text-left">
                             <span class="text-slate-500 text-[10px] font-black tracking-[0.25em] uppercase mb-1.5 block text-left">Total Balance</span>
                             <div class="flex items-baseline gap-2.5 text-left">
                                 <h1 class="text-4xl md:text-5xl font-black tracking-tighter font-sans text-left" id="stat-total-value">₩0</h1>
                                 <div id="stat-profit-pct" class="text-[11px] font-black text-white/40 px-2.5 py-1 rounded-lg bg-white/5 border border-white/5">0.0%</div>
                             </div>
-                            <div class="flex items-center gap-2 mt-2.5 mb-8 text-left font-sans">
+                            <div class="flex items-center gap-2 mt-2 mb-5 text-left font-sans">
                                 <span id="stat-profit-icon" class="text-sm">🚀</span>
                                 <span id="stat-profit-amount" class="text-sm font-bold text-white/80 tracking-tight">₩0</span>
                             </div>
-                            <div class="grid grid-cols-2 gap-4 border-t border-white/5 pt-6 md:pt-8 text-left">
-                                <div onclick="openCashModal()" id="cash-card-area" class="cursor-pointer active:scale-95 transition hover:bg-white/5 p-3 rounded-2xl border border-transparent text-left">
-                                    <p class="text-[9px] text-slate-500 mb-1.5 uppercase font-black tracking-widest text-left">Liquid Cash <i class="fa-solid fa-chevron-right ml-0.5 text-[7px] opacity-30 text-center"></i></p>
-                                    <p class="font-black text-xl font-sans tracking-tight text-left" id="stat-cash-balance">₩0</p>
+                            <div class="grid grid-cols-2 gap-3 border-t border-white/10 pt-4 md:pt-5 text-left">
+                                <div onclick="openCashModal()" id="cash-card-area" class="cursor-pointer active:scale-95 transition hover:bg-white/5 p-2.5 rounded-2xl border border-transparent text-left">
+                                    <p class="text-[8px] text-slate-400 mb-1 uppercase font-black tracking-[0.18em] text-left">Liquid Cash <i class="fa-solid fa-chevron-right ml-0.5 text-[7px] opacity-30 text-center"></i></p>
+                                    <p class="font-black text-lg font-sans tracking-tight text-left" id="stat-cash-balance">₩0</p>
                                 </div>
-                                <div class="text-right p-3 font-sans">
-                                    <p class="text-[9px] text-slate-500 mb-1.5 uppercase font-black tracking-widest text-right">Self Growth</p>
-                                    <p class="font-black text-xl text-emerald-400 tracking-tight text-right font-sans" id="stat-reinvest-rate">0%</p>
+                                <div class="text-right p-2.5 font-sans">
+                                    <p class="text-[8px] text-slate-400 mb-1 uppercase font-black tracking-[0.18em] text-right">Self Growth</p>
+                                    <p class="font-black text-lg text-emerald-300 tracking-tight text-right font-sans" id="stat-reinvest-rate">0%</p>
                                 </div>
                             </div>
                         </div>
