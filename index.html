@@ -199,9 +199,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 
         .hero-balance-card {
-            background: linear-gradient(160deg, #1f2a44 0%, #2d3f6b 55%, #314b86 100%);
+            background: linear-gradient(160deg, #263b66 0%, #315089 55%, #3a5fa5 100%);
             border: 1px solid rgba(148, 163, 184, 0.28);
-            box-shadow: 0 20px 38px -24px rgba(15, 23, 42, 0.72);
+            box-shadow: 0 16px 28px -20px rgba(30, 58, 138, 0.58);
         }
 
         .hero-balance-art {
@@ -272,7 +272,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                 </button>
             </header>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start font-sans text-left">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-start font-sans text-left">
                 <div class="lg:col-span-8 space-y-4 text-left">
                     <div class="hero-balance-card rounded-[2.5rem] p-6 md:p-8 text-white shadow-2xl relative overflow-hidden group text-left">
                         <div class="hero-balance-art" aria-hidden="true">
@@ -301,25 +301,25 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                                 <span id="stat-profit-icon" class="text-sm">🚀</span>
                                 <span id="stat-profit-amount" class="text-sm font-bold text-white/80 tracking-tight">₩0</span>
                             </div>
-                            <div class="grid grid-cols-2 gap-3 border-t border-white/10 pt-4 md:pt-5 text-left">
-                                <div onclick="openCashModal()" id="cash-card-area" class="cursor-pointer active:scale-95 transition hover:bg-white/5 p-2.5 rounded-2xl border border-transparent text-left">
-                                    <p class="text-[8px] text-slate-400 mb-1 uppercase font-black tracking-[0.18em] text-left">Liquid Cash <i class="fa-solid fa-chevron-right ml-0.5 text-[7px] opacity-30 text-center"></i></p>
-                                    <p class="font-black text-lg font-sans tracking-tight text-left" id="stat-cash-balance">₩0</p>
+                            <div class="grid grid-cols-2 gap-2 border-t border-white/10 pt-2.5 md:pt-3 text-left">
+                                <div onclick="openCashModal()" id="cash-card-area" class="cursor-pointer active:scale-95 transition hover:bg-white/5 p-2 rounded-xl border border-transparent text-left">
+                                    <p class="text-[6px] text-slate-300/90 mb-0.5 uppercase font-black tracking-[0.2em] text-left">Liquid Cash <i class="fa-solid fa-chevron-right ml-0.5 text-[7px] opacity-30 text-center"></i></p>
+                                    <p class="font-black text-base font-sans tracking-tight text-left" id="stat-cash-balance">₩0</p>
                                 </div>
-                                <div class="text-right p-2.5 font-sans">
-                                    <p class="text-[8px] text-slate-400 mb-1 uppercase font-black tracking-[0.18em] text-right">Self Growth</p>
-                                    <p class="font-black text-lg text-emerald-300 tracking-tight text-right font-sans" id="stat-reinvest-rate">0%</p>
+                                <div class="text-right p-2 font-sans">
+                                    <p class="text-[6px] text-slate-300/90 mb-0.5 uppercase font-black tracking-[0.2em] text-right">Self Growth</p>
+                                    <p class="font-black text-base text-emerald-300 tracking-tight text-right font-sans" id="stat-reinvest-rate">0%</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="glass-card p-5 md:p-7 flex justify-between items-center group relative overflow-hidden text-left font-sans">
+                    <div class="glass-card p-4 md:p-5 flex justify-between items-center group relative overflow-hidden text-left font-sans">
                         <div class="flex items-center gap-5 text-left font-sans">
-                            <div class="w-12 h-12 md:w-16 md:h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-3xl shadow-xl shadow-blue-500/20 transition group-hover:rotate-3 text-white text-center font-sans" id="div-level-icon">🌱</div>
+                            <div class="w-11 h-11 md:w-14 md:h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl shadow-xl shadow-blue-500/20 transition group-hover:rotate-3 text-white text-center font-sans" id="div-level-icon">🌱</div>
                             <div class="text-left font-sans">
-                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-left">Portfolio Output</p>
-                                <p id="dividend-level-text" class="text-base md:text-xl font-black text-slate-900 tracking-tight leading-none font-sans text-left">데이터 수신 대기 중</p>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-left">Engine Mood</p>
+                                <p id="dividend-level-text" class="text-sm md:text-lg font-black text-slate-900 tracking-tight leading-none font-sans text-left">데이터 수신 대기 중</p>
                             </div>
                         </div>
 
@@ -327,11 +327,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
                         <div class="text-right font-sans">
                             <p class="text-[10px] font-black text-slate-400 uppercase mb-1 text-right font-sans">Expected</p>
-                            <p class="text-2xl md:text-3xl font-black text-blue-600 tracking-tighter text-right font-sans" id="stat-monthly-dividend">₩0</p>
+                            <p class="text-xl md:text-2xl font-black text-blue-600 tracking-tighter text-right font-sans" id="stat-monthly-dividend">₩0</p>
                         </div>
                     </div>
 
-                    <div class="p-4 text-left font-sans bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 text-white border border-indigo-400/20 shadow-2xl rounded-[1.75rem]">
+                    <div class="p-3 text-left font-sans bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 text-white border border-indigo-400/20 shadow-2xl rounded-[1.5rem]">
                         <div id="cash-buy-empty" class="hidden rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-[11px] font-bold text-white/80">
                             지금 현금으로는 매수 가능한 수량이 없어요.
                         </div>
@@ -356,8 +356,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                     </div>
                 </div>
 
-                <div class="lg:col-span-4 space-y-6 text-left font-sans">
-                    <div class="glass-card p-8 flex flex-col items-center justify-center min-h-[340px] text-left font-sans font-sans">
+                <div class="lg:col-span-4 space-y-3.5 text-left font-sans">
+                    <div class="glass-card p-6 flex flex-col items-center justify-center min-h-[300px] text-left font-sans font-sans">
                         <h3 class="font-black text-[10px] text-slate-400 uppercase tracking-[0.25em] mb-8 w-full text-left font-sans">Allocation Mix</h3>
                         <div class="relative w-44 h-44 mb-8 text-center font-sans">
                             <canvas id="assetChart"></canvas>
@@ -622,13 +622,18 @@ const centerTextPlugin = {
 
         let selectedTicker = "";
 
-        // 감성 명칭 복구
+        // 위트 있는 엔진 레벨 (세분화)
         function getDividendLevel(amount) {
-            if (amount < 10000) return { icon: "🌱", text: "새싹 엔진 단계" };
-            if (amount < 50000) return { icon: "☕", text: "스타벅스 무한 단계" };
-            if (amount < 150000) return { icon: "🍔", text: "국밥 프리패스 단계" };
-            if (amount < 400000) return { icon: "🍗", text: "치킨 무한 엔진 가동" };
-            return { icon: "✈️", text: "경제적 자유 엔진" };
+            if (amount < 5000) return { icon: "🥚", text: "알 단계 · 막 태어난 배당" };
+            if (amount < 12000) return { icon: "🌱", text: "새싹 단계 · 물 주는 중" };
+            if (amount < 25000) return { icon: "🛴", text: "킥보드 단계 · 커피값 자립" };
+            if (amount < 50000) return { icon: "☕", text: "카페 프리패스 단계" };
+            if (amount < 90000) return { icon: "🍜", text: "라면+토핑 단계" };
+            if (amount < 150000) return { icon: "🍔", text: "국밥/버거 무제한 단계" };
+            if (amount < 250000) return { icon: "🍗", text: "치킨 복리 가속 단계" };
+            if (amount < 400000) return { icon: "🏍️", text: "바이크 엔진 풀가동" };
+            if (amount < 700000) return { icon: "🏖️", text: "주말 힐링 자동결제 단계" };
+            return { icon: "🚀", text: "자유 가속 단계 · 엔진 MAX" };
         }
 
         const DEFAULT_FIREBASE_CONFIG = {
