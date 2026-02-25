@@ -198,23 +198,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         }
 
 
-        .hero-balance-card {
-            background: linear-gradient(160deg, #263b66 0%, #315089 55%, #3a5fa5 100%);
-            border: 1px solid rgba(148, 163, 184, 0.28);
-            box-shadow: 0 16px 28px -20px rgba(30, 58, 138, 0.58);
-        }
-
-        .hero-balance-art {
+        .hero-corner-art {
             position: absolute;
-            inset: 0;
+            right: 14px;
+            top: 12px;
+            width: min(38%, 190px);
+            height: 84px;
             pointer-events: none;
-            opacity: 0.9;
+            opacity: 0.7;
+            z-index: 1;
         }
 
-        .hero-balance-art svg {
-            width: 100%;
-            height: 100%;
-        }
+        .hero-corner-art svg { width: 100%; height: 100%; }
+
 
     </style>
 </head>
@@ -274,23 +270,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-start font-sans text-left">
                 <div class="lg:col-span-8 space-y-4 text-left">
-                    <div class="hero-balance-card rounded-[2.5rem] p-6 md:p-8 text-white shadow-2xl relative overflow-hidden group text-left">
-                        <div class="hero-balance-art" aria-hidden="true">
-                            <svg viewBox="0 0 1200 420" xmlns="http://www.w3.org/2000/svg" fill="none">
-                                <defs>
-                                    <linearGradient id="heroLine" x1="0" y1="0" x2="1" y2="0">
-                                        <stop offset="0%" stop-color="#9CCBFF" stop-opacity="0.15"/>
-                                        <stop offset="60%" stop-color="#93C5FD" stop-opacity="0.5"/>
-                                        <stop offset="100%" stop-color="#60A5FA" stop-opacity="0.2"/>
-                                    </linearGradient>
-                                </defs>
-                                <rect x="58" y="178" width="1084" height="182" rx="64" fill="#BFDBFE" fill-opacity="0.16"/>
-                                <path d="M110 255 C 230 210, 360 292, 505 245 C 650 200, 790 266, 1090 220" stroke="url(#heroLine)" stroke-width="6" stroke-linecap="round"/>
-                                <circle cx="930" cy="184" r="44" stroke="#60A5FA" stroke-opacity="0.72" stroke-width="6"/>
-                                <circle cx="930" cy="184" r="25" fill="#93C5FD" fill-opacity="0.18"/>
+                    <div class="bg-slate-900 rounded-[2.5rem] p-6 md:p-8 text-white shadow-2xl relative overflow-hidden group text-left">
+                        <div class="absolute -right-20 -top-20 w-80 h-80 bg-blue-500/10 rounded-full blur-[100px] group-hover:bg-blue-500/20 transition-all duration-1000"></div>
+                        <div class="hero-corner-art" aria-hidden="true">
+                            <svg viewBox="0 0 220 100" xmlns="http://www.w3.org/2000/svg" fill="none">
+                                <path d="M6 70C45 52 73 84 112 64C150 44 175 71 214 55" stroke="#93C5FD" stroke-opacity="0.55" stroke-width="3" stroke-linecap="round"/>
+                                <circle cx="158" cy="38" r="18" stroke="#60A5FA" stroke-opacity="0.8" stroke-width="3"/>
+                                <circle cx="158" cy="38" r="9" fill="#93C5FD" fill-opacity="0.22"/>
                             </svg>
                         </div>
-                        <div class="absolute -right-24 -top-24 w-80 h-80 bg-blue-400/10 rounded-full blur-[110px] group-hover:bg-blue-400/20 transition-all duration-1000"></div>
                         <div class="relative z-10 text-left">
                             <span class="text-slate-500 text-[10px] font-black tracking-[0.25em] uppercase mb-1.5 block text-left">Total Balance</span>
                             <div class="flex items-baseline gap-2.5 text-left">
