@@ -145,6 +145,58 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     opacity: 0.7;
 }
 
+
+        /* ===== Visual polish pack (revert-safe) ===== */
+        .glass-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(236, 244, 255, 0.78));
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            box-shadow: 0 18px 40px -22px rgba(30, 64, 175, 0.28);
+        }
+
+        .cta-primary {
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
+            background: linear-gradient(135deg, #1e3a8a, #2563eb) !important;
+            box-shadow: 0 14px 28px -14px rgba(37, 99, 235, 0.85) !important;
+        }
+
+        .cta-primary::before {
+            content: "";
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            left: -80px;
+            top: -120px;
+            border-radius: 999px;
+            background: radial-gradient(circle, rgba(125, 211, 252, 0.42), transparent 70%);
+            z-index: -1;
+        }
+
+        .wallet-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wallet-card::after {
+            content: "";
+            position: absolute;
+            right: -14px;
+            top: -18px;
+            width: 94px;
+            height: 94px;
+            border-radius: 999px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.22), transparent 70%);
+        }
+
+        .wallet-card-special::after {
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.24), transparent 70%);
+        }
+
+        .wallet-card-base::after {
+            background: radial-gradient(circle, rgba(100, 116, 139, 0.22), transparent 70%);
+        }
+
     </style>
 </head>
 <body class="pb-24 lg:pb-0 lg:pl-20 text-left font-sans">
@@ -350,7 +402,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                     <input type="hidden" id="edit-id" value="">
                     
                     <div id="form-action-buttons" class="flex gap-2 text-left font-sans">
-                        <button onclick="saveStockPurchase()" id="save-btn" class="flex-1 py-5 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-2xl active:scale-95 transition-all hover:bg-slate-800 text-center uppercase">매수하기</button>
+                        <button onclick="saveStockPurchase()" id="save-btn" class="cta-primary flex-1 py-5 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-2xl active:scale-95 transition-all hover:bg-slate-800 text-center uppercase">매수하기</button>
                         <button onclick="exitEditMode()" id="cancel-edit-btn" class="hidden px-6 py-5 bg-slate-100 text-slate-400 rounded-2xl font-black text-sm active:scale-95 text-center font-sans">취소</button>
                     </div>
                 </div>
@@ -389,7 +441,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                         </div>
                     </div>
                     <div class="flex gap-2 text-left font-sans">
-                        <button onclick="saveWalletDeposit()" id="save-div-btn" class="flex-1 py-5 bg-blue-600 text-white rounded-xl font-black text-sm shadow-xl active:scale-95 transition-all hover:bg-blue-700 text-center uppercase">충전하기</button>
+                        <button onclick="saveWalletDeposit()" id="save-div-btn" class="cta-primary flex-1 py-5 bg-blue-600 text-white rounded-xl font-black text-sm shadow-xl active:scale-95 transition-all hover:bg-blue-700 text-center uppercase">충전하기</button>
                         <button onclick="exitEditMode()" id="cancel-edit-btn-deposit" class="hidden px-6 py-5 bg-slate-100 text-slate-400 rounded-2xl font-black text-sm active:scale-95 text-center font-sans">취소</button>
                     </div>
                 </div>
@@ -441,21 +493,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                 <button onclick="closeCashModal()" class="p-2.5 bg-slate-100 rounded-full text-slate-400 hover:bg-slate-200 transition text-center font-sans font-sans"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             </div>
             <div class="space-y-4 text-left font-sans">
-                <div class="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 flex justify-between items-center transition active:scale-[0.98] text-left">
+                <div class="wallet-card bg-blue-50/50 p-6 rounded-2xl border border-blue-100 flex justify-between items-center transition active:scale-[0.98] text-left">
                     <div class="text-left font-sans">
                         <span class="text-[8px] font-black text-blue-500 uppercase tracking-widest text-left">Level 1: Reinvestment</span>
                         <p class="text-lg font-black text-slate-900 text-left uppercase">배당금 잔고</p>
                     </div>
                     <p class="text-xl font-black text-blue-600 text-right tracking-tight font-sans" id="modal-cash-div">₩0</p>
                 </div>
-                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 flex justify-between items-center transition active:scale-[0.98] text-left">
+                <div class="wallet-card wallet-card-special bg-slate-50 p-6 rounded-2xl border border-slate-200 flex justify-between items-center transition active:scale-[0.98] text-left">
                     <div class="text-left font-sans">
                         <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest text-left">Level 2: Special</span>
                         <p class="text-lg font-black text-slate-900 text-left uppercase">특별금 잔고</p>
                     </div>
                     <p class="text-xl font-black text-slate-500 text-right tracking-tight font-sans" id="modal-cash-spec">₩0</p>
                 </div>
-                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 flex justify-between items-center transition active:scale-[0.98] text-left">
+                <div class="wallet-card wallet-card-base bg-slate-50 p-6 rounded-2xl border border-slate-200 flex justify-between items-center transition active:scale-[0.98] text-left">
                     <div class="text-left font-sans">
                         <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest text-left">Level 3: Base</span>
                         <p class="text-lg font-black text-slate-900 text-left uppercase font-sans">원금 잔고</p>
@@ -464,7 +516,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                 </div>
             </div>
             <div class="mt-8 pt-4 border-t border-slate-100 text-center font-sans font-sans">
-                <button onclick="showSection('transaction'); closeCashModal(); switchTab('deposit');" class="w-full py-4.5 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-xl active:scale-95 transition uppercase tracking-widest text-center font-sans">현금 충전하러 가기</button>
+                <button onclick="showSection('transaction'); closeCashModal(); switchTab('deposit');" class="cta-primary w-full py-4.5 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-xl active:scale-95 transition uppercase tracking-widest text-center font-sans">현금 충전하러 가기</button>
             </div>
         </div>
     </div>
