@@ -204,11 +204,38 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             width: min(38%, 190px);
             height: 84px;
             pointer-events: none;
-            opacity: 0.7;
+            opacity: 0.72;
             z-index: 1;
+            background: url('icons/ui/card-dividend.svg') center / contain no-repeat;
         }
 
-        .hero-corner-art svg { width: 100%; height: 100%; }
+        .wallet-card {
+            background-image: url('icons/ui/card-dividend.svg');
+            background-repeat: no-repeat;
+            background-size: 110px auto;
+            background-position: right 10px top 8px;
+        }
+
+        .wallet-card.wallet-card-special {
+            background-image: url('icons/ui/card-special.svg');
+        }
+
+        .wallet-card.wallet-card-base {
+            background-image: url('icons/ui/card-base.svg');
+        }
+
+        #save-btn::after,
+        #save-div-btn::after,
+        #cash-modal .cta-primary::after {
+            content: "";
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            margin-left: 8px;
+            vertical-align: -2px;
+            background: url('icons/ui/cta-outline.svg') center / contain no-repeat;
+            filter: brightness(0) invert(1);
+        }
 
 
     </style>
@@ -271,13 +298,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                 <div class="lg:col-span-8 space-y-4 text-left">
                     <div class="bg-slate-900 rounded-[2.5rem] p-6 md:p-8 text-white shadow-2xl relative overflow-hidden group text-left">
                         <div class="absolute -right-20 -top-20 w-80 h-80 bg-blue-500/10 rounded-full blur-[100px] group-hover:bg-blue-500/20 transition-all duration-1000"></div>
-                        <div class="hero-corner-art" aria-hidden="true">
-                            <svg viewBox="0 0 220 100" xmlns="http://www.w3.org/2000/svg" fill="none">
-                                <path d="M6 70C45 52 73 84 112 64C150 44 175 71 214 55" stroke="#93C5FD" stroke-opacity="0.55" stroke-width="3" stroke-linecap="round"/>
-                                <circle cx="158" cy="38" r="18" stroke="#60A5FA" stroke-opacity="0.8" stroke-width="3"/>
-                                <circle cx="158" cy="38" r="9" fill="#93C5FD" fill-opacity="0.22"/>
-                            </svg>
-                        </div>
+                        <div class="hero-corner-art" aria-hidden="true"></div>
                         <div class="relative z-10 text-left">
                             <span class="text-slate-500 text-[10px] font-black tracking-[0.25em] uppercase mb-1.5 block text-left">Total Balance</span>
                             <div class="flex items-baseline gap-2.5 text-left">
