@@ -709,6 +709,15 @@ const centerTextPlugin = {
         }
 
         function toHistoryRecord(item, source = 'firebase') {
+            const createdAtRaw = item?.createdAt;
+            const createdAtMs = (() => {
+                if (typeof createdAtRaw?.toMillis === 'function') return Number(createdAtRaw.toMillis());
+                if (createdAtRaw && typeof createdAtRaw.seconds === 'number') return Number(createdAtRaw.seconds) * 1000;
+                const asNum = Number(createdAtRaw);
+                if (!Number.isNaN(asNum) && asNum > 0) return asNum;
+                return 0;
+            })();
+
             return {
                 id: String(item.id ?? Date.now()),
                 date: String(item.date || '').substring(0, 10),
@@ -717,6 +726,7 @@ const centerTextPlugin = {
                 shares: Number(item.shares || 0),
                 price: Number(item.price || 0),
                 category: normalizeCashCategory(item.category),
+                createdAtMs,
                 source
             };
         }
@@ -1094,9 +1104,26 @@ if(assetChart){
 
         }
 
+        function getTransactionSortTime(tx) {
+            const createdAtMs = Number(tx?.createdAtMs || 0);
+            if (!Number.isNaN(createdAtMs) && createdAtMs > 0) return createdAtMs;
+
+            const idNum = Number(tx?.id);
+            if (!Number.isNaN(idNum) && idNum > 0) return idNum;
+
+            const dateMs = new Date(String(tx?.date || '')).getTime();
+            if (!Number.isNaN(dateMs)) return dateMs;
+
+            return 0;
+        }
+
         function renderHistoryList(containerId, data) {
             const container = getEl(containerId); if (!container) return;
-            const sortedData = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
+            const sortedData = [...data].sort((a, b) => {
+                const diff = getTransactionSortTime(b) - getTransactionSortTime(a);
+                if (diff !== 0) return diff;
+                return String(b.id || '').localeCompare(String(a.id || ''));
+            });
             container.innerHTML = sortedData.map(t => {
                 const isDeposit = isDepositTransaction(t);
                 const normalizedCategory = normalizeCashCategory(t.category);
