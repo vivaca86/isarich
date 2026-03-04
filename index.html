@@ -1156,10 +1156,56 @@ if(assetChart){
         window.openDetailModal = (ticker) => {
             const data = transactions.filter(t => String(t.ticker).trim() === ticker); if(data.length === 0) return;
             safeSetText('modal-name', data[0].name); safeSetText('modal-ticker', ticker);
+
+            const sortedTx = [...transactions].sort((a, b) => {
+                const dateDiff = new Date(a.date) - new Date(b.date);
+                if (dateDiff !== 0) return dateDiff;
+                return String(a.id || '').localeCompare(String(b.id || ''));
+            });
+
+            const cashByCat = { "1": 0, "2": 0, "3": 0 };
             let c1 = 0, c2 = 0, c3 = 0;
-            data.forEach(t => { const a = Number(t.shares || 0) * Number(t.price || 0); if(t.category=="1") c1+=a; else if(t.category=="2") c2+=a; else c3+=a; });
-            const tot = c1+c2+c3;
-            const p1 = tot>0 ? (c1/tot)*100 : 0, p2 = tot>0 ? (c2/tot)*100 : 0, p3 = tot>0 ? (c3/tot)*100 : 0;
+
+            sortedTx.forEach(tx => {
+                const amt = Number(tx.shares || 0) * Number(tx.price || 0);
+                if (amt <= 0) return;
+
+                if (isDepositTransaction(tx)) {
+                    const cat = normalizeCashCategory(tx.category);
+                    cashByCat[cat] += amt;
+                    return;
+                }
+
+                const txTicker = String(tx.ticker || '').trim();
+                if (!txTicker) return;
+
+                let remain = amt;
+                const used = { "1": 0, "2": 0, "3": 0 };
+                ['3', '2', '1'].forEach(cat => {
+                    if (remain <= 0) return;
+                    const usable = Math.max(0, cashByCat[cat]);
+                    const take = Math.min(usable, remain);
+                    cashByCat[cat] -= take;
+                    used[cat] += take;
+                    remain -= take;
+                });
+
+                if (remain > 0) {
+                    cashByCat['1'] -= remain;
+                    used['1'] += remain;
+                }
+
+                if (txTicker === ticker) {
+                    c1 += used['1'];
+                    c2 += used['2'];
+                    c3 += used['3'];
+                }
+            });
+
+            const tot = c1 + c2 + c3;
+            const p1 = tot > 0 ? (c1 / tot) * 100 : 0;
+            const p2 = tot > 0 ? (c2 / tot) * 100 : 0;
+            const p3 = tot > 0 ? (c3 / tot) * 100 : 0;
             getEl('bar-invest-1').style.width = p1+"%"; getEl('bar-invest-2').style.width = p2+"%"; getEl('bar-reinvest').style.width = p3+"%";
             safeSetText('val-invest-1', `${Math.round(p1)}%`); safeSetText('val-invest-2', `${Math.round(p2)}%`); safeSetText('val-reinvest', `${Math.round(p3)}%`);
             const hBox = getEl('modal-history-list');
