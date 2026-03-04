@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="CTA 듀오톤 아이콘">
+  <rect x="8" y="18" width="48" height="30" rx="10" fill="#1e3a8a"/>
+  <circle cx="46" cy="33" r="8" fill="#22d3ee"/>
+  <path d="M18 33h20" stroke="#dbeafe" stroke-width="4" stroke-linecap="round"/>
+  <path d="M34 27l8 6-8 6" fill="none" stroke="#dbeafe" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
