@@ -1,11 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" role="img" aria-label="특별금 카드 아트">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" role="img" aria-label="특별금 카드 아트 프리미엄">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#7c3aed"/>
-      <stop offset="100%" stop-color="#a855f7"/>
+    <linearGradient id="spBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1e1b4b"/>
+      <stop offset="50%" stop-color="#6d28d9"/>
+      <stop offset="100%" stop-color="#db2777"/>
     </linearGradient>
+    <radialGradient id="spGlow" cx="78%" cy="20%" r="55%">
+      <stop offset="0%" stop-color="#f5d0fe" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#f5d0fe" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <rect width="360" height="160" rx="28" fill="url(#bg)" opacity="0.18"/>
-  <path d="M40 120L88 64L134 118L184 52L236 114L292 46" stroke="#d8b4fe" stroke-width="4" stroke-linecap="round" fill="none"/>
-  <polygon points="300,24 308,42 328,44 312,56 316,76 300,66 284,76 288,56 272,44 292,42" fill="#f5d0fe" opacity="0.75"/>
+  <rect width="360" height="160" rx="28" fill="url(#spBg)"/>
+  <rect width="360" height="160" rx="28" fill="url(#spGlow)"/>
+  <path d="M32 121L80 69L128 119L176 58L224 114L275 48L328 102" stroke="#f5d0fe" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+  <path d="M38 136L83 89L127 131L171 83L218 130L268 79L318 126" stroke="#e9d5ff" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7"/>
+  <polygon points="300,20 308,38 327,40 312,52 316,70 300,60 284,70 288,52 273,40 292,38" fill="#fdf4ff" opacity="0.9"/>
+  <circle cx="69" cy="40" r="10" fill="#f0abfc" opacity="0.5"/>
 </svg>

@@ -224,6 +224,86 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             background-image: url('icons/ui/card-base.svg');
         }
 
+        :root {
+            --ui-radius-lg: 18px;
+            --ui-radius-xl: 22px;
+            --ui-border: rgba(148, 163, 184, 0.22);
+            --ui-shadow-soft: 0 10px 24px -18px rgba(15, 23, 42, 0.45);
+            --ui-shadow-card: 0 18px 34px -24px rgba(15, 23, 42, 0.52);
+            --ui-shadow-press: 0 8px 18px -14px rgba(15, 23, 42, 0.55);
+        }
+
+        #section-dashboard .glass-card,
+        #section-transaction .glass-card,
+        #section-history .glass-card {
+            border-radius: var(--ui-radius-xl);
+            border: 1px solid var(--ui-border);
+            box-shadow: var(--ui-shadow-card);
+            background: linear-gradient(140deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.82));
+        }
+
+        .wallet-card {
+            border-radius: var(--ui-radius-xl);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            box-shadow: var(--ui-shadow-soft);
+        }
+
+        .cta-primary,
+        #cancel-edit-btn,
+        #cancel-edit-btn-deposit,
+        #section-dashboard header button,
+        #settings-modal button,
+        #cash-modal button,
+        .sub-tab-btn,
+        .quick-select-btn {
+            border-radius: var(--ui-radius-lg) !important;
+            transition: transform .18s ease, box-shadow .22s ease, filter .22s ease, background-color .22s ease;
+        }
+
+        .cta-primary {
+            box-shadow: 0 16px 28px -18px rgba(37, 99, 235, 0.7) !important;
+            filter: saturate(1.05);
+        }
+
+        .cta-primary:hover,
+        #settings-modal button:hover,
+        #cash-modal button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 26px -16px rgba(15, 23, 42, 0.5);
+        }
+
+        .sub-tab-btn {
+            border: 1px solid rgba(203, 213, 225, 0.9);
+            background: rgba(255,255,255,0.75);
+        }
+
+        .sub-tab-btn.active-purchase,
+        .sub-tab-btn.active-deposit {
+            border-color: transparent;
+        }
+
+        #cancel-edit-btn,
+        #cancel-edit-btn-deposit {
+            border: 1px solid rgba(148, 163, 184, 0.32);
+            background: rgba(241, 245, 249, 0.9);
+            color: #475569;
+            box-shadow: var(--ui-shadow-press);
+        }
+
+        .kb-card-stack > .wallet-card {
+            margin-bottom: 2px;
+        }
+
+        .holding-item {
+            box-shadow: 0 8px 18px -16px rgba(15, 23, 42, 0.45);
+        }
+
+        #history-list .glass-card {
+            border-radius: 20px;
+            padding-top: 18px;
+            padding-bottom: 18px;
+        }
+
         #save-btn::after,
         #save-div-btn::after,
         #cash-modal .cta-primary::after {
@@ -280,7 +360,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     <main class="max-w-screen-xl mx-auto p-4 lg:p-12 text-left min-h-screen">
         
         <!-- 대시보드 -->
-        <section id="section-dashboard" class="animate-fade-up space-y-4 text-left font-sans">
+        <section id="section-dashboard" class="animate-fade-up space-y-6 text-left font-sans">
             <header class="flex justify-between items-end mb-2 text-left">
                 <div class="text-left font-sans">
                     <div id="app-title-row" class="flex items-center gap-2"><h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">나의 엔진</h2><span id="app-version-badge" class="text-[9px] font-black px-2 py-1 rounded-md bg-slate-900 text-white">v1.0.17</span></div>
@@ -293,9 +373,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                 </button>
             </header>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-start font-sans text-left">
-                <div class="lg:col-span-8 space-y-4 text-left">
-                    <div class="bg-slate-900 rounded-[2.5rem] p-6 md:p-8 text-white shadow-2xl relative overflow-hidden group text-left">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start font-sans text-left">
+                <div class="lg:col-span-8 space-y-5 text-left">
+                    <div class="bg-slate-900 rounded-[2.1rem] p-7 md:p-9 text-white shadow-2xl relative overflow-hidden group text-left">
                         <div class="absolute -right-20 -top-20 w-80 h-80 bg-blue-500/10 rounded-full blur-[100px] group-hover:bg-blue-500/20 transition-all duration-1000"></div>
                         <div class="hero-corner-art" aria-hidden="true"></div>
                         <div class="relative z-10 text-left">
@@ -381,7 +461,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                 <p class="text-blue-600 font-black text-xs uppercase tracking-[0.2em] mb-1 text-left">History Feed</p>
                 <h2 class="text-3xl font-black text-slate-900 tracking-tighter text-left">전체 기록 보관소</h2>
             </header>
-            <div id="history-list" class="space-y-4 px-1 text-left font-sans"></div>
+            <div id="history-list" class="space-y-3 px-1 text-left font-sans"></div>
         </section>
 
         <!-- 거래소 터미널 -->
@@ -397,8 +477,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             </div>
             
             <!-- 매수 탭 -->
-            <div id="tab-content-purchase" class="space-y-4 text-left font-sans">
-                <div class="glass-card p-7 md:p-10 space-y-8 text-left font-sans">
+            <div id="tab-content-purchase" class="space-y-5 text-left font-sans">
+                <div class="glass-card p-8 md:p-10 space-y-7 text-left font-sans">
                     <div>
                         <label class="text-[10px] font-black text-slate-400 uppercase block mb-4 tracking-widest text-left font-sans font-sans">종목 퀵 선택</label>
                         <div id="quick-select-buttons" class="flex flex-wrap gap-2.5 text-left font-sans"></div>
@@ -450,8 +530,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             </div>
 
             <!-- 충전 탭 -->
-            <div id="tab-content-deposit" class="hidden space-y-4 font-sans">
-                <div class="glass-card p-7 md:p-10 space-y-8 text-left font-sans">
+            <div id="tab-content-deposit" class="hidden space-y-5 font-sans">
+                <div class="glass-card p-8 md:p-10 space-y-7 text-left font-sans">
                     <div>
                         <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left font-sans">입금 날짜</label>
                         <input type="date" id="div-date" class="premium-input px-4 font-black text-sm text-left">
@@ -533,22 +613,22 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                 </div>
                 <button onclick="closeCashModal()" class="p-2.5 bg-slate-100 rounded-full text-slate-400 hover:bg-slate-200 transition text-center font-sans font-sans"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             </div>
-            <div class="space-y-4 text-left font-sans">
-                <div class="wallet-card bg-blue-50/50 p-6 rounded-2xl border border-blue-100 flex justify-between items-center transition active:scale-[0.98] text-left">
+            <div class="space-y-5 text-left font-sans kb-card-stack">
+                <div class="wallet-card bg-blue-50/60 p-5 md:p-6 rounded-[1.6rem] border border-blue-100 flex justify-between items-center transition active:scale-[0.98] text-left">
                     <div class="text-left font-sans">
                         <span class="text-[8px] font-black text-blue-500 uppercase tracking-widest text-left">Level 1: Reinvestment</span>
                         <p class="text-lg font-black text-slate-900 text-left uppercase">배당금 잔고</p>
                     </div>
                     <p class="text-xl font-black text-blue-600 text-right tracking-tight font-sans" id="modal-cash-div">₩0</p>
                 </div>
-                <div class="wallet-card wallet-card-special bg-slate-50 p-6 rounded-2xl border border-slate-200 flex justify-between items-center transition active:scale-[0.98] text-left">
+                <div class="wallet-card wallet-card-special bg-slate-50 p-5 md:p-6 rounded-[1.6rem] border border-slate-200 flex justify-between items-center transition active:scale-[0.98] text-left">
                     <div class="text-left font-sans">
                         <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest text-left">Level 2: Special</span>
                         <p class="text-lg font-black text-slate-900 text-left uppercase">특별금 잔고</p>
                     </div>
                     <p class="text-xl font-black text-slate-500 text-right tracking-tight font-sans" id="modal-cash-spec">₩0</p>
                 </div>
-                <div class="wallet-card wallet-card-base bg-slate-50 p-6 rounded-2xl border border-slate-200 flex justify-between items-center transition active:scale-[0.98] text-left">
+                <div class="wallet-card wallet-card-base bg-slate-50 p-5 md:p-6 rounded-[1.6rem] border border-slate-200 flex justify-between items-center transition active:scale-[0.98] text-left">
                     <div class="text-left font-sans">
                         <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest text-left">Level 3: Base</span>
                         <p class="text-lg font-black text-slate-900 text-left uppercase font-sans">원금 잔고</p>
@@ -1014,7 +1094,7 @@ async function postMutation(action, payload = {}) {
                 totalV += val; totalD += div;
                 labels.push(d.name); data.push(val); bg.push(COLORS[i % COLORS.length]);
                 const safeName = escapeHtml(d.name);
-                listHTML += `<div class="holding-item flex justify-between items-center p-4 hover:bg-white/50 transition rounded-2xl cursor-pointer group text-left" data-ticker="${escapeHtml(k)}"><div class="flex items-center gap-4 text-left"><div class="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-bold text-xs" style="background:${bg[i]}">${String(d.name)[0] || '?'}</div><div class="text-left font-sans"><p class="font-black text-slate-800 text-[15px] font-sans">${safeName} <span class="text-blue-500 font-bold text-[10px] ml-0.5 font-sans">[${yieldPct.toFixed(2)}%]</span></p><p class="text-[11px] text-slate-400 font-black mt-0.5 font-sans">${d.shares.toFixed(2)}주 · ₩${Math.round(d.cost/d.shares).toLocaleString()}</p></div></div><div class="text-right font-sans"><p class="font-black text-slate-900 text-sm text-right font-sans">₩${Math.round(val).toLocaleString()}</p><p class="text-[9px] font-black ${profit>=0?'text-red-500':'text-blue-500'} uppercase mt-0.5 text-right font-sans">${profit>=0?'▲':'▼'} ${Math.abs(prate).toFixed(1)}%</p></div></div>`;
+                listHTML += `<div class="holding-item flex justify-between items-center p-4.5 hover:bg-white/70 transition rounded-[1.35rem] cursor-pointer group text-left border border-slate-100" data-ticker="${escapeHtml(k)}"><div class="flex items-center gap-4 text-left"><div class="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-bold text-xs" style="background:${bg[i]}">${String(d.name)[0] || '?'}</div><div class="text-left font-sans"><p class="font-black text-slate-800 text-[15px] font-sans">${safeName} <span class="text-blue-500 font-bold text-[10px] ml-0.5 font-sans">[${yieldPct.toFixed(2)}%]</span></p><p class="text-[11px] text-slate-400 font-black mt-0.5 font-sans">${d.shares.toFixed(2)}주 · ₩${Math.round(d.cost/d.shares).toLocaleString()}</p></div></div><div class="text-right font-sans"><p class="font-black text-slate-900 text-sm text-right font-sans">₩${Math.round(val).toLocaleString()}</p><p class="text-[9px] font-black ${profit>=0?'text-red-500':'text-blue-500'} uppercase mt-0.5 text-right font-sans">${profit>=0?'▲':'▼'} ${Math.abs(prate).toFixed(1)}%</p></div></div>`;
             });
             animateValue('stat-total-value', 0, Math.round(totalV), 900);
             const totProfit = totalV - totalC, totRate = totalC > 0 ? (totProfit/totalC)*100 : 0;
@@ -1155,7 +1235,7 @@ if(assetChart){
                 const safeDate = escapeHtml(String(t.date || '').substring(0, 10));
                 const shares = Number(t.shares || 0);
                 const price = Number(t.price || 0);
-                return `<div class="glass-card p-4 md:p-5 flex justify-between items-center transition hover:shadow-xl border-l-4 ${isDeposit ? 'border-l-blue-500' : 'border-l-slate-800'} text-left font-sans"><div class="flex items-center gap-4 text-left font-sans"><div class="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-sm border border-slate-100 shadow-sm text-center"><span class="text-${themeColor} flex items-center justify-center">${iconCode}</span></div><div class="text-left font-sans font-sans"><p class="text-[9px] text-slate-400 font-black mb-0.5 uppercase tracking-widest text-left font-sans">${safeDate} · ${isDeposit ? depositLabel + ' 입금' : '매수'}</p><p class="text-sm font-black text-slate-800 text-left font-sans">${safeName}</p><p class="text-[9px] text-slate-400 font-black uppercase mt-0.5 text-left font-sans">${isDeposit ? 'CASH_LOADED' : shares.toFixed(2) + '주 · @₩' + price.toLocaleString()}</p></div></div><div class="flex flex-col items-end gap-2 text-right font-sans"><p class="font-black text-${isDeposit?'blue-600':'slate-900'} text-base tracking-tighter text-right font-sans">₩${Math.round(shares*price).toLocaleString()}</p><div class="flex gap-2 font-sans"><button type="button" data-action="edit" data-id="${safeId}" class="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 text-slate-400 transition hover:bg-indigo-500 hover:text-white active:scale-90"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button><button type="button" data-action="delete" data-id="${safeId}" class="w-7 h-7 flex items-center justify-center rounded-lg bg-rose-50 text-rose-400 transition hover:bg-rose-500 hover:text-white active:scale-90"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button></div></div></div>`;
+                return `<div class="glass-card p-4.5 md:p-5 flex justify-between items-center transition hover:shadow-xl border-l-4 ${isDeposit ? 'border-l-blue-500' : 'border-l-slate-800'} text-left font-sans"><div class="flex items-center gap-4 text-left font-sans"><div class="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-sm border border-slate-100 shadow-sm text-center"><span class="text-${themeColor} flex items-center justify-center">${iconCode}</span></div><div class="text-left font-sans font-sans"><p class="text-[9px] text-slate-400 font-black mb-0.5 uppercase tracking-widest text-left font-sans">${safeDate} · ${isDeposit ? depositLabel + ' 입금' : '매수'}</p><p class="text-sm font-black text-slate-800 text-left font-sans">${safeName}</p><p class="text-[9px] text-slate-400 font-black uppercase mt-0.5 text-left font-sans">${isDeposit ? 'CASH_LOADED' : shares.toFixed(2) + '주 · @₩' + price.toLocaleString()}</p></div></div><div class="flex flex-col items-end gap-2 text-right font-sans"><p class="font-black text-${isDeposit?'blue-600':'slate-900'} text-base tracking-tighter text-right font-sans">₩${Math.round(shares*price).toLocaleString()}</p><div class="flex gap-2 font-sans"><button type="button" data-action="edit" data-id="${safeId}" class="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 text-slate-400 transition hover:bg-indigo-500 hover:text-white active:scale-90"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button><button type="button" data-action="delete" data-id="${safeId}" class="w-7 h-7 flex items-center justify-center rounded-lg bg-rose-50 text-rose-400 transition hover:bg-rose-500 hover:text-white active:scale-90"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button></div></div></div>`;
             }).join('') || `<div class="text-center p-24 text-slate-300 font-black text-[10px] uppercase font-sans">기록 없음</div>`;
         }
 
