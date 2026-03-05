@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="CTA Master Glass" data-origin="designer-master">
+  <title>ISA RICH CTA Master - Glass (Premium Skin)</title>
+  <desc>Advanced editable master with layered glassmorphism, aurora highlights, and directional action glyph.</desc>
+  <defs>
+    <linearGradient id="bgGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="55%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+    <radialGradient id="aurora" cx="78%" cy="12%" r="70%">
+      <stop offset="0%" stop-color="#a5f3fc" stop-opacity="0.88"/>
+      <stop offset="100%" stop-color="#a5f3fc" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="accentGradient" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#f0f9ff"/>
+      <stop offset="100%" stop-color="#dbeafe"/>
+    </linearGradient>
+  </defs>
+
+  <g id="layer-background">
+    <rect x="56" y="108" width="400" height="296" rx="92" fill="url(#bgGradient)"/>
+    <rect x="56" y="108" width="400" height="296" rx="92" fill="url(#aurora)"/>
+    <path d="M74 150C174 90 276 206 438 112" stroke="#e0f2fe" stroke-opacity="0.26" stroke-width="16" fill="none"/>
+  </g>
+
+  <g id="layer-frame">
+    <rect x="72" y="124" width="368" height="264" rx="80" fill="none" stroke="#7dd3fc" stroke-width="16"/>
+    <rect x="88" y="140" width="336" height="232" rx="70" fill="#0b1020" opacity="0.25"/>
+    <path d="M110 168h164" stroke="#f0f9ff" stroke-width="10" stroke-linecap="round" opacity="0.4"/>
+  </g>
+
+  <g id="layer-symbol" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M150 256h166" stroke="url(#accentGradient)" stroke-width="30"/>
+    <path d="M280 194l90 62-90 62" fill="none" stroke="#f0f9ff" stroke-width="30"/>
+    <circle cx="168" cy="192" r="16" fill="#ccfbf1"/>
+  </g>
+</svg>
