@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="CTA Master Burst" data-origin="designer-master">
+  <title>ISA RICH CTA Master - Burst (Premium Skin)</title>
+  <desc>Advanced editable burst master with cinematic core ring and energetic radial beam set.</desc>
+  <defs>
+    <radialGradient id="core" cx="50%" cy="45%" r="58%">
+      <stop offset="0%" stop-color="#fef3c7"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="50%" cy="50%" r="62%">
+      <stop offset="0%" stop-color="#fde68a" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#fde68a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <g id="layer-base">
+    <rect x="64" y="136" width="384" height="240" rx="72" fill="#111827"/>
+    <rect x="64" y="136" width="384" height="240" rx="72" fill="none" stroke="#334155" stroke-width="10"/>
+  </g>
+
+  <g id="layer-core">
+    <circle cx="256" cy="256" r="114" fill="url(#halo)"/>
+    <circle cx="256" cy="256" r="102" fill="url(#core)"/>
+    <path d="M248 200v112M200 256h112" stroke="#78350f" stroke-width="28" stroke-linecap="round"/>
+    <circle cx="256" cy="256" r="87" fill="none" stroke="#fef3c7" stroke-width="8" opacity="0.55"/>
+  </g>
+
+  <g id="layer-rays" stroke="#fbbf24" stroke-width="14" stroke-linecap="round" opacity="0.95">
+    <path d="M256 62v38M256 412v38M62 256h38M412 256h38"/>
+    <path d="M120 120l27 27M365 365l27 27M392 120l-27 27M147 365l-27 27"/>
+    <path d="M256 96v24M256 392v24M96 256h24M392 256h24" opacity="0.7"/>
+  </g>
+</svg>
