@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="CTA 아웃라인 아이콘">
+  <rect x="8" y="18" width="48" height="30" rx="10" fill="none" stroke="#1e3a8a" stroke-width="4"/>
+  <path d="M20 33h24" stroke="#1e3a8a" stroke-width="4" stroke-linecap="round"/>
+  <path d="M32 24v18" stroke="#1e3a8a" stroke-width="4" stroke-linecap="round"/>
+</svg>
