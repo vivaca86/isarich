@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="CTA 칩 아이콘 프리미엄">
+  <rect x="9" y="17" width="46" height="30" rx="9" fill="#0b1020" stroke="#6366f1" stroke-width="3"/>
+  <rect x="14" y="22" width="14" height="20" rx="4" fill="#4338ca"/>
+  <path d="M34 24h13M34 32h13M34 40h9" stroke="#c7d2fe" stroke-width="3" stroke-linecap="round"/>
+  <path d="M21 29v6M18 32h6" stroke="#eef2ff" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M16 15v-3M24 15v-3M32 15v-3M40 15v-3M48 15v-3" stroke="#818cf8" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M16 52v-3M24 52v-3M32 52v-3M40 52v-3M48 52v-3" stroke="#818cf8" stroke-width="1.8" stroke-linecap="round"/>
+</svg>
