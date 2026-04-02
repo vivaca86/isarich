@@ -193,7 +193,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         }
 
         .wallet-card-base::after {
-            background: radial-gradient(circle, rgba(100, 116, 139, 0.22), transparent 70%);
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.24), transparent 70%);
         }
 
 
@@ -223,6 +223,28 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         .wallet-card.wallet-card-base {
             background-image: url('icons/ui/card-base.svg');
         }
+
+        .wallet-card-amount {
+            position: relative;
+            z-index: 2;
+            align-self: flex-end;
+            transform: translateY(10px);
+        }
+
+        .wallet-card-special-theme {
+            background-color: rgba(245, 243, 255, 0.85) !important;
+            border-color: #ddd6fe !important;
+        }
+
+        .wallet-card-base-theme {
+            background-color: rgba(236, 253, 245, 0.85) !important;
+            border-color: #a7f3d0 !important;
+        }
+
+        .wallet-level-special { color: #7c3aed !important; }
+        .wallet-level-base { color: #059669 !important; }
+        #modal-cash-spec { color: #7c3aed !important; }
+        #modal-cash-base { color: #059669 !important; }
 
         :root {
             --ui-radius-lg: 18px;
@@ -608,7 +630,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         <div class="relative bg-white w-full lg:max-w-md p-8 rounded-t-[3rem] lg:rounded-[3rem] shadow-2xl modal-animate font-sans font-sans">
             <div class="flex justify-between items-start mb-8 font-sans text-left font-sans">
                 <div class="text-left font-sans">
-                    <h3 class="text-2xl font-black text-slate-900 tracking-tighter text-left">현금 잔고 상세</h3>
+                    <h3 class="text-2xl font-black text-slate-900 tracking-tighter text-left">투자 원금</h3>
                     <p class="text-[10px] text-blue-500 font-black uppercase tracking-widest mt-1 text-left font-sans">Wallet Flow Breakdown</p>
                 </div>
                 <button onclick="closeCashModal()" class="p-2.5 bg-slate-100 rounded-full text-slate-400 hover:bg-slate-200 transition text-center font-sans font-sans"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
@@ -617,23 +639,23 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                 <div class="wallet-card bg-blue-50/60 p-5 md:p-6 rounded-[1.6rem] border border-blue-100 flex justify-between items-center transition active:scale-[0.98] text-left">
                     <div class="text-left font-sans">
                         <span class="text-[8px] font-black text-blue-500 uppercase tracking-widest text-left">Level 1: Reinvestment</span>
-                        <p class="text-lg font-black text-slate-900 text-left uppercase">배당금 잔고</p>
+                        <p class="text-lg font-black text-slate-900 text-left uppercase">배당금</p>
                     </div>
-                    <p class="text-xl font-black text-blue-600 text-right tracking-tight font-sans" id="modal-cash-div">₩0</p>
+                    <p class="wallet-card-amount text-xl font-black text-blue-600 text-right tracking-tight font-sans" id="modal-cash-div">₩0</p>
                 </div>
-                <div class="wallet-card wallet-card-special bg-slate-50 p-5 md:p-6 rounded-[1.6rem] border border-slate-200 flex justify-between items-center transition active:scale-[0.98] text-left">
+                <div class="wallet-card wallet-card-special wallet-card-special-theme p-5 md:p-6 rounded-[1.6rem] border flex justify-between items-center transition active:scale-[0.98] text-left">
                     <div class="text-left font-sans">
-                        <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest text-left">Level 2: Special</span>
-                        <p class="text-lg font-black text-slate-900 text-left uppercase">특별금 잔고</p>
+                        <span class="text-[8px] font-black wallet-level-special uppercase tracking-widest text-left">Level 2: Special</span>
+                        <p class="text-lg font-black text-slate-900 text-left uppercase">특별금</p>
                     </div>
-                    <p class="text-xl font-black text-slate-500 text-right tracking-tight font-sans" id="modal-cash-spec">₩0</p>
+                    <p class="wallet-card-amount text-xl font-black text-purple-600 text-right tracking-tight font-sans" id="modal-cash-spec">₩0</p>
                 </div>
-                <div class="wallet-card wallet-card-base bg-slate-50 p-5 md:p-6 rounded-[1.6rem] border border-slate-200 flex justify-between items-center transition active:scale-[0.98] text-left">
+                <div class="wallet-card wallet-card-base wallet-card-base-theme p-5 md:p-6 rounded-[1.6rem] border flex justify-between items-center transition active:scale-[0.98] text-left">
                     <div class="text-left font-sans">
-                        <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest text-left">Level 3: Base</span>
-                        <p class="text-lg font-black text-slate-900 text-left uppercase font-sans">원금 잔고</p>
+                        <span class="text-[8px] font-black wallet-level-base uppercase tracking-widest text-left">Level 3: Base</span>
+                        <p class="text-lg font-black text-slate-900 text-left uppercase font-sans">원금</p>
                     </div>
-                    <p class="text-xl font-black text-slate-500 text-right tracking-tight font-sans" id="modal-cash-base">₩0</p>
+                    <p class="wallet-card-amount text-xl font-black text-emerald-600 text-right tracking-tight font-sans" id="modal-cash-base">₩0</p>
                 </div>
             </div>
             <div class="mt-8 pt-4 border-t border-slate-100 text-center font-sans font-sans">
@@ -709,18 +731,34 @@ const centerTextPlugin = {
 
         let selectedTicker = "";
 
-        // 위트 있는 엔진 레벨 (세분화)
+        // 엔진 레벨: 5,000원 단위 · 먹거리 미션 (최대 100,000원)
         function getDividendLevel(amount) {
-            if (amount < 5000) return { icon: "🥚", text: "알 단계 · 막 태어난 배당" };
-            if (amount < 12000) return { icon: "🌱", text: "새싹 단계 · 물 주는 중" };
-            if (amount < 25000) return { icon: "🛴", text: "킥보드 단계 · 커피값 자립" };
-            if (amount < 50000) return { icon: "☕", text: "카페 프리패스 단계" };
-            if (amount < 90000) return { icon: "🍜", text: "라면+토핑 단계" };
-            if (amount < 150000) return { icon: "🍔", text: "국밥/버거 무제한 단계" };
-            if (amount < 250000) return { icon: "🍗", text: "치킨 복리 가속 단계" };
-            if (amount < 400000) return { icon: "🏍️", text: "바이크 엔진 풀가동" };
-            if (amount < 700000) return { icon: "🏖️", text: "주말 힐링 자동결제 단계" };
-            return { icon: "🚀", text: "자유 가속 단계 · 엔진 MAX" };
+            const FOOD_LEVELS = [
+                { icon: "🥚", text: "계란 한 판 스타트" },
+                { icon: "☕", text: "메가커피 아아 1잔" },
+                { icon: "🌭", text: "편의점 핫바+콜라" },
+                { icon: "🍔", text: "맘스터치 싸이버거 세트" },
+                { icon: "🍜", text: "신라면+삼각김밥+계란" },
+                { icon: "🍗", text: "BHC 뿌링클 반마리권" },
+                { icon: "🍕", text: "도미노 피자 L 1판권" },
+                { icon: "🥩", text: "소갈비살 1인분" },
+                { icon: "🍣", text: "연어초밥 세트" },
+                { icon: "🥘", text: "곱창전골 1회전" },
+                { icon: "🍖", text: "삼겹살 2인분" },
+                { icon: "🍤", text: "새우튀김+우동 세트" },
+                { icon: "🌮", text: "타코 3피스 세트" },
+                { icon: "🍲", text: "부대찌개 2인 세트" },
+                { icon: "🍝", text: "파스타+스테이크 런치" },
+                { icon: "🍱", text: "초밥 오마카세 라이트" },
+                { icon: "🐟", text: "방어회 소자" },
+                { icon: "🍞", text: "두찜 로제찜닭 + 치즈볼" },
+                { icon: "🥓", text: "한우 국밥 + 육회" },
+                { icon: "🚀", text: "치킨+피자+햄버거 풀세트" }
+            ];
+
+            const safeAmount = Math.max(0, Number(amount) || 0);
+            const index = Math.min(Math.floor(safeAmount / 5000), FOOD_LEVELS.length - 1);
+            return FOOD_LEVELS[index];
         }
 
         const DEFAULT_FIREBASE_CONFIG = {
@@ -1042,6 +1080,7 @@ async function postMutation(action, payload = {}) {
         function updateUI() {
             const h = {}; let totalV = 0, totalC = 0, totalD = 0;
             const cashD = { "1": 0, "2": 0, "3": 0 };
+            const chargedByCat = { "1": 0, "2": 0, "3": 0 };
             const usedByCat = { "1": 0, "2": 0, "3": 0 };
             const sortedTx = [...transactions].sort((a, b) => {
                 const dateDiff = new Date(a.date) - new Date(b.date);
@@ -1054,6 +1093,7 @@ async function postMutation(action, payload = {}) {
                 if(isDepositTransaction(t)) {
                     const cat = normalizeCashCategory(t.category);
                     cashD[cat] += amt;
+                    chargedByCat[cat] += amt;
                     return;
                 }
 
@@ -1178,7 +1218,7 @@ async function postMutation(action, payload = {}) {
             safeSetText('stat-reinvest-rate', `${reinvestRate.toFixed(1)}%`);
             safeSetText('stat-monthly-dividend', `₩${Math.round(totalD).toLocaleString()}`);
             const level = getDividendLevel(totalD); safeSetText('div-level-icon', level.icon); safeSetText('dividend-level-text', level.text);
-            const bDiv = Math.round(cashD["3"]), bSpec = Math.round(cashD["2"]), bBase = Math.round(cashD["1"]);
+            const bDiv = Math.round(chargedByCat["3"]), bSpec = Math.round(chargedByCat["2"]), bBase = Math.round(chargedByCat["1"]);
             safeSetText('modal-cash-div', `₩${bDiv.toLocaleString()}`); safeSetText('modal-cash-spec', `₩${bSpec.toLocaleString()}`); safeSetText('modal-cash-base', `₩${bBase.toLocaleString()}`);
             safeSetHTML('holdings-list', listHTML || `<div class="text-center p-6 text-slate-300 font-black text-[10px] uppercase font-sans">데이터 없음</div>`);
             if (getEl('assetChart')) {
