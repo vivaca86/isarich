@@ -406,7 +406,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                                 <h1 class="text-4xl md:text-5xl font-black tracking-tighter font-sans text-left" id="stat-total-value">₩0</h1>
                             </div>
                             <div class="flex items-center gap-2 mt-2 mb-5 text-left font-sans">
-                                <span id="stat-profit-icon" class="text-sm">🚀</span>
+                                <span id="stat-profit-icon" class="text-sm"><i class="fa-solid fa-minus"></i></span>
                                 <span id="stat-profit-amount" class="text-sm font-bold text-white/80 tracking-tight">₩0</span>
                                 <div id="stat-profit-pct" class="text-[11px] font-black text-white/60">0.0%</div>
                             </div>
@@ -607,14 +607,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             <div class="bg-slate-50 p-6 rounded-2xl mb-6 border border-slate-100 text-left font-sans">
                 <p class="text-[9px] font-black text-slate-400 mb-4 uppercase tracking-widest text-left font-sans">Fund Ratio Analysis</p>
                 <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden flex shadow-inner text-left font-sans">
-                    <div id="bar-invest-1" class="h-full bg-slate-800 transition-all duration-1000" style="width:0%"></div>
-                    <div id="bar-invest-2" class="h-full bg-slate-400 transition-all duration-1000" style="width:0%"></div>
+                    <div id="bar-invest-1" class="h-full bg-emerald-500 transition-all duration-1000" style="width:0%"></div>
+                    <div id="bar-invest-2" class="h-full bg-violet-500 transition-all duration-1000" style="width:0%"></div>
                     <div id="bar-reinvest" class="h-full bg-blue-500 transition-all duration-1000" style="width:0%"></div>
                 </div>
                 <div class="flex justify-between text-[9px] mt-4 font-black font-sans text-left">
                     <div class="flex gap-4 font-sans text-left font-sans">
-                        <span class="flex items-center gap-1.5 text-left"><span class="w-1.5 h-1.5 rounded-full bg-slate-800"></span>원금 <span id="val-invest-1" class="text-slate-400 font-sans">0%</span></span>
-                        <span class="flex items-center gap-1.5 text-left"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>특별 <span id="val-invest-2" class="text-slate-400 font-sans">0%</span></span>
+                        <span class="flex items-center gap-1.5 text-left text-emerald-700"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>원금 <span id="val-invest-1" class="text-emerald-600 font-black font-sans">0%</span></span>
+                        <span class="flex items-center gap-1.5 text-left text-violet-700"><span class="w-1.5 h-1.5 rounded-full bg-violet-500"></span>특별 <span id="val-invest-2" class="text-violet-600 font-black font-sans">0%</span></span>
                     </div>
                     <span class="flex items-center gap-1.5 text-left"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>재투자 <span id="val-reinvest" class="text-blue-600 font-black font-sans">0%</span></span>
                 </div>
@@ -917,6 +917,22 @@ const centerTextPlugin = {
         }
 
         function getEl(id) { return document.getElementById(id); }
+        function getTrendVisual(rate) {
+            const n = Number(rate || 0);
+            if (n >= 75) return { iconHtml: '<i class="fa-solid fa-fire"></i><i class="fa-solid fa-rocket ml-1"></i>', lightTextClass: 'text-red-500', darkTextClass: 'text-red-300' };
+            if (n >= 50) return { iconHtml: '<i class="fa-solid fa-mountain ml-[1px]"></i><i class="fa-solid fa-fire-flame-curved ml-1"></i>', lightTextClass: 'text-red-500', darkTextClass: 'text-red-300' };
+            if (n >= 30) return { iconHtml: '<i class="fa-solid fa-fire-flame-curved"></i>', lightTextClass: 'text-red-500', darkTextClass: 'text-red-300' };
+            if (n >= 15) return { iconHtml: '<i class="fa-solid fa-fire"></i>', lightTextClass: 'text-red-500', darkTextClass: 'text-red-300' };
+            if (n >= 5) return { iconHtml: '<i class="fa-solid fa-bolt"></i>', lightTextClass: 'text-red-500', darkTextClass: 'text-red-300' };
+            if (n > 0) return { iconHtml: '<i class="fa-solid fa-temperature-quarter"></i>', lightTextClass: 'text-red-500', darkTextClass: 'text-red-300' };
+            if (n <= -75) return { iconHtml: '<i class="fa-solid fa-mountain"></i>', lightTextClass: 'text-blue-500', darkTextClass: 'text-blue-300' };
+            if (n <= -50) return { iconHtml: '<i class="fa-solid fa-temperature-empty"></i>', lightTextClass: 'text-blue-500', darkTextClass: 'text-blue-300' };
+            if (n <= -30) return { iconHtml: '<i class="fa-solid fa-wind"></i>', lightTextClass: 'text-blue-500', darkTextClass: 'text-blue-300' };
+            if (n <= -15) return { iconHtml: '<i class="fa-regular fa-snowflake"></i>', lightTextClass: 'text-blue-500', darkTextClass: 'text-blue-300' };
+            if (n <= -5) return { iconHtml: '<i class="fa-solid fa-glass-water"></i>', lightTextClass: 'text-blue-500', darkTextClass: 'text-blue-300' };
+            if (n < 0) return { iconHtml: '<i class="fa-solid fa-droplet"></i>', lightTextClass: 'text-blue-500', darkTextClass: 'text-blue-300' };
+            return { iconHtml: '<i class="fa-solid fa-minus"></i>', lightTextClass: 'text-slate-500', darkTextClass: 'text-slate-300' };
+        }
 
         function dedupeAppTitleRow() {
             const rows = document.querySelectorAll('#section-dashboard header #app-title-row');
@@ -1131,22 +1147,28 @@ async function postMutation(action, payload = {}) {
                 const m = marketData[k] || { price: 0, yield: 0 };
                 let yieldPct = Number(m.yield || 0); if(yieldPct < 1 && yieldPct > 0) yieldPct *= 100;
                 const val = d.shares * m.price, profit = val - d.cost, prate = d.cost > 0 ? (profit/d.cost)*100 : 0, div = val * (yieldPct/100/12);
+                const itemTrend = getTrendVisual(prate);
                 totalV += val; totalD += div;
                 labels.push(d.name); data.push(val); bg.push(COLORS[i % COLORS.length]);
                 const safeName = escapeHtml(d.name);
-                listHTML += `<div class="holding-item flex justify-between items-start md:items-center py-4 px-5 hover:bg-white/70 transition rounded-[1.5rem] cursor-pointer group text-left border border-slate-100 gap-4 border-b-2 border-b-slate-200/80" data-ticker="${escapeHtml(k)}"><div class="flex items-center gap-3.5 text-left min-w-0 flex-1"><div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-sm" style="background:${bg[i]}">${String(d.name)[0] || '?'}</div><div class="text-left font-sans min-w-0"><p class="font-black text-slate-800 text-[15px] font-sans truncate">${safeName} <span class="text-blue-500 font-bold text-[10px] ml-0.5 font-sans">[${yieldPct.toFixed(2)}%]</span></p><p class="text-[11px] text-slate-400 font-black mt-0.5 font-sans">${d.shares.toFixed(2)}주 · ₩${Math.round(d.cost/d.shares).toLocaleString()}</p></div></div><div class="text-right font-sans shrink-0 pl-2"><p class="font-black text-slate-900 text-sm text-right font-sans">₩${Math.round(val).toLocaleString()}</p><p class="text-[9px] font-black ${profit>=0?'text-red-500':'text-blue-500'} uppercase mt-0.5 text-right font-sans">${profit>=0?'▲':'▼'} ${Math.abs(prate).toFixed(1)}%</p></div></div>`;
+                listHTML += `<div class="holding-item flex justify-between items-start md:items-center py-4 px-5 hover:bg-white/70 transition rounded-[1.5rem] cursor-pointer group text-left border border-slate-100 gap-4 border-b-2 border-b-slate-200/80" data-ticker="${escapeHtml(k)}"><div class="flex items-center gap-3.5 text-left min-w-0 flex-1"><div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-sm" style="background:${bg[i]}">${String(d.name)[0] || '?'}</div><div class="text-left font-sans min-w-0"><p class="font-black text-slate-800 text-[15px] font-sans truncate">${safeName} <span class="text-blue-500 font-bold text-[10px] ml-0.5 font-sans">[${yieldPct.toFixed(2)}%]</span></p><p class="text-[11px] text-slate-400 font-black mt-0.5 font-sans">${d.shares.toFixed(2)}주 · ₩${Math.round(d.cost/d.shares).toLocaleString()}</p></div></div><div class="text-right font-sans shrink-0 pl-2"><p class="font-black ${itemTrend.lightTextClass} text-sm text-right font-sans">₩${Math.round(val).toLocaleString()}</p><p class="text-[9px] font-black ${itemTrend.lightTextClass} uppercase mt-0.5 text-right font-sans">${itemTrend.iconHtml} ${profit>=0?'▲':'▼'} ${Math.abs(prate).toFixed(1)}%</p></div></div>`;
             });
             animateValue('stat-total-value', 0, Math.round(totalV), 900);
             const totProfit = totalV - totalC, totRate = totalC > 0 ? (totProfit/totalC)*100 : 0;
+            const totalTrend = getTrendVisual(totRate);
             safeSetText('stat-profit-amount', `₩${Math.round(Math.abs(totProfit)).toLocaleString()}`);
-            
-            const pctBox = document.getElementById('stat-profit-pct');
-            if(pctBox){
-                pctBox.classList.remove('stat-profit-positive','stat-profit-negative');
-                pctBox.classList.add(totProfit >= 0 ? 'stat-profit-positive' : 'stat-profit-negative');
+            const amountBox = getEl('stat-profit-amount');
+            if (amountBox) {
+                amountBox.classList.remove('text-white/80', 'text-red-300', 'text-blue-300', 'text-slate-300');
+                amountBox.classList.add(totalTrend.darkTextClass);
+            }
+            const pctBox = getEl('stat-profit-pct');
+            if (pctBox) {
+                pctBox.classList.remove('text-white/60', 'text-red-300', 'text-blue-300', 'text-slate-300');
+                pctBox.classList.add(totalTrend.darkTextClass);
             }
             safeSetHTML('stat-profit-pct', `${totProfit>=0?'+':''}${totRate.toFixed(1)}%`);
-            safeSetText('stat-profit-icon', totProfit >= 0 ? "🚀" : "💧");
+            safeSetHTML('stat-profit-icon', totalTrend.iconHtml);
             safeSetText('stat-cash-balance', `₩${Math.round(curCash).toLocaleString()}`);
             const usableCash = Math.max(0, Math.floor(curCash));
             const tickerA = BUY_PLAN_TICKERS[0], tickerB = BUY_PLAN_TICKERS[1];
