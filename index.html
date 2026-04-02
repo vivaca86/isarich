@@ -1240,6 +1240,11 @@ async function postMutation(action, payload = {}) {
                 let yieldPct = Number(m.yield || 0); if(yieldPct < 1 && yieldPct > 0) yieldPct *= 100;
                 const val = d.shares * m.price, profit = val - d.cost, prate = d.cost > 0 ? (profit/d.cost)*100 : 0, div = val * (yieldPct/100/12);
                 const itemTrend = getTrendVisual(prate);
+                const trendToneClass = prate >= 8 ? 'holding-tone-up' : (prate <= -8 ? 'holding-tone-down' : 'holding-tone-flat');
+                const edgeClass = prate >= 8 ? 'bg-gradient-to-b from-rose-400 to-orange-300' : (prate <= -8 ? 'bg-gradient-to-b from-blue-400 to-cyan-300' : 'bg-gradient-to-b from-slate-300 to-slate-200');
+                const pillClass = prate >= 8 ? 'trend-pill-up' : (prate <= -8 ? 'trend-pill-down' : 'trend-pill-flat');
+                const sparkClass = prate >= 8 ? 'bg-gradient-to-r from-rose-500 to-orange-400' : (prate <= -8 ? 'bg-gradient-to-r from-blue-500 to-cyan-400' : 'bg-gradient-to-r from-slate-500 to-slate-400');
+                const sparkWidth = Math.max(12, Math.min(100, Math.abs(prate) * 3));
                 totalV += val; totalD += div;
                 labels.push(d.name); data.push(val); bg.push(COLORS[i % COLORS.length]);
                 listHTML += renderHoldingCard({
