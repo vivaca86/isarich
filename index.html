@@ -810,7 +810,7 @@ const centerTextPlugin = {
             if (value === '1' || value === '원금' || lower === 'base' || lower === 'principal') return '1';
             if (value === '2' || value === '특별' || value === '특별금' || lower === 'special' || lower === 'bonus') return '2';
             if (value === '3' || value === '배당' || value === '배당금' || lower === 'dividend' || lower === 'reinvest' || value === '재투자') return '3';
-            return '3';
+            return '1';
         }
 
         function isDepositTransaction(tx) {
@@ -916,6 +916,21 @@ const centerTextPlugin = {
             }
         }
 
+        async function fetchJsonWithTimeout(url, options = {}, timeoutMs = 12000) {
+            const response = await fetchWithTimeout(url, options, timeoutMs);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const text = await response.text();
+            return JSON.parse(text || "{}");
+        }
+
+        function getLocalDateInputValue() {
+            const now = new Date();
+            const offsetMs = now.getTimezoneOffset() * 60000;
+            return new Date(now.getTime() - offsetMs).toISOString().split('T')[0];
+        }
+
         function getEl(id) { return document.getElementById(id); }
         function getTrendVisual(rate) {
             const n = Number(rate || 0);
@@ -980,8 +995,7 @@ const centerTextPlugin = {
             if(hasPriceUrl) {
                 try {
                     const ts = Date.now();
-                    const pRes = await fetchWithTimeout(`${sheetsUrl}?action=prices&_t=${ts}`, { redirect: 'follow' });
-                    marketData = JSON.parse(await pRes.text() || "{}");
+                    marketData = await fetchJsonWithTimeout(`${sheetsUrl}?action=prices&_t=${ts}`, { redirect: 'follow' });
                 } catch (e) {
                     console.error(e);
                     priceSyncFailed = true;
@@ -1260,7 +1274,7 @@ if(assetChart){
                 }
             } }); }
             }
-            safeSetHTML('chart-legend', labels.map((l, i) => `<div class="flex justify-between text-[10px] mb-2 font-black transition hover:translate-x-1 text-left font-sans"><span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full" style="background:${bg[i]}"></span><span class="truncate w-24 text-slate-500 font-sans">${l}</span></span><span class="text-slate-800 text-right font-sans">${((data[i]/totalV)*100).toFixed(1)}%</span></div>`).join(''));
+            safeSetHTML('chart-legend', labels.map((l, i) => `<div class="flex justify-between text-[10px] mb-2 font-black transition hover:translate-x-1 text-left font-sans"><span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full" style="background:${bg[i]}"></span><span class="truncate w-24 text-slate-500 font-sans">${escapeHtml(l)}</span></span><span class="text-slate-800 text-right font-sans">${((data[i]/totalV)*100).toFixed(1)}%</span></div>`).join(''));
             renderHistoryList('history-list', transactions);
 
 
@@ -1449,7 +1463,7 @@ if(assetChart){
             const candidate = urlInput.value.trim();
             const nextSheetsUrl = isValidSheetsUrl(candidate) ? candidate : '';
 
-            const nextFirebaseConfigRaw = firebaseInput.value.trim();
+            const nextFirebaseConfigRaw = firebaseInput.value.trim() || JSON.stringify(DEFAULT_FIREBASE_CONFIG, null, 2);
             const parsedFirebase = parseFirebaseConfig(nextFirebaseConfigRaw);
             if(nextFirebaseConfigRaw && !parsedFirebase) {
                 alert('파이어베이스 설정값 형식이 잘못됐어요.\n프로젝트 설정 > 웹 앱 구성값(JSON)을 그대로 붙여넣어 주세요.');
@@ -1501,14 +1515,15 @@ function animateValue(id, start, end, duration) {
 
 
 window.onload = () => {
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalDateInputValue();
             if(getEl('input-date')) getEl('input-date').value = today;
             if(getEl('div-date')) getEl('div-date').value = today;
             dedupeAppTitleRow();
             initFirebase();
             setDepositCat(3); syncAllData();
 
-            if ('serviceWorker' in navigator) {
+            const debugSwReset = localStorage.getItem('isa_debug_sw_reset') === '1';
+            if (debugSwReset && 'serviceWorker' in navigator) {
                 navigator.serviceWorker.getRegistrations()
                     .then((regs) => regs.forEach((reg) => reg.unregister()))
                     .catch((err) => console.warn('Service worker unregister failed:', err));
