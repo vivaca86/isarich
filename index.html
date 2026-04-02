@@ -228,8 +228,23 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             position: relative;
             z-index: 2;
             align-self: flex-end;
-            transform: translateY(24px);
+            transform: translateY(10px);
         }
+
+        .wallet-card-special-theme {
+            background-color: rgba(245, 243, 255, 0.85) !important;
+            border-color: #ddd6fe !important;
+        }
+
+        .wallet-card-base-theme {
+            background-color: rgba(236, 253, 245, 0.85) !important;
+            border-color: #a7f3d0 !important;
+        }
+
+        .wallet-level-special { color: #7c3aed !important; }
+        .wallet-level-base { color: #059669 !important; }
+        #modal-cash-spec { color: #7c3aed !important; }
+        #modal-cash-base { color: #059669 !important; }
 
         :root {
             --ui-radius-lg: 18px;
@@ -628,16 +643,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                     </div>
                     <p class="wallet-card-amount text-xl font-black text-blue-600 text-right tracking-tight font-sans" id="modal-cash-div">₩0</p>
                 </div>
-                <div class="wallet-card wallet-card-special bg-purple-50/60 p-5 md:p-6 rounded-[1.6rem] border border-purple-100 flex justify-between items-center transition active:scale-[0.98] text-left">
+                <div class="wallet-card wallet-card-special wallet-card-special-theme p-5 md:p-6 rounded-[1.6rem] border flex justify-between items-center transition active:scale-[0.98] text-left">
                     <div class="text-left font-sans">
-                        <span class="text-[8px] font-black text-purple-500 uppercase tracking-widest text-left">Level 2: Special</span>
+                        <span class="text-[8px] font-black wallet-level-special uppercase tracking-widest text-left">Level 2: Special</span>
                         <p class="text-lg font-black text-slate-900 text-left uppercase">특별금</p>
                     </div>
                     <p class="wallet-card-amount text-xl font-black text-purple-600 text-right tracking-tight font-sans" id="modal-cash-spec">₩0</p>
                 </div>
-                <div class="wallet-card wallet-card-base bg-emerald-50/60 p-5 md:p-6 rounded-[1.6rem] border border-emerald-100 flex justify-between items-center transition active:scale-[0.98] text-left">
+                <div class="wallet-card wallet-card-base wallet-card-base-theme p-5 md:p-6 rounded-[1.6rem] border flex justify-between items-center transition active:scale-[0.98] text-left">
                     <div class="text-left font-sans">
-                        <span class="text-[8px] font-black text-emerald-500 uppercase tracking-widest text-left">Level 3: Base</span>
+                        <span class="text-[8px] font-black wallet-level-base uppercase tracking-widest text-left">Level 3: Base</span>
                         <p class="text-lg font-black text-slate-900 text-left uppercase font-sans">원금</p>
                     </div>
                     <p class="wallet-card-amount text-xl font-black text-emerald-600 text-right tracking-tight font-sans" id="modal-cash-base">₩0</p>
