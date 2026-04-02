@@ -224,6 +224,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             background-image: url('icons/ui/card-base.svg');
         }
 
+        .wallet-card-amount {
+            position: relative;
+            z-index: 2;
+            margin-top: 28px;
+        }
+
         :root {
             --ui-radius-lg: 18px;
             --ui-radius-xl: 22px;
@@ -619,21 +625,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                         <span class="text-[8px] font-black text-blue-500 uppercase tracking-widest text-left">Level 1: Reinvestment</span>
                         <p class="text-lg font-black text-slate-900 text-left uppercase">배당금</p>
                     </div>
-                    <p class="text-xl font-black text-blue-600 text-right tracking-tight font-sans" id="modal-cash-div">₩0</p>
+                    <p class="wallet-card-amount text-xl font-black text-blue-600 text-right tracking-tight font-sans" id="modal-cash-div">₩0</p>
                 </div>
                 <div class="wallet-card wallet-card-special bg-slate-50 p-5 md:p-6 rounded-[1.6rem] border border-slate-200 flex justify-between items-center transition active:scale-[0.98] text-left">
                     <div class="text-left font-sans">
                         <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest text-left">Level 2: Special</span>
                         <p class="text-lg font-black text-slate-900 text-left uppercase">특별금</p>
                     </div>
-                    <p class="text-xl font-black text-slate-500 text-right tracking-tight font-sans" id="modal-cash-spec">₩0</p>
+                    <p class="wallet-card-amount text-xl font-black text-slate-500 text-right tracking-tight font-sans" id="modal-cash-spec">₩0</p>
                 </div>
                 <div class="wallet-card wallet-card-base bg-slate-50 p-5 md:p-6 rounded-[1.6rem] border border-slate-200 flex justify-between items-center transition active:scale-[0.98] text-left">
                     <div class="text-left font-sans">
                         <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest text-left">Level 3: Base</span>
                         <p class="text-lg font-black text-slate-900 text-left uppercase font-sans">원금</p>
                     </div>
-                    <p class="text-xl font-black text-slate-500 text-right tracking-tight font-sans" id="modal-cash-base">₩0</p>
+                    <p class="wallet-card-amount text-xl font-black text-slate-500 text-right tracking-tight font-sans" id="modal-cash-base">₩0</p>
                 </div>
             </div>
             <div class="mt-8 pt-4 border-t border-slate-100 text-center font-sans font-sans">
