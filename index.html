@@ -919,7 +919,6 @@ const centerTextPlugin = {
         function getEl(id) { return document.getElementById(id); }
         function getTrendVisual(rate) {
             const n = Number(rate || 0);
-<<<<<<< codex/update-progress-bar-colors-for-capital-display-r7zp9q
             if (n >= 75) return { iconHtml: '<i class="fa-solid fa-fire"></i><i class="fa-solid fa-rocket ml-1"></i>', lightTextClass: 'text-red-500', darkTextClass: 'text-red-300' };
             if (n >= 50) return { iconHtml: '<i class="fa-solid fa-mountain ml-[1px]"></i><i class="fa-solid fa-fire-flame-curved ml-1"></i>', lightTextClass: 'text-red-500', darkTextClass: 'text-red-300' };
             if (n >= 30) return { iconHtml: '<i class="fa-solid fa-fire-flame-curved"></i>', lightTextClass: 'text-red-500', darkTextClass: 'text-red-300' };
@@ -933,14 +932,6 @@ const centerTextPlugin = {
             if (n <= -5) return { iconHtml: '<i class="fa-solid fa-glass-water"></i>', lightTextClass: 'text-blue-500', darkTextClass: 'text-blue-300' };
             if (n < 0) return { iconHtml: '<i class="fa-solid fa-droplet"></i>', lightTextClass: 'text-blue-500', darkTextClass: 'text-blue-300' };
             return { iconHtml: '<i class="fa-solid fa-minus"></i>', lightTextClass: 'text-slate-500', darkTextClass: 'text-slate-300' };
-=======
-            if (n >= 50) return { icon: '🌋', lightTextClass: 'text-red-500', darkTextClass: 'text-red-300' };
-            if (n >= 10) return { icon: '🔥', lightTextClass: 'text-red-500', darkTextClass: 'text-red-300' };
-            if (n > 0) return { icon: '🚀', lightTextClass: 'text-red-500', darkTextClass: 'text-red-300' };
-            if (n <= -10) return { icon: '🧊', lightTextClass: 'text-blue-500', darkTextClass: 'text-blue-300' };
-            if (n < 0) return { icon: '💧', lightTextClass: 'text-blue-500', darkTextClass: 'text-blue-300' };
-            return { icon: '➖', lightTextClass: 'text-slate-500', darkTextClass: 'text-slate-300' };
->>>>>>> main
         }
 
         function dedupeAppTitleRow() {
@@ -1160,11 +1151,7 @@ async function postMutation(action, payload = {}) {
                 totalV += val; totalD += div;
                 labels.push(d.name); data.push(val); bg.push(COLORS[i % COLORS.length]);
                 const safeName = escapeHtml(d.name);
-<<<<<<< codex/update-progress-bar-colors-for-capital-display-r7zp9q
                 listHTML += `<div class="holding-item flex justify-between items-start md:items-center py-4 px-5 hover:bg-white/70 transition rounded-[1.5rem] cursor-pointer group text-left border border-slate-100 gap-4 border-b-2 border-b-slate-200/80" data-ticker="${escapeHtml(k)}"><div class="flex items-center gap-3.5 text-left min-w-0 flex-1"><div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-sm" style="background:${bg[i]}">${String(d.name)[0] || '?'}</div><div class="text-left font-sans min-w-0"><p class="font-black text-slate-800 text-[15px] font-sans truncate">${safeName} <span class="text-blue-500 font-bold text-[10px] ml-0.5 font-sans">[${yieldPct.toFixed(2)}%]</span></p><p class="text-[11px] text-slate-400 font-black mt-0.5 font-sans">${d.shares.toFixed(2)}주 · ₩${Math.round(d.cost/d.shares).toLocaleString()}</p></div></div><div class="text-right font-sans shrink-0 pl-2"><p class="font-black ${itemTrend.lightTextClass} text-sm text-right font-sans">₩${Math.round(val).toLocaleString()}</p><p class="text-[9px] font-black ${itemTrend.lightTextClass} uppercase mt-0.5 text-right font-sans">${itemTrend.iconHtml} ${profit>=0?'▲':'▼'} ${Math.abs(prate).toFixed(1)}%</p></div></div>`;
-=======
-                listHTML += `<div class="holding-item flex justify-between items-start md:items-center py-4 px-5 hover:bg-white/70 transition rounded-[1.5rem] cursor-pointer group text-left border border-slate-100 gap-4 border-b-2 border-b-slate-200/80" data-ticker="${escapeHtml(k)}"><div class="flex items-center gap-3.5 text-left min-w-0 flex-1"><div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-sm" style="background:${bg[i]}">${String(d.name)[0] || '?'}</div><div class="text-left font-sans min-w-0"><p class="font-black text-slate-800 text-[15px] font-sans truncate">${safeName} <span class="text-blue-500 font-bold text-[10px] ml-0.5 font-sans">[${yieldPct.toFixed(2)}%]</span></p><p class="text-[11px] text-slate-400 font-black mt-0.5 font-sans">${d.shares.toFixed(2)}주 · ₩${Math.round(d.cost/d.shares).toLocaleString()}</p></div></div><div class="text-right font-sans shrink-0 pl-2"><p class="font-black ${itemTrend.lightTextClass} text-sm text-right font-sans">₩${Math.round(val).toLocaleString()}</p><p class="text-[9px] font-black ${itemTrend.lightTextClass} uppercase mt-0.5 text-right font-sans">${itemTrend.icon} ${profit>=0?'▲':'▼'} ${Math.abs(prate).toFixed(1)}%</p></div></div>`;
->>>>>>> main
             });
             animateValue('stat-total-value', 0, Math.round(totalV), 900);
             const totProfit = totalV - totalC, totRate = totalC > 0 ? (totProfit/totalC)*100 : 0;
@@ -1181,11 +1168,7 @@ async function postMutation(action, payload = {}) {
                 pctBox.classList.add(totalTrend.darkTextClass);
             }
             safeSetHTML('stat-profit-pct', `${totProfit>=0?'+':''}${totRate.toFixed(1)}%`);
-<<<<<<< codex/update-progress-bar-colors-for-capital-display-r7zp9q
             safeSetHTML('stat-profit-icon', totalTrend.iconHtml);
-=======
-            safeSetText('stat-profit-icon', totalTrend.icon);
->>>>>>> main
             safeSetText('stat-cash-balance', `₩${Math.round(curCash).toLocaleString()}`);
             const usableCash = Math.max(0, Math.floor(curCash));
             const tickerA = BUY_PLAN_TICKERS[0], tickerB = BUY_PLAN_TICKERS[1];
