@@ -228,7 +228,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             position: relative;
             z-index: 2;
             align-self: flex-end;
-            transform: translateY(20px);
+            transform: translateY(10px);
         }
 
         .wallet-card-special-theme {
@@ -731,18 +731,34 @@ const centerTextPlugin = {
 
         let selectedTicker = "";
 
-        // 위트 있는 엔진 레벨 (세분화)
+        // 엔진 레벨: 5,000원 단위 · 먹거리 미션 (최대 100,000원)
         function getDividendLevel(amount) {
-            if (amount < 5000) return { icon: "🥚", text: "알 단계 · 막 태어난 배당" };
-            if (amount < 12000) return { icon: "🌱", text: "새싹 단계 · 물 주는 중" };
-            if (amount < 25000) return { icon: "🛴", text: "킥보드 단계 · 커피값 자립" };
-            if (amount < 50000) return { icon: "☕", text: "카페 프리패스 단계" };
-            if (amount < 90000) return { icon: "🍜", text: "라면+토핑 단계" };
-            if (amount < 150000) return { icon: "🍔", text: "국밥/버거 무제한 단계" };
-            if (amount < 250000) return { icon: "🍗", text: "치킨 복리 가속 단계" };
-            if (amount < 400000) return { icon: "🏍️", text: "바이크 엔진 풀가동" };
-            if (amount < 700000) return { icon: "🏖️", text: "주말 힐링 자동결제 단계" };
-            return { icon: "🚀", text: "자유 가속 단계 · 엔진 MAX" };
+            const FOOD_LEVELS = [
+                { icon: "🥚", text: "계란 한 판 스타트" },
+                { icon: "☕", text: "메가커피 아아 1잔" },
+                { icon: "🌭", text: "편의점 핫바+콜라" },
+                { icon: "🍔", text: "맘스터치 싸이버거 세트" },
+                { icon: "🍜", text: "신라면+삼각김밥+계란" },
+                { icon: "🍗", text: "BHC 뿌링클 반마리권" },
+                { icon: "🍕", text: "도미노 피자 L 1판권" },
+                { icon: "🥩", text: "소갈비살 1인분" },
+                { icon: "🍣", text: "연어초밥 세트" },
+                { icon: "🥘", text: "곱창전골 1회전" },
+                { icon: "🍖", text: "삼겹살 2인분" },
+                { icon: "🍤", text: "새우튀김+우동 세트" },
+                { icon: "🌮", text: "타코 3피스 세트" },
+                { icon: "🍲", text: "부대찌개 2인 세트" },
+                { icon: "🍝", text: "파스타+스테이크 런치" },
+                { icon: "🍱", text: "초밥 오마카세 라이트" },
+                { icon: "🐟", text: "방어회 소자" },
+                { icon: "🍞", text: "두찜 로제찜닭 + 치즈볼" },
+                { icon: "🥓", text: "한우 국밥 + 육회" },
+                { icon: "🚀", text: "치킨+피자+햄버거 풀세트" }
+            ];
+
+            const safeAmount = Math.max(0, Number(amount) || 0);
+            const index = Math.min(Math.floor(safeAmount / 5000), FOOD_LEVELS.length - 1);
+            return FOOD_LEVELS[index];
         }
 
         const DEFAULT_FIREBASE_CONFIG = {
