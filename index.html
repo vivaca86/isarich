@@ -768,6 +768,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     <script>
         const APP_VERSION = "1.0.17";
+        const HISTORY_LOAD_LIMIT = 500;
         const MY_GAS_URL = "https://script.google.com/macros/s/AKfycbxW-WaMughV03d2tarKDoFGkwliIltREbnbiPpA1L-CpvOcXGLpSe-PuZRs2HO4EnbCWw/exec"; 
         const COLORS = ["#3b82f6", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6"];
         const CAT_NAMES = { "1": "원금", "2": "특별", "3": "배당" };
@@ -949,7 +950,20 @@ const centerTextPlugin = {
 
         async function loadTransactionsFromFirebase() {
             if(!firestoreDb) throw new Error('파이어베이스 설정이 필요합니다.');
-            const snap = await firestoreDb.collection(firebaseCollection).get();
+            let snap;
+            try {
+                snap = await firestoreDb
+                    .collection(firebaseCollection)
+                    .orderBy('date', 'desc')
+                    .limit(HISTORY_LOAD_LIMIT)
+                    .get();
+            } catch (e) {
+                console.warn('Ordered history query failed, using fallback query.', e);
+                snap = await firestoreDb
+                    .collection(firebaseCollection)
+                    .limit(HISTORY_LOAD_LIMIT)
+                    .get();
+            }
             return snap.docs.map(doc => toHistoryRecord({ id: doc.id, ...(doc.data() || {}) }, 'firebase'));
         }
 
@@ -1128,10 +1142,11 @@ const centerTextPlugin = {
                 setTimeout(() => totalValueEl.classList.remove('sync-flash'), 650);
             }
 
-            if(historyRecoveredWithFallback) setSyncStatus("컬렉션 자동 복구 · 기록 동기화됨");
-            else if(!hasPriceUrl) setSyncStatus("가격 URL 미설정 · 기록만 동기화됨");
-            else if(priceSyncFailed) setSyncStatus("가격 연결 실패 · 기록은 동기화됨");
-            else setSyncStatus("최근 업데이트: " + new Date().toLocaleTimeString());
+            const limitedHint = transactions.length >= HISTORY_LOAD_LIMIT ? ` · 최근 ${HISTORY_LOAD_LIMIT}건` : '';
+            if(historyRecoveredWithFallback) setSyncStatus("컬렉션 자동 복구 · 기록 동기화됨" + limitedHint);
+            else if(!hasPriceUrl) setSyncStatus("가격 URL 미설정 · 기록만 동기화됨" + limitedHint);
+            else if(priceSyncFailed) setSyncStatus("가격 연결 실패 · 기록은 동기화됨" + limitedHint);
+            else setSyncStatus("최근 업데이트: " + new Date().toLocaleTimeString() + limitedHint);
 
             if(icon) icon.classList.remove('sync-spin');
         }
@@ -1463,13 +1478,6 @@ if(assetChart){
                 };
                 const depositTone = depositToneMap[normalizedCategory] || depositToneMap["3"];
                 const iconCode = isDeposit ? CAT_ICONS[normalizedCategory] || '💳' : '<svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 11 4-7"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4"/><path d="m9 11 1 9"/><path d="m15 11-1 9"/></svg>';
-                const tickerKey = String(t.ticker || t.name || '');
-                const colorIndex = tickerKey.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0) % COLORS.length;
-                const stockAvatarBg = COLORS[colorIndex];
-                const iconCode = isDeposit
-                    ? CAT_ICONS[normalizedCategory] || '💳'
-                    : `<span class="text-white font-black text-[11px]">${escapeHtml(String(t.name || '?')[0] || '?')}</span>`;
-
                 const themeColor = isDeposit ? depositTone.iconClass : 'slate-600';
                 const safeName = escapeHtml(t.name);
                 const safeId = escapeHtml(t.id);
@@ -1477,15 +1485,6 @@ if(assetChart){
                 const shares = Number(t.shares || 0);
                 const price = Number(t.price || 0);
                 return `<div class="glass-card p-3.5 md:p-4 flex justify-between items-start md:items-center transition hover:shadow-xl border-l-4 gap-2.5 ${isDeposit ? depositTone.borderClass : 'border-l-slate-800'} text-left font-sans"><div class="flex items-center gap-3.5 text-left font-sans min-w-0 flex-1"><div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[12px] border border-slate-100 shadow-sm text-center"><span class="text-${themeColor} flex items-center justify-center">${iconCode}</span></div><div class="text-left font-sans min-w-0"><p class="text-[9px] text-slate-400 font-black mb-0.5 uppercase tracking-widest text-left font-sans">${safeDate} · ${isDeposit ? '현금 입금' : '매수'}</p><p class="text-[13px] font-black ${isDeposit ? depositTone.textClass : 'text-slate-800'} text-left font-sans truncate">${isDeposit ? (depositLabel + ' 입금') : safeName}</p><p class="text-[9px] text-slate-400 font-black uppercase mt-0.5 text-left font-sans">${isDeposit ? safeName : shares.toFixed(2) + '주 · @₩' + price.toLocaleString()}</p></div></div><div class="flex flex-col items-end gap-2 text-right font-sans shrink-0 pl-2"><p class="font-black ${isDeposit ? depositTone.textClass : 'text-slate-900'} text-sm tracking-tight text-right font-sans">₩${Math.round(shares*price).toLocaleString()}</p><div class="flex gap-2 font-sans"><button type="button" data-action="edit" data-id="${safeId}" class="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-100 text-slate-400 transition hover:bg-indigo-500 hover:text-white active:scale-90"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button><button type="button" data-action="delete" data-id="${safeId}" class="w-6 h-6 flex items-center justify-center rounded-lg bg-rose-50 text-rose-400 transition hover:bg-rose-500 hover:text-white active:scale-90"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button></div></div></div>`;
-                const iconWrapperClass = isDeposit
-                    ? 'w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[12px] border border-slate-100 shadow-sm text-center'
-                    : 'w-10 h-10 rounded-xl flex items-center justify-center text-center shadow-sm';
-                const iconWrapperStyle = isDeposit ? '' : `style="background:${stockAvatarBg}"`;
-                const iconInner = isDeposit
-                    ? `<span class="text-${themeColor} flex items-center justify-center">${iconCode}</span>`
-                    : iconCode;
-                return `<div class="glass-card p-3.5 md:p-4 flex justify-between items-start md:items-center transition hover:shadow-xl border-l-4 gap-2.5 ${isDeposit ? depositTone.borderClass : 'border-l-slate-800'} text-left font-sans"><div class="flex items-center gap-3.5 text-left font-sans min-w-0 flex-1"><div class="${iconWrapperClass}" ${iconWrapperStyle}>${iconInner}</div><div class="text-left font-sans min-w-0"><p class="text-[9px] text-slate-400 font-black mb-0.5 uppercase tracking-widest text-left font-sans">${safeDate} · ${isDeposit ? '현금 입금' : '매수'}</p><p class="text-[13px] font-black ${isDeposit ? depositTone.textClass : 'text-slate-800'} text-left font-sans truncate">${isDeposit ? (depositLabel + ' 입금') : safeName}</p><p class="text-[9px] text-slate-400 font-black uppercase mt-0.5 text-left font-sans">${isDeposit ? safeName : shares.toFixed(2) + '주 · @₩' + price.toLocaleString()}</p></div></div><div class="flex flex-col items-end gap-2 text-right font-sans shrink-0 pl-2"><p class="font-black ${isDeposit ? depositTone.textClass : 'text-slate-900'} text-sm tracking-tight text-right font-sans">₩${Math.round(shares*price).toLocaleString()}</p><div class="flex gap-2 font-sans"><button type="button" data-action="edit" data-id="${safeId}" class="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-100 text-slate-400 transition hover:bg-indigo-500 hover:text-white active:scale-90"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button><button type="button" data-action="delete" data-id="${safeId}" class="w-6 h-6 flex items-center justify-center rounded-lg bg-rose-50 text-rose-400 transition hover:bg-rose-500 hover:text-white active:scale-90"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button></div></div></div>`;
-
                 }).join('');
                 return `<section class="space-y-2"><h4 class="px-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">${escapeHtml(monthKey)}</h4><div class="space-y-2">${itemsHtml}</div></section>`;
             }).join('');
