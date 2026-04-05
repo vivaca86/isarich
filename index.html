@@ -884,15 +884,124 @@ const centerTextPlugin = {
             return ['1', '2', '3'].includes(cat) && (name.includes('입금') || name.includes('충전'));
         }
 
+        function roundShares(value) {
+            const n = Number(value || 0);
+            if (!Number.isFinite(n)) return 0;
+            return Math.round(n * 10000) / 10000;
+        }
+
+        function roundMoney(value) {
+            const n = Number(value || 0);
+            if (!Number.isFinite(n)) return 0;
+            return Math.round(n * 100) / 100;
+        }
+
+        function simulatePortfolioState(inputTransactions) {
+            const sortedTx = [...(inputTransactions || [])].sort((a, b) => {
+                const dateDiff = new Date(a.date) - new Date(b.date);
+                if (dateDiff !== 0) return dateDiff;
+                return String(a.id || '').localeCompare(String(b.id || ''));
+            });
+
+            const cash = { "1": 0, "2": 0, "3": 0 };
+            const chargedByCat = { "1": 0, "2": 0, "3": 0 };
+            const buyUsedByCat = { "1": 0, "2": 0, "3": 0 };
+            const holdings = {};
+            let totalBuyAmount = 0;
+
+            sortedTx.forEach((tx) => {
+                const shares = roundShares(tx?.shares || 0);
+                const price = Number(tx?.price || 0);
+                if (!Number.isFinite(price) || price <= 0) return;
+                const amt = roundMoney(Math.abs(shares * price));
+
+                if (isDepositTransaction(tx)) {
+                    const cat = normalizeCashCategory(tx?.category);
+                    cash[cat] = roundMoney(cash[cat] + amt);
+                    chargedByCat[cat] = roundMoney(chargedByCat[cat] + amt);
+                    return;
+                }
+
+                const ticker = String(tx?.ticker || '').trim();
+                if (!ticker || shares === 0) return;
+                if (!holdings[ticker]) {
+                    holdings[ticker] = { shares: 0, cost: 0, name: tx?.name || ticker, alloc: { "1": 0, "2": 0, "3": 0 } };
+                }
+                const h = holdings[ticker];
+
+                if (shares > 0) {
+                    totalBuyAmount = roundMoney(totalBuyAmount + amt);
+                    h.shares = roundShares(h.shares + shares);
+                    h.cost = roundMoney(h.cost + amt);
+
+                    let remain = amt;
+                    ['3', '2', '1'].forEach(cat => {
+                        if (remain <= 0) return;
+                        const usable = Math.max(0, cash[cat]);
+                        const used = Math.min(usable, remain);
+                        cash[cat] = roundMoney(cash[cat] - used);
+                        h.alloc[cat] = roundMoney(h.alloc[cat] + used);
+                        buyUsedByCat[cat] = roundMoney(buyUsedByCat[cat] + used);
+                        remain = roundMoney(remain - used);
+                    });
+                    if (remain > 0) {
+                        cash['1'] = roundMoney(cash['1'] - remain);
+                        h.alloc['1'] = roundMoney(h.alloc['1'] + remain);
+                        buyUsedByCat['1'] = roundMoney(buyUsedByCat['1'] + remain);
+                    }
+                    return;
+                }
+
+                const sellQty = Math.abs(shares);
+                if (h.shares <= 0) return;
+                const actualSellQty = Math.min(sellQty, h.shares);
+                const proceeds = roundMoney(actualSellQty * price);
+                const avgCost = h.shares > 0 ? h.cost / h.shares : 0;
+                const costBasisSold = roundMoney(actualSellQty * avgCost);
+                const realizedPnl = roundMoney(proceeds - costBasisSold);
+
+                h.shares = roundShares(h.shares - actualSellQty);
+                h.cost = roundMoney(Math.max(0, h.cost - costBasisSold));
+
+                let remainCost = costBasisSold;
+                const recovered = { "1": 0, "2": 0, "3": 0 };
+                ['3', '2', '1'].forEach(cat => {
+                    if (remainCost <= 0) return;
+                    const fromCat = Math.min(h.alloc[cat], remainCost);
+                    h.alloc[cat] = roundMoney(h.alloc[cat] - fromCat);
+                    recovered[cat] = roundMoney(recovered[cat] + fromCat);
+                    remainCost = roundMoney(remainCost - fromCat);
+                });
+                if (remainCost > 0) recovered['1'] = roundMoney(recovered['1'] + remainCost);
+
+                ['1', '2', '3'].forEach(cat => {
+                    cash[cat] = roundMoney(cash[cat] + recovered[cat]);
+                });
+
+                if (realizedPnl >= 0) {
+                    cash['3'] = roundMoney(cash['3'] + realizedPnl);
+                } else {
+                    const loss = Math.abs(realizedPnl);
+                    const recoveredTotal = recovered['1'] + recovered['2'] + recovered['3'];
+                    if (recoveredTotal > 0) {
+                        ['1', '2', '3'].forEach(cat => {
+                            const ratio = recovered[cat] / recoveredTotal;
+                            cash[cat] = roundMoney(cash[cat] - (loss * ratio));
+                        });
+                    } else {
+                        cash['1'] = roundMoney(cash['1'] - loss);
+                    }
+                }
+            });
+
+            return { cash, chargedByCat, buyUsedByCat, holdings, totalBuyAmount };
+        }
+
         function getHoldingSharesByTicker(ticker) {
             const targetTicker = String(ticker || '').trim();
             if (!targetTicker) return 0;
-            return transactions.reduce((sum, tx) => {
-                if (isDepositTransaction(tx)) return sum;
-                const txTicker = String(tx?.ticker || '').trim();
-                if (txTicker !== targetTicker) return sum;
-                return sum + Number(tx?.shares || 0);
-            }, 0);
+            const state = simulatePortfolioState(transactions);
+            return roundShares(state.holdings?.[targetTicker]?.shares || 0);
         }
 
         function initFirebase() {
@@ -1254,7 +1363,7 @@ async function postMutation(action, payload = {}) {
         window.saveDetailTrade = async (side) => {
             const date = getEl('detail-trade-date')?.value;
             const price = Number(getEl('detail-trade-price')?.value || 0);
-            const sharesInput = Number(getEl('detail-trade-shares')?.value || 0);
+            const sharesInput = roundShares(getEl('detail-trade-shares')?.value || 0);
             const isSell = side === 'sell';
             const shares = isSell ? -Math.abs(sharesInput) : Math.abs(sharesInput);
             const actionBtn = getEl(isSell ? 'detail-sell-btn' : 'detail-buy-btn');
@@ -1264,8 +1373,8 @@ async function postMutation(action, payload = {}) {
                 alert('종목 정보를 찾지 못했습니다. 상세 창을 다시 열어 주세요.');
                 return;
             }
-            if(!date || !price || !sharesInput) {
-                alert('날짜, 금액, 수량을 모두 입력해 주세요.');
+            if(!date || !sharesInput || price <= 0) {
+                alert('날짜, 금액(0보다 큼), 수량을 모두 입력해 주세요.');
                 return;
             }
             if(isSell) {
@@ -1307,45 +1416,13 @@ async function postMutation(action, payload = {}) {
         };
 
         function updateUI() {
-            const h = {}; let totalV = 0, totalC = 0, totalD = 0;
-            const cashD = { "1": 0, "2": 0, "3": 0 };
-            const chargedByCat = { "1": 0, "2": 0, "3": 0 };
-            const usedByCat = { "1": 0, "2": 0, "3": 0 };
-            const sortedTx = [...transactions].sort((a, b) => {
-                const dateDiff = new Date(a.date) - new Date(b.date);
-                if (dateDiff !== 0) return dateDiff;
-                return String(a.id || '').localeCompare(String(b.id || ''));
-            });
-
-            sortedTx.forEach(t => {
-                const amt = Number(t.shares || 0) * Number(t.price || 0);
-                if(isDepositTransaction(t)) {
-                    const cat = normalizeCashCategory(t.category);
-                    cashD[cat] += amt;
-                    chargedByCat[cat] += amt;
-                    return;
-                }
-
-                const ticker = String(t.ticker || '').trim();
-                if(!ticker) return;
-
-                if (!h[ticker]) h[ticker] = { shares: 0, cost: 0, name: t.name || ticker };
-                h[ticker].shares += Number(t.shares || 0);
-                h[ticker].cost += amt;
-                totalC += amt;
-
-                let remain = amt;
-                ['3', '2', '1'].forEach(cat => {
-                    if (remain <= 0) return;
-                    const usable = Math.max(0, cashD[cat]);
-                    const used = Math.min(usable, remain);
-                    cashD[cat] -= used;
-                    usedByCat[cat] += used;
-                    remain -= used;
-                });
-
-                if (remain > 0) cashD['1'] -= remain;
-            });
+            let totalV = 0, totalD = 0;
+            const state = simulatePortfolioState(transactions);
+            const h = state.holdings;
+            const cashD = state.cash;
+            const chargedByCat = state.chargedByCat;
+            const usedByCat = state.buyUsedByCat;
+            const totalC = state.totalBuyAmount;
 
             const usedDiv = usedByCat['3'];
             const curCash = cashD["1"] + cashD["2"] + cashD["3"];
@@ -1644,51 +1721,11 @@ if(assetChart){
             detailModalTicker = ticker;
             detailModalName = String(data[0].name || ticker);
 
-            const sortedTx = [...transactions].sort((a, b) => {
-                const dateDiff = new Date(a.date) - new Date(b.date);
-                if (dateDiff !== 0) return dateDiff;
-                return String(a.id || '').localeCompare(String(b.id || ''));
-            });
-
-            const cashByCat = { "1": 0, "2": 0, "3": 0 };
-            let c1 = 0, c2 = 0, c3 = 0;
-
-            sortedTx.forEach(tx => {
-                const amt = Number(tx.shares || 0) * Number(tx.price || 0);
-                if (amt <= 0) return;
-
-                if (isDepositTransaction(tx)) {
-                    const cat = normalizeCashCategory(tx.category);
-                    cashByCat[cat] += amt;
-                    return;
-                }
-
-                const txTicker = String(tx.ticker || '').trim();
-                if (!txTicker) return;
-
-                let remain = amt;
-                const used = { "1": 0, "2": 0, "3": 0 };
-                ['3', '2', '1'].forEach(cat => {
-                    if (remain <= 0) return;
-                    const usable = Math.max(0, cashByCat[cat]);
-                    const take = Math.min(usable, remain);
-                    cashByCat[cat] -= take;
-                    used[cat] += take;
-                    remain -= take;
-                });
-
-                if (remain > 0) {
-                    cashByCat['1'] -= remain;
-                    used['1'] += remain;
-                }
-
-                if (txTicker === ticker) {
-                    c1 += used['1'];
-                    c2 += used['2'];
-                    c3 += used['3'];
-                }
-            });
-
+            const state = simulatePortfolioState(transactions);
+            const alloc = state.holdings?.[ticker]?.alloc || { "1": 0, "2": 0, "3": 0 };
+            const c1 = Number(alloc['1'] || 0);
+            const c2 = Number(alloc['2'] || 0);
+            const c3 = Number(alloc['3'] || 0);
             const tot = c1 + c2 + c3;
             const p1 = tot > 0 ? (c1 / tot) * 100 : 0;
             const p2 = tot > 0 ? (c2 / tot) * 100 : 0;
