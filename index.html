@@ -40,16 +40,6 @@
             body { padding-top: 0; }
         }
 
-        .glass-card { 
-            background: rgba(255, 255, 255, 0.75);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            box-shadow: 0 12px 40px -15px rgba(59, 130, 246, 0.08);
-            border-radius: 1.75rem; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
         .reinvest-highlight {
             box-shadow: 0 0 20px rgba(59, 130, 246, 0.18);
         }
@@ -62,18 +52,8 @@
             transition: all 0.25s ease;
             width: 100%;
             outline: none;
+            box-sizing: border-box;
         }
-/* ===== 날짜 input 튀어나옴 완전 차단 ===== */
-input[type="date"] {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-}
-
-.premium-input {
-    box-sizing: border-box;
-}
 
         .premium-input:focus {
             border-color: #3b82f6 !important;
@@ -88,6 +68,12 @@ input[type="date"] {
         .clickable:active { transform: scale(0.96); opacity: 0.9; }
         .sync-spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes syncFlash {
+            0% { transform: scale(1); text-shadow: 0 0 0 rgba(59, 130, 246, 0); }
+            45% { transform: scale(1.02); text-shadow: 0 0 18px rgba(59, 130, 246, 0.3); }
+            100% { transform: scale(1); text-shadow: 0 0 0 rgba(59, 130, 246, 0); }
+        }
+        .sync-flash { animation: syncFlash .55s ease; }
 
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.1); border-radius: 10px; }
@@ -131,8 +117,8 @@ input[type="date"] {
 input[type="date"] {
     appearance: none;
     -webkit-appearance: none;
-    width: 100%;
-    max-width: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
     min-width: 0;
     box-sizing: border-box;
     padding-right: 10px;
@@ -150,26 +136,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(236, 244, 255, 0.78));
             border: 1px solid rgba(148, 163, 184, 0.22);
             box-shadow: 0 18px 40px -22px rgba(30, 64, 175, 0.28);
-        }
-
-        .cta-primary {
-            position: relative;
-            overflow: hidden;
-            isolation: isolate;
-            background: linear-gradient(135deg, #1e3a8a, #2563eb) !important;
-            box-shadow: 0 14px 28px -14px rgba(37, 99, 235, 0.85) !important;
-        }
-
-        .cta-primary::before {
-            content: "";
-            position: absolute;
-            width: 200px;
-            height: 200px;
-            left: -80px;
-            top: -120px;
-            border-radius: 999px;
-            background: radial-gradient(circle, rgba(125, 211, 252, 0.42), transparent 70%);
-            z-index: -1;
         }
 
         .wallet-card {
@@ -270,7 +236,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             box-shadow: var(--ui-shadow-soft);
         }
 
-        .cta-primary,
+        .btn-token,
         #cancel-edit-btn,
         #cancel-edit-btn-deposit,
         #section-dashboard header button,
@@ -282,12 +248,24 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             transition: transform .18s ease, box-shadow .22s ease, filter .22s ease, background-color .22s ease;
         }
 
-        .cta-primary {
+        .btn-primary-strong {
             box-shadow: 0 16px 28px -18px rgba(37, 99, 235, 0.7) !important;
             filter: saturate(1.05);
         }
 
-        .cta-primary:hover,
+        .btn-primary-soft {
+            box-shadow: 0 10px 20px -14px rgba(37, 99, 235, 0.45) !important;
+        }
+
+        .btn-neutral {
+            box-shadow: var(--ui-shadow-press);
+            background: rgba(241, 245, 249, 0.9);
+            color: #475569;
+            border: 1px solid rgba(148, 163, 184, 0.32);
+        }
+
+        .btn-primary-strong:hover,
+        .btn-primary-soft:hover,
         #settings-modal button:hover,
         #cash-modal button:hover {
             transform: translateY(-1px);
@@ -304,20 +282,42 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             border-color: transparent;
         }
 
-        #cancel-edit-btn,
-        #cancel-edit-btn-deposit {
-            border: 1px solid rgba(148, 163, 184, 0.32);
-            background: rgba(241, 245, 249, 0.9);
-            color: #475569;
-            box-shadow: var(--ui-shadow-press);
-        }
-
         .kb-card-stack > .wallet-card {
             margin-bottom: 2px;
         }
 
         .holding-item {
             box-shadow: 0 8px 18px -16px rgba(15, 23, 42, 0.45);
+            transform: translateY(0);
+            transition: transform .22s ease, box-shadow .25s ease, filter .22s ease;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+        }
+
+        .holding-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 30px -22px rgba(15, 23, 42, 0.45);
+            filter: saturate(1.03);
+        }
+
+        .holding-tone-up {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(254, 242, 242, 0.85));
+        }
+
+        .holding-tone-down {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(239, 246, 255, 0.88));
+        }
+
+        .holding-tone-flat {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.9));
+        }
+
+        .holding-edge {
+            opacity: 0.85;
+            transition: opacity .2s ease;
+        }
+
+        .holding-item:hover .holding-edge {
+            opacity: 1;
         }
 
         #history-list .glass-card {
@@ -328,7 +328,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
         #save-btn::after,
         #save-div-btn::after,
-        #cash-modal .cta-primary::after {
+        #cash-modal .btn-primary-soft::after {
             content: "";
             display: inline-block;
             width: 16px;
@@ -383,25 +383,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         
         <!-- 대시보드 -->
         <section id="section-dashboard" class="animate-fade-up space-y-3 text-left font-sans">
-            <header class="flex justify-between items-end mb-2 text-left">
-                <div class="text-left font-sans">
-                    <div id="app-title-row" class="flex items-center gap-2"><h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">나의 엔진</h2><span id="app-version-badge" class="text-[9px] font-black px-2 py-1 rounded-md bg-slate-900 text-white">v1.0.17</span></div>
-                    <p class="text-[10px] text-blue-600 mt-1.5 flex items-center gap-1.5 font-black uppercase tracking-widest text-left" id="sync-time">
-                        <i class="fa-solid fa-rotate-right"></i> 동기화 대기 중
-                    </p>
-                </div>
-                <button onclick="syncAllData()" class="bg-white/50 backdrop-blur-md p-3 rounded-2xl shadow-sm border border-slate-200 active:scale-90 transition text-slate-400 hover:text-blue-600">
-                    <svg id="sync-icon" class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
-                </button>
-            </header>
-
+            <div id="dashboard-sync-mini" class="flex items-center gap-2 px-1 py-0.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-500/80"></span>
+                <p id="sync-time-mini" class="text-[10px] text-blue-600/90 font-black uppercase tracking-widest">동기화 대기 중</p>
+            </div>
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start font-sans text-left">
                 <div class="lg:col-span-8 space-y-3 text-left">
                     <div class="bg-slate-900 rounded-[2.1rem] p-7 md:p-9 text-white shadow-2xl relative overflow-hidden group text-left">
                         <div class="absolute -right-20 -top-20 w-80 h-80 bg-blue-500/10 rounded-full blur-[100px] group-hover:bg-blue-500/20 transition-all duration-1000"></div>
                         <div class="hero-corner-art" aria-hidden="true"></div>
                         <div class="relative z-10 text-left">
-                            <span class="text-slate-500 text-[10px] font-black tracking-[0.25em] uppercase mb-1.5 block text-left">Total Balance</span>
+                            <span class="text-slate-500 text-[10px] font-black tracking-[0.25em] uppercase mb-1.5 block text-left">총 자산</span>
                             <div class="flex items-baseline gap-2.5 text-left">
                                 <h1 class="text-4xl md:text-5xl font-black tracking-tighter font-sans text-left" id="stat-total-value">₩0</h1>
                             </div>
@@ -412,11 +404,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                             </div>
                             <div class="grid grid-cols-2 gap-2 border-t border-white/10 pt-2.5 md:pt-3 text-left">
                                 <div onclick="openCashModal()" id="cash-card-area" class="cursor-pointer active:scale-95 transition hover:bg-white/5 p-2 rounded-xl text-left">
-                                    <p class="text-[6px] text-slate-300/90 mb-0.5 uppercase font-black tracking-[0.2em] text-left">Liquid Cash <i class="fa-solid fa-chevron-right ml-0.5 text-[7px] opacity-30 text-center"></i></p>
+                                    <p class="text-[6px] text-slate-300/90 mb-0.5 uppercase font-black tracking-[0.2em] text-left">현금 잔고 <i class="fa-solid fa-chevron-right ml-0.5 text-[7px] opacity-30 text-center"></i></p>
                                     <p class="font-black text-base font-sans tracking-tight text-left" id="stat-cash-balance">₩0</p>
                                 </div>
                                 <div class="text-right p-2 font-sans">
-                                    <p class="text-[6px] text-slate-300/90 mb-0.5 uppercase font-black tracking-[0.2em] text-right">Self Growth</p>
+                                    <p class="text-[6px] text-slate-300/90 mb-0.5 uppercase font-black tracking-[0.2em] text-right">재투자율</p>
                                     <p class="font-black text-base text-emerald-300 tracking-tight text-right font-sans" id="stat-reinvest-rate">0%</p>
                                 </div>
                             </div>
@@ -427,7 +419,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                         <div class="flex items-center gap-5 text-left font-sans">
                             <div class="w-11 h-11 md:w-14 md:h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl shadow-xl shadow-blue-500/20 transition group-hover:rotate-3 text-white text-center font-sans" id="div-level-icon">🌱</div>
                             <div class="text-left font-sans">
-                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-left">Engine Mood</p>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-left">엔진 상태</p>
                                 <p id="dividend-level-text" class="text-sm md:text-lg font-black text-slate-900 tracking-tight leading-none font-sans text-left">데이터 수신 대기 중</p>
                             </div>
                         </div>
@@ -435,8 +427,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 
                         <div class="text-right font-sans">
-                            <p class="text-[10px] font-black text-slate-400 uppercase mb-1 text-right font-sans">Expected</p>
-                            <p class="text-xl md:text-2xl font-black text-blue-600 tracking-tighter text-right font-sans" id="stat-monthly-dividend">₩0</p>
+                            <p class="text-[10px] font-black text-slate-400 uppercase mb-1 text-right font-sans">예상 배당</p>
+                            <p class="text-xl md:text-2xl font-black text-emerald-600 tracking-tighter text-right font-sans" id="stat-monthly-dividend">₩0</p>
                         </div>
                     </div>
 
@@ -457,17 +449,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                     </div>
 
                     <div class="glass-card overflow-hidden text-left font-sans">
-                        <div class="p-6 border-b border-slate-100/50 flex justify-between items-center bg-white/30 text-left">
-                            <h3 class="font-black text-base text-slate-900 tracking-tighter uppercase text-left font-sans">Asset List</h3>
+                        <div class="p-4 border-b border-slate-100/50 flex justify-between items-center bg-white/30 text-left">
+                            <h3 class="font-black text-base text-slate-900 tracking-tighter uppercase text-left font-sans">자산 목록</h3>
                             <span class="text-[9px] font-black text-slate-400 bg-slate-100/50 border border-slate-200 px-2.5 py-1 rounded-lg uppercase text-center">Live</span>
                         </div>
-                        <div id="holdings-list" class="space-y-2 p-2 text-left font-sans"></div>
+                        <div id="holdings-list" class="space-y-1.5 p-1.5 text-left font-sans"></div>
                     </div>
                 </div>
 
                 <div class="lg:col-span-4 space-y-2.5 text-left font-sans">
-                    <div class="glass-card p-6 flex flex-col items-center justify-center min-h-[300px] text-left font-sans font-sans">
-                        <h3 class="font-black text-[10px] text-slate-400 uppercase tracking-[0.25em] mb-8 w-full text-left font-sans">Allocation Mix</h3>
+                    <div class="glass-card p-6 flex flex-col items-center justify-center min-h-[300px] text-left font-sans">
+                        <h3 class="font-black text-[10px] text-slate-400 uppercase tracking-[0.25em] mb-8 w-full text-left font-sans">자산 비중</h3>
                         <div class="relative w-44 h-44 mb-8 text-center font-sans">
                             <canvas id="assetChart"></canvas>
                         </div>
@@ -480,16 +472,25 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         <!-- 전체 기록 보관소 -->
         <section id="section-history" class="hidden animate-fade-up text-left font-sans">
             <header class="mb-8 pl-1 text-left font-sans">
-                <p class="text-blue-600 font-black text-xs uppercase tracking-[0.2em] mb-1 text-left">History Feed</p>
+                <p class="text-blue-600 font-black text-xs uppercase tracking-[0.2em] mb-1 text-left">기록 피드</p>
                 <h2 class="text-3xl font-black text-slate-900 tracking-tighter text-left">전체 기록 보관소</h2>
+                <div id="history-filter-group" class="mt-4 flex flex-wrap gap-2">
+                    <button type="button" data-history-filter="30" class="history-filter-btn px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-500 text-[10px] font-black">최근 30일</button>
+                    <button type="button" data-history-filter="90" class="history-filter-btn px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-500 text-[10px] font-black">최근 90일</button>
+                    <button type="button" data-history-filter="365" class="history-filter-btn px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-500 text-[10px] font-black">최근 1년</button>
+                    <button type="button" data-history-filter="all" class="history-filter-btn px-3 py-1.5 rounded-xl border border-slate-900 bg-slate-900 text-white text-[10px] font-black">전체</button>
+                </div>
             </header>
             <div id="history-list" class="space-y-4 px-1 text-left font-sans"></div>
+            <div class="mt-4 flex justify-center">
+                <button id="history-load-more" type="button" class="hidden btn-token btn-primary-soft px-4 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-wider">더보기</button>
+            </div>
         </section>
 
         <!-- 거래소 터미널 -->
         <section id="section-transaction" class="hidden animate-fade-up max-w-lg mx-auto font-sans">
             <header class="mb-8 pl-1 text-center font-sans">
-                <p class="text-blue-600 font-black text-xs uppercase tracking-[0.2em] mb-1 text-center">Exchange Center</p>
+                <p class="text-blue-600 font-black text-xs uppercase tracking-[0.2em] mb-1 text-center">거래 센터</p>
                 <h2 class="text-3xl font-black text-slate-900 tracking-tighter text-center uppercase">거래 및 자산 입력</h2>
             </header>
             
@@ -502,7 +503,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             <div id="tab-content-purchase" class="space-y-5 text-left font-sans">
                 <div class="glass-card p-8 md:p-10 space-y-7 text-left font-sans">
                     <div>
-                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-4 tracking-widest text-left font-sans font-sans">종목 퀵 선택</label>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-4 tracking-widest text-left font-sans">종목 퀵 선택</label>
                         <div id="quick-select-buttons" class="flex flex-wrap gap-2.5 text-left font-sans"></div>
                     </div>
 
@@ -545,8 +546,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                     <input type="hidden" id="edit-id" value="">
                     
                     <div id="form-action-buttons" class="flex gap-2 text-left font-sans">
-                        <button onclick="saveStockPurchase()" id="save-btn" class="cta-primary flex-1 py-5 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-2xl active:scale-95 transition-all hover:bg-slate-800 text-center uppercase">매수하기</button>
-                        <button onclick="exitEditMode()" id="cancel-edit-btn" class="hidden px-6 py-5 bg-slate-100 text-slate-400 rounded-2xl font-black text-sm active:scale-95 text-center font-sans">취소</button>
+                        <button onclick="saveStockPurchase()" id="save-btn" class="btn-token btn-primary-strong flex-1 py-5 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-2xl active:scale-95 transition-all hover:bg-slate-800 text-center uppercase">매수하기</button>
+                        <button onclick="exitEditMode()" id="cancel-edit-btn" class="hidden btn-token btn-neutral px-6 py-5 rounded-2xl font-black text-sm active:scale-95 text-center font-sans">취소</button>
                     </div>
                 </div>
             </div>
@@ -559,9 +560,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                         <input type="date" id="div-date" class="premium-input px-4 font-black text-sm text-left">
                     </div>
                     <div>
-                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-4 tracking-widest text-left font-sans font-sans">자금 성격 분류</label>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-4 tracking-widest text-left font-sans">자금 성격 분류</label>
                         <div class="grid grid-cols-3 gap-3 text-left font-sans">
-                            <button onclick="setDepositCat(3)" id="dep-cat-3" class="flex flex-col items-center gap-2 py-4 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-500 text-[11px] font-black transition text-center font-sans font-sans font-sans">
+                            <button onclick="setDepositCat(3)" id="dep-cat-3" class="flex flex-col items-center gap-2 py-4 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-500 text-[11px] font-black transition text-center font-sans">
                                 <svg class="icon-svg mx-auto mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18.06"/><path d="M7 6h1v4"/></svg>
                                 <span>배당금</span>
                             </button>
@@ -584,8 +585,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                         </div>
                     </div>
                     <div class="flex gap-2 text-left font-sans">
-                        <button onclick="saveWalletDeposit()" id="save-div-btn" class="cta-primary flex-1 py-5 bg-blue-600 text-white rounded-xl font-black text-sm shadow-xl active:scale-95 transition-all hover:bg-blue-700 text-center uppercase">충전하기</button>
-                        <button onclick="exitEditMode()" id="cancel-edit-btn-deposit" class="hidden px-6 py-5 bg-slate-100 text-slate-400 rounded-2xl font-black text-sm active:scale-95 text-center font-sans">취소</button>
+                        <button onclick="saveWalletDeposit()" id="save-div-btn" class="btn-token btn-primary-soft flex-1 py-5 bg-blue-600 text-white rounded-xl font-black text-sm shadow-xl active:scale-95 transition-all hover:bg-blue-700 text-center uppercase">충전하기</button>
+                        <button onclick="exitEditMode()" id="cancel-edit-btn-deposit" class="hidden btn-token btn-neutral px-6 py-5 rounded-2xl font-black text-sm active:scale-95 text-center font-sans">취소</button>
                     </div>
                 </div>
             </div>
@@ -605,7 +606,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             </div>
             
             <div class="bg-slate-50 p-6 rounded-2xl mb-6 border border-slate-100 text-left font-sans">
-                <p class="text-[9px] font-black text-slate-400 mb-4 uppercase tracking-widest text-left font-sans">Fund Ratio Analysis</p>
+                <p class="text-[9px] font-black text-slate-400 mb-4 uppercase tracking-widest text-left font-sans">자금 비율 분석</p>
                 <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden flex shadow-inner text-left font-sans">
                     <div id="bar-invest-1" class="h-full bg-emerald-500 transition-all duration-1000" style="width:0%"></div>
                     <div id="bar-invest-2" class="h-full bg-violet-500 transition-all duration-1000" style="width:0%"></div>
@@ -619,21 +620,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                     <span class="flex items-center gap-1.5 text-left"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>재투자 <span id="val-reinvest" class="text-blue-600 font-black font-sans">0%</span></span>
                 </div>
             </div>
-            <p class="text-[9px] font-black text-slate-400 mb-4 uppercase tracking-widest text-left font-sans font-sans font-sans">Individual Records</p>
+            <p class="text-[9px] font-black text-slate-400 mb-4 uppercase tracking-widest text-left font-sans">개별 기록</p>
             <div id="modal-history-list" class="flex-1 overflow-y-auto max-h-[30vh] space-y-3 pb-2 text-left font-sans"></div>
         </div>
     </div>
 
     <!-- [Modal] 현금 잔고 -->
-    <div id="cash-modal" class="fixed inset-0 z-[100] hidden flex items-end lg:items-center justify-center lg:p-4 text-left font-sans font-sans">
+    <div id="cash-modal" class="fixed inset-0 z-[100] hidden flex items-end lg:items-center justify-center lg:p-4 text-left font-sans">
         <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-md font-sans" onclick="closeCashModal()"></div>
-        <div class="relative bg-white w-full lg:max-w-md p-8 rounded-t-[3rem] lg:rounded-[3rem] shadow-2xl modal-animate font-sans font-sans">
+        <div class="relative bg-white w-full lg:max-w-md p-8 rounded-t-[3rem] lg:rounded-[3rem] shadow-2xl modal-animate font-sans">
             <div class="flex justify-between items-start mb-8 font-sans text-left font-sans">
                 <div class="text-left font-sans">
                     <h3 class="text-2xl font-black text-slate-900 tracking-tighter text-left">투자 원금</h3>
-                    <p class="text-[10px] text-blue-500 font-black uppercase tracking-widest mt-1 text-left font-sans">Wallet Flow Breakdown</p>
+                    <p class="text-[10px] text-blue-500 font-black uppercase tracking-widest mt-1 text-left font-sans">자금 흐름 분석</p>
                 </div>
-                <button onclick="closeCashModal()" class="p-2.5 bg-slate-100 rounded-full text-slate-400 hover:bg-slate-200 transition text-center font-sans font-sans"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                <button onclick="closeCashModal()" class="p-2.5 bg-slate-100 rounded-full text-slate-400 hover:bg-slate-200 transition text-center font-sans"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             </div>
             <div class="space-y-5 text-left font-sans kb-card-stack">
                 <div class="wallet-card bg-blue-50/60 p-5 md:p-6 rounded-[1.6rem] border border-blue-100 flex justify-between items-center transition active:scale-[0.98] text-left">
@@ -658,8 +659,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                     <p class="wallet-card-amount text-xl font-black text-emerald-600 text-right tracking-tight font-sans" id="modal-cash-base">₩0</p>
                 </div>
             </div>
-            <div class="mt-8 pt-4 border-t border-slate-100 text-center font-sans font-sans">
-                <button onclick="showSection('transaction'); closeCashModal(); switchTab('deposit');" class="cta-primary w-full py-4.5 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-xl active:scale-95 transition uppercase tracking-widest text-center font-sans">현금 충전하러 가기</button>
+            <div class="mt-8 pt-4 border-t border-slate-100 text-center font-sans">
+                <button onclick="showSection('transaction'); closeCashModal(); switchTab('deposit');" class="btn-token btn-primary-soft w-full py-4.5 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-xl active:scale-95 transition uppercase tracking-widest text-center font-sans">현금 충전하러 가기</button>
             </div>
         </div>
     </div>
@@ -668,10 +669,22 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     <div id="settings-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6 text-left font-sans">
         <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-xl" onclick="closeSettings()"></div>
         <div class="relative bg-white w-full max-w-sm p-8 rounded-[2.5rem] shadow-2xl animate-fade-up text-left font-sans">
-            <h3 class="text-2xl font-black mb-8 tracking-tighter text-left font-sans font-sans">System Config</h3>
-<p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-6">
-    Version : ver.1.0.4
-</p>
+            <h3 class="text-2xl font-black mb-6 tracking-tighter text-left font-sans">시스템 설정</h3>
+            <div class="mb-6 p-4 rounded-2xl border border-slate-200 bg-slate-50/70">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-sm font-black text-slate-900 tracking-tight">나의 엔진</p>
+                        <p id="settings-version" class="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">v1.0.17</p>
+                    </div>
+                    <button onclick="syncAllData()" class="btn-token btn-primary-soft px-3 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-wide">
+                        <svg id="sync-icon" class="icon-btn inline-block mr-1 align-[-2px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                        새로고침
+                    </button>
+                </div>
+                <p class="text-[10px] text-blue-600 mt-3 flex items-center gap-1.5 font-black uppercase tracking-widest text-left" id="sync-time">
+                    <i class="fa-solid fa-rotate-right"></i> 동기화 대기 중
+                </p>
+            </div>
 
             <div class="space-y-6 text-left font-sans">
                 <div class="text-left font-sans">
@@ -692,12 +705,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                     <p>2) 프로젝트 설정의 웹 앱 Config JSON을 그대로 붙여넣기</p>
                     <p>3) 저장하면 입금(DEPOSIT)만 Firebase로 저장되고, 미설정 시 기존 시트 방식이 유지됩니다.</p>
                 </div>
-                <button onclick="saveSettings()" class="w-full py-5 bg-slate-900 text-white rounded-[1.5rem] font-black text-sm shadow-xl active:scale-95 transition mt-4 text-center font-sans font-sans font-sans">환경 설정 저장</button>
+                <button onclick="saveSettings()" class="btn-token btn-primary-soft w-full py-5 bg-slate-900 text-white rounded-[1.5rem] font-black text-sm shadow-xl active:scale-95 transition mt-4 text-center font-sans">환경 설정 저장</button>
             </div>
         </div>
     </div>
 
     <script>
+        const APP_VERSION = "1.0.17";
+        const HISTORY_LOAD_LIMIT = 500;
         const MY_GAS_URL = "https://script.google.com/macros/s/AKfycbxW-WaMughV03d2tarKDoFGkwliIltREbnbiPpA1L-CpvOcXGLpSe-PuZRs2HO4EnbCWw/exec"; 
         const COLORS = ["#3b82f6", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6"];
         const CAT_NAMES = { "1": "원금", "2": "특별", "3": "배당" };
@@ -730,6 +745,8 @@ const centerTextPlugin = {
 };
 
         let selectedTicker = "";
+        let historyFilterDays = 'all';
+        let historyVisibleCount = 100;
 
         // 엔진 레벨: 5,000원 단위 · 먹거리 미션 (최대 100,000원)
         function getDividendLevel(amount) {
@@ -810,7 +827,7 @@ const centerTextPlugin = {
             if (value === '1' || value === '원금' || lower === 'base' || lower === 'principal') return '1';
             if (value === '2' || value === '특별' || value === '특별금' || lower === 'special' || lower === 'bonus') return '2';
             if (value === '3' || value === '배당' || value === '배당금' || lower === 'dividend' || lower === 'reinvest' || value === '재투자') return '3';
-            return '3';
+            return '1';
         }
 
         function isDepositTransaction(tx) {
@@ -823,6 +840,12 @@ const centerTextPlugin = {
         }
 
         function initFirebase() {
+            if (typeof firebase === 'undefined' || !firebase?.initializeApp) {
+                console.warn('Firebase SDK is not available.');
+                firestoreDb = null;
+                return false;
+            }
+
             const parsed = parseFirebaseConfig(firebaseConfigRaw);
             const candidates = [parsed, DEFAULT_FIREBASE_CONFIG].filter(Boolean);
 
@@ -871,7 +894,20 @@ const centerTextPlugin = {
 
         async function loadTransactionsFromFirebase() {
             if(!firestoreDb) throw new Error('파이어베이스 설정이 필요합니다.');
-            const snap = await firestoreDb.collection(firebaseCollection).get();
+            let snap;
+            try {
+                snap = await firestoreDb
+                    .collection(firebaseCollection)
+                    .orderBy('date', 'desc')
+                    .limit(HISTORY_LOAD_LIMIT)
+                    .get();
+            } catch (e) {
+                console.warn('Ordered history query failed, using fallback query.', e);
+                snap = await firestoreDb
+                    .collection(firebaseCollection)
+                    .limit(HISTORY_LOAD_LIMIT)
+                    .get();
+            }
             return snap.docs.map(doc => toHistoryRecord({ id: doc.id, ...(doc.data() || {}) }, 'firebase'));
         }
 
@@ -916,10 +952,24 @@ const centerTextPlugin = {
             }
         }
 
+        async function fetchJsonWithTimeout(url, options = {}, timeoutMs = 12000) {
+            const response = await fetchWithTimeout(url, options, timeoutMs);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const text = await response.text();
+            return JSON.parse(text || "{}");
+        }
+
+        function getLocalDateInputValue() {
+            const now = new Date();
+            const offsetMs = now.getTimezoneOffset() * 60000;
+            return new Date(now.getTime() - offsetMs).toISOString().split('T')[0];
+        }
+
         function getEl(id) { return document.getElementById(id); }
         function getTrendVisual(rate) {
             const n = Number(rate || 0);
-<<<<<<< codex/update-progress-bar-colors-for-capital-display-r7zp9q
             if (n >= 75) return { iconHtml: '<i class="fa-solid fa-fire"></i><i class="fa-solid fa-rocket ml-1"></i>', lightTextClass: 'text-red-500', darkTextClass: 'text-red-300' };
             if (n >= 50) return { iconHtml: '<i class="fa-solid fa-mountain ml-[1px]"></i><i class="fa-solid fa-fire-flame-curved ml-1"></i>', lightTextClass: 'text-red-500', darkTextClass: 'text-red-300' };
             if (n >= 30) return { iconHtml: '<i class="fa-solid fa-fire-flame-curved"></i>', lightTextClass: 'text-red-500', darkTextClass: 'text-red-300' };
@@ -933,26 +983,42 @@ const centerTextPlugin = {
             if (n <= -5) return { iconHtml: '<i class="fa-solid fa-glass-water"></i>', lightTextClass: 'text-blue-500', darkTextClass: 'text-blue-300' };
             if (n < 0) return { iconHtml: '<i class="fa-solid fa-droplet"></i>', lightTextClass: 'text-blue-500', darkTextClass: 'text-blue-300' };
             return { iconHtml: '<i class="fa-solid fa-minus"></i>', lightTextClass: 'text-slate-500', darkTextClass: 'text-slate-300' };
-=======
-            if (n >= 50) return { icon: '🌋', lightTextClass: 'text-red-500', darkTextClass: 'text-red-300' };
-            if (n >= 10) return { icon: '🔥', lightTextClass: 'text-red-500', darkTextClass: 'text-red-300' };
-            if (n > 0) return { icon: '🚀', lightTextClass: 'text-red-500', darkTextClass: 'text-red-300' };
-            if (n <= -10) return { icon: '🧊', lightTextClass: 'text-blue-500', darkTextClass: 'text-blue-300' };
-            if (n < 0) return { icon: '💧', lightTextClass: 'text-blue-500', darkTextClass: 'text-blue-300' };
-            return { icon: '➖', lightTextClass: 'text-slate-500', darkTextClass: 'text-slate-300' };
->>>>>>> main
-        }
-
-        function dedupeAppTitleRow() {
-            const rows = document.querySelectorAll('#section-dashboard header #app-title-row');
-            if (rows.length <= 1) return;
-            rows.forEach((row, idx) => {
-                if (idx > 0) row.remove();
-            });
         }
 
         function safeSetText(id, text) { const el = getEl(id); if (el) el.innerText = text; }
         function safeSetHTML(id, html) { const el = getEl(id); if (el) el.innerHTML = html; }
+        function setSyncStatus(text) {
+            safeSetText('sync-time', text);
+            safeSetText('sync-time-mini', text);
+        }
+        function applyAppVersion() {
+            document.title = `ISA RICH Premium ver${APP_VERSION}`;
+            safeSetText('settings-version', `v${APP_VERSION}`);
+        }
+
+        function getStockVisual(name, ticker, fallbackColor = '#64748b') {
+            const safeName = String(name || '').trim();
+            const safeTicker = String(ticker || '').trim();
+            const upperTicker = safeTicker.toUpperCase();
+
+            if (safeName.includes('초고배당')) return { label: '초', bgColor: '#10b981' };
+            if (safeName.includes('고배당')) return { label: '고', bgColor: '#f59e0b' };
+            if (safeName.includes('S&P') || upperTicker === 'S&P500' || upperTicker === 'SP500') return { label: 'S', bgColor: '#3b82f6' };
+
+            return { label: String(safeName || safeTicker || '?')[0] || '?', bgColor: fallbackColor };
+        }
+
+        function renderHoldingCard({ ticker, name, yieldPct, shares, avgPrice, value, profit, prate, itemTrend, avatarColor }) {
+            const trendToneClass = prate >= 8 ? 'holding-tone-up' : (prate <= -8 ? 'holding-tone-down' : 'holding-tone-flat');
+            const edgeClass = prate >= 8 ? 'bg-gradient-to-b from-rose-400 to-orange-300' : (prate <= -8 ? 'bg-gradient-to-b from-blue-400 to-cyan-300' : 'bg-gradient-to-b from-slate-300 to-slate-200');
+            const safeName = escapeHtml(name);
+            const safeTicker = escapeHtml(ticker);
+            const stockVisual = getStockVisual(name, ticker, avatarColor);
+            const avatarInitial = escapeHtml(stockVisual.label);
+            const signedRate = `${profit >= 0 ? '+' : '-'}${Math.abs(prate).toFixed(1)}%`;
+
+            return `<div class="holding-item ${trendToneClass} relative flex justify-between items-start md:items-center py-3 px-4 rounded-[1.25rem] cursor-pointer group text-left gap-3 border-b-2 border-b-slate-200/80 overflow-hidden" data-ticker="${safeTicker}"><span class="holding-edge absolute left-0 top-0 h-full w-1.5 ${edgeClass}"></span><div class="flex items-center gap-3 text-left min-w-0 flex-1 pl-1"><div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-[11px] shadow-sm" style="background:${stockVisual.bgColor}">${avatarInitial}</div><div class="text-left font-sans min-w-0"><p class="font-black text-slate-800 text-[13px] font-sans truncate">${safeName} <span class="text-blue-500 font-bold text-[9px] ml-0.5 font-sans">[${yieldPct.toFixed(2)}%]</span></p><p class="text-[10px] text-slate-400 font-black mt-0.5 font-sans">${shares.toFixed(2)}주 · ₩${Math.round(avgPrice).toLocaleString()}</p></div></div><div class="text-right font-sans shrink-0 pl-1.5"><p class="font-black ${itemTrend.lightTextClass} text-[13px] text-right font-sans">₩${Math.round(value).toLocaleString()}</p><div class="mt-1 flex items-center justify-end gap-1.5"><span class="text-[11px] font-black ${itemTrend.lightTextClass}">${signedRate}</span><span class="text-[9px] font-black ${itemTrend.lightTextClass}">${itemTrend.iconHtml}</span></div></div></div>`;
+        }
 
         function switchTab(type) {
             const pb = getEl('tab-btn-purchase'), db = getEl('tab-btn-deposit');
@@ -980,7 +1046,7 @@ const centerTextPlugin = {
         }
 
         async function syncAllData() {
-            if(!firestoreDb && !initFirebase()) { safeSetText('sync-time', "파이어베이스 미연결"); return; }
+            if(!firestoreDb && !initFirebase()) { setSyncStatus("파이어베이스 미연결"); return; }
             const icon = getEl('sync-icon'); if(icon) icon.classList.add('sync-spin');
             const hasPriceUrl = isValidSheetsUrl(sheetsUrl);
             let priceSyncFailed = false;
@@ -989,8 +1055,7 @@ const centerTextPlugin = {
             if(hasPriceUrl) {
                 try {
                     const ts = Date.now();
-                    const pRes = await fetchWithTimeout(`${sheetsUrl}?action=prices&_t=${ts}`, { redirect: 'follow' });
-                    marketData = JSON.parse(await pRes.text() || "{}");
+                    marketData = await fetchJsonWithTimeout(`${sheetsUrl}?action=prices&_t=${ts}`, { redirect: 'follow' });
                 } catch (e) {
                     console.error(e);
                     priceSyncFailed = true;
@@ -1010,23 +1075,31 @@ const centerTextPlugin = {
                         historyRecoveredWithFallback = true;
                     } catch (retryError) {
                         console.error(retryError);
-                        safeSetText('sync-time', "기록 연결 실패");
+                        setSyncStatus("기록 연결 실패");
                         if(icon) icon.classList.remove('sync-spin');
                         return;
                     }
                 } else {
-                    safeSetText('sync-time', "기록 연결 실패");
+                    setSyncStatus("기록 연결 실패");
                     if(icon) icon.classList.remove('sync-spin');
                     return;
                 }
             }
 
             updateUI(); updateQuickSelectUI();
+            const totalValueEl = getEl('stat-total-value');
+            if (totalValueEl) {
+                totalValueEl.classList.remove('sync-flash');
+                void totalValueEl.offsetWidth;
+                totalValueEl.classList.add('sync-flash');
+                setTimeout(() => totalValueEl.classList.remove('sync-flash'), 650);
+            }
 
-            if(historyRecoveredWithFallback) safeSetText('sync-time', "컬렉션 자동 복구 · 기록 동기화됨");
-            else if(!hasPriceUrl) safeSetText('sync-time', "가격 URL 미설정 · 기록만 동기화됨");
-            else if(priceSyncFailed) safeSetText('sync-time', "가격 연결 실패 · 기록은 동기화됨");
-            else safeSetText('sync-time', "최근 업데이트: " + new Date().toLocaleTimeString());
+            const limitedHint = transactions.length >= HISTORY_LOAD_LIMIT ? ` · 최근 ${HISTORY_LOAD_LIMIT}건` : '';
+            if(historyRecoveredWithFallback) setSyncStatus("컬렉션 자동 복구 · 기록 동기화됨" + limitedHint);
+            else if(!hasPriceUrl) setSyncStatus("가격 URL 미설정 · 기록만 동기화됨" + limitedHint);
+            else if(priceSyncFailed) setSyncStatus("가격 연결 실패 · 기록은 동기화됨" + limitedHint);
+            else setSyncStatus("최근 업데이트: " + new Date().toLocaleTimeString() + limitedHint);
 
             if(icon) icon.classList.remove('sync-spin');
         }
@@ -1159,12 +1232,18 @@ async function postMutation(action, payload = {}) {
                 const itemTrend = getTrendVisual(prate);
                 totalV += val; totalD += div;
                 labels.push(d.name); data.push(val); bg.push(COLORS[i % COLORS.length]);
-                const safeName = escapeHtml(d.name);
-<<<<<<< codex/update-progress-bar-colors-for-capital-display-r7zp9q
-                listHTML += `<div class="holding-item flex justify-between items-start md:items-center py-4 px-5 hover:bg-white/70 transition rounded-[1.5rem] cursor-pointer group text-left border border-slate-100 gap-4 border-b-2 border-b-slate-200/80" data-ticker="${escapeHtml(k)}"><div class="flex items-center gap-3.5 text-left min-w-0 flex-1"><div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-sm" style="background:${bg[i]}">${String(d.name)[0] || '?'}</div><div class="text-left font-sans min-w-0"><p class="font-black text-slate-800 text-[15px] font-sans truncate">${safeName} <span class="text-blue-500 font-bold text-[10px] ml-0.5 font-sans">[${yieldPct.toFixed(2)}%]</span></p><p class="text-[11px] text-slate-400 font-black mt-0.5 font-sans">${d.shares.toFixed(2)}주 · ₩${Math.round(d.cost/d.shares).toLocaleString()}</p></div></div><div class="text-right font-sans shrink-0 pl-2"><p class="font-black ${itemTrend.lightTextClass} text-sm text-right font-sans">₩${Math.round(val).toLocaleString()}</p><p class="text-[9px] font-black ${itemTrend.lightTextClass} uppercase mt-0.5 text-right font-sans">${itemTrend.iconHtml} ${profit>=0?'▲':'▼'} ${Math.abs(prate).toFixed(1)}%</p></div></div>`;
-=======
-                listHTML += `<div class="holding-item flex justify-between items-start md:items-center py-4 px-5 hover:bg-white/70 transition rounded-[1.5rem] cursor-pointer group text-left border border-slate-100 gap-4 border-b-2 border-b-slate-200/80" data-ticker="${escapeHtml(k)}"><div class="flex items-center gap-3.5 text-left min-w-0 flex-1"><div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-sm" style="background:${bg[i]}">${String(d.name)[0] || '?'}</div><div class="text-left font-sans min-w-0"><p class="font-black text-slate-800 text-[15px] font-sans truncate">${safeName} <span class="text-blue-500 font-bold text-[10px] ml-0.5 font-sans">[${yieldPct.toFixed(2)}%]</span></p><p class="text-[11px] text-slate-400 font-black mt-0.5 font-sans">${d.shares.toFixed(2)}주 · ₩${Math.round(d.cost/d.shares).toLocaleString()}</p></div></div><div class="text-right font-sans shrink-0 pl-2"><p class="font-black ${itemTrend.lightTextClass} text-sm text-right font-sans">₩${Math.round(val).toLocaleString()}</p><p class="text-[9px] font-black ${itemTrend.lightTextClass} uppercase mt-0.5 text-right font-sans">${itemTrend.icon} ${profit>=0?'▲':'▼'} ${Math.abs(prate).toFixed(1)}%</p></div></div>`;
->>>>>>> main
+                listHTML += renderHoldingCard({
+                    ticker: k,
+                    name: d.name,
+                    yieldPct,
+                    shares: d.shares,
+                    avgPrice: d.cost / d.shares,
+                    value: val,
+                    profit,
+                    prate,
+                    itemTrend,
+                    avatarColor: bg[i]
+                });
             });
             animateValue('stat-total-value', 0, Math.round(totalV), 900);
             const totProfit = totalV - totalC, totRate = totalC > 0 ? (totProfit/totalC)*100 : 0;
@@ -1181,11 +1260,7 @@ async function postMutation(action, payload = {}) {
                 pctBox.classList.add(totalTrend.darkTextClass);
             }
             safeSetHTML('stat-profit-pct', `${totProfit>=0?'+':''}${totRate.toFixed(1)}%`);
-<<<<<<< codex/update-progress-bar-colors-for-capital-display-r7zp9q
             safeSetHTML('stat-profit-icon', totalTrend.iconHtml);
-=======
-            safeSetText('stat-profit-icon', totalTrend.icon);
->>>>>>> main
             safeSetText('stat-cash-balance', `₩${Math.round(curCash).toLocaleString()}`);
             const usableCash = Math.max(0, Math.floor(curCash));
             const tickerA = BUY_PLAN_TICKERS[0], tickerB = BUY_PLAN_TICKERS[1];
@@ -1251,6 +1326,16 @@ async function postMutation(action, payload = {}) {
             const canBuyB = qtyB > 0;
             if(planAEl) planAEl.classList.toggle('hidden', !canBuyA);
             if(planBEl) planBEl.classList.toggle('hidden', !canBuyB);
+            if(planAEl) {
+                planAEl.classList.remove('ring-2', 'ring-cyan-200/60', 'bg-white/10', 'bg-cyan-400/20');
+                if (canBuyA) planAEl.classList.add('ring-2', 'ring-cyan-200/60', 'bg-cyan-400/20');
+                else planAEl.classList.add('bg-white/10');
+            }
+            if(planBEl) {
+                planBEl.classList.remove('ring-2', 'ring-violet-200/60', 'bg-white/10', 'bg-violet-400/20');
+                if (canBuyB) planBEl.classList.add('ring-2', 'ring-violet-200/60', 'bg-violet-400/20');
+                else planBEl.classList.add('bg-white/10');
+            }
             const noPlan = !canBuyA && !canBuyB;
             if(plansWrap) plansWrap.classList.toggle('hidden', noPlan);
             if(emptyBox) emptyBox.classList.toggle('hidden', !noPlan);
@@ -1277,7 +1362,7 @@ if(assetChart){
                 }
             } }); }
             }
-            safeSetHTML('chart-legend', labels.map((l, i) => `<div class="flex justify-between text-[10px] mb-2 font-black transition hover:translate-x-1 text-left font-sans"><span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full" style="background:${bg[i]}"></span><span class="truncate w-24 text-slate-500 font-sans">${l}</span></span><span class="text-slate-800 text-right font-sans">${((data[i]/totalV)*100).toFixed(1)}%</span></div>`).join(''));
+            safeSetHTML('chart-legend', labels.map((l, i) => `<div class="flex justify-between text-[10px] mb-2 font-black transition hover:translate-x-1 text-left font-sans"><span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full" style="background:${bg[i]}"></span><span class="truncate w-24 text-slate-500 font-sans">${escapeHtml(l)}</span></span><span class="text-slate-800 text-right font-sans">${((data[i]/totalV)*100).toFixed(1)}%</span></div>`).join(''));
             renderHistoryList('history-list', transactions);
 
 
@@ -1296,26 +1381,88 @@ if(assetChart){
             return 0;
         }
 
+        function updateHistoryFilterUI() {
+            document.querySelectorAll('.history-filter-btn').forEach((btn) => {
+                const isActive = btn.dataset.historyFilter === String(historyFilterDays);
+                btn.classList.toggle('bg-slate-900', isActive);
+                btn.classList.toggle('border-slate-900', isActive);
+                btn.classList.toggle('text-white', isActive);
+                btn.classList.toggle('bg-white', !isActive);
+                btn.classList.toggle('border-slate-200', !isActive);
+                btn.classList.toggle('text-slate-500', !isActive);
+            });
+        }
+
+        function filterHistoryByRange(data) {
+            if (historyFilterDays === 'all') return data;
+            const days = Number(historyFilterDays);
+            if (Number.isNaN(days) || days <= 0) return data;
+            const threshold = Date.now() - (days * 24 * 60 * 60 * 1000);
+            return data.filter((tx) => getTransactionSortTime(tx) >= threshold);
+        }
+
         function renderHistoryList(containerId, data) {
             const container = getEl(containerId); if (!container) return;
-            const sortedData = [...data].sort((a, b) => {
+            const sortedData = filterHistoryByRange([...data]).sort((a, b) => {
                 const diff = getTransactionSortTime(b) - getTransactionSortTime(a);
                 if (diff !== 0) return diff;
                 return String(b.id || '').localeCompare(String(a.id || ''));
             });
-            container.innerHTML = sortedData.map(t => {
+            const visibleData = sortedData.slice(0, historyVisibleCount);
+            const grouped = visibleData.reduce((acc, tx) => {
+                const dateObj = new Date(String(tx?.date || ''));
+                const key = Number.isNaN(dateObj.getTime())
+                    ? '날짜 미상'
+                    : `${dateObj.getFullYear()}년 ${String(dateObj.getMonth() + 1).padStart(2, '0')}월`;
+                if (!acc[key]) acc[key] = [];
+                acc[key].push(tx);
+                return acc;
+            }, {});
+
+            const html = Object.entries(grouped).map(([monthKey, monthItems]) => {
+                const itemsHtml = monthItems.map(t => {
                 const isDeposit = isDepositTransaction(t);
+                const sideRaw = String(t?.side || t?.type || '').trim().toLowerCase();
+                const sharesRaw = Number(t?.shares || 0);
+                const isSell = !isDeposit && (sideRaw === 'sell' || sideRaw === '매도' || sharesRaw < 0);
+                const tradeLabel = isDeposit ? '현금 입금' : (isSell ? '매도' : '매수');
                 const normalizedCategory = normalizeCashCategory(t.category);
                 const depositLabel = CAT_NAMES[normalizedCategory] || '기본';
-                const iconCode = isDeposit ? CAT_ICONS[normalizedCategory] || '💳' : '<svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 11 4-7"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4"/><path d="m9 11 1 9"/><path d="m15 11-1 9"/></svg>';
-                const themeColor = isDeposit ? 'blue-600' : 'slate-600';
+                const depositToneMap = {
+                    "1": { textClass: 'text-emerald-600', borderClass: 'border-l-emerald-500', iconClass: 'emerald-600' },
+                    "2": { textClass: 'text-violet-600', borderClass: 'border-l-violet-500', iconClass: 'violet-600' },
+                    "3": { textClass: 'text-blue-600', borderClass: 'border-l-blue-500', iconClass: 'blue-600' }
+                };
+                const depositTone = depositToneMap[normalizedCategory] || depositToneMap["3"];
+                const tradeTone = isSell
+                    ? { textClass: 'text-slate-900', borderClass: 'border-l-blue-500', iconClass: 'blue-500', bgClass: 'bg-blue-50/60' }
+                    : { textClass: 'text-slate-900', borderClass: 'border-l-rose-500', iconClass: 'rose-500', bgClass: 'bg-rose-50/60' };
+                const stockVisual = getStockVisual(t.name, t.ticker, isSell ? '#3b82f6' : '#ef4444');
+                const stockIcon = `<span class="w-6 h-6 rounded-lg flex items-center justify-center text-white text-[11px] font-black" style="background:${stockVisual.bgColor}">${escapeHtml(stockVisual.label)}</span>`;
+                const iconCode = isDeposit ? CAT_ICONS[normalizedCategory] || '💳' : stockIcon;
+                const themeColor = isDeposit ? depositTone.iconClass : tradeTone.iconClass;
                 const safeName = escapeHtml(t.name);
                 const safeId = escapeHtml(t.id);
                 const safeDate = escapeHtml(String(t.date || '').substring(0, 10));
                 const shares = Number(t.shares || 0);
                 const price = Number(t.price || 0);
-                return `<div class="glass-card p-3.5 md:p-4 flex justify-between items-start md:items-center transition hover:shadow-xl border-l-4 gap-2.5 ${isDeposit ? 'border-l-blue-500' : 'border-l-slate-800'} text-left font-sans"><div class="flex items-center gap-3.5 text-left font-sans min-w-0 flex-1"><div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[12px] border border-slate-100 shadow-sm text-center"><span class="text-${themeColor} flex items-center justify-center">${iconCode}</span></div><div class="text-left font-sans font-sans min-w-0"><p class="text-[9px] text-slate-400 font-black mb-0.5 uppercase tracking-widest text-left font-sans">${safeDate} · ${isDeposit ? depositLabel + ' 입금' : '매수'}</p><p class="text-[13px] font-black text-slate-800 text-left font-sans truncate">${safeName}</p><p class="text-[9px] text-slate-400 font-black uppercase mt-0.5 text-left font-sans">${isDeposit ? 'CASH_LOADED' : shares.toFixed(2) + '주 · @₩' + price.toLocaleString()}</p></div></div><div class="flex flex-col items-end gap-2 text-right font-sans shrink-0 pl-2"><p class="font-black text-${isDeposit?'blue-600':'slate-900'} text-sm tracking-tight text-right font-sans">₩${Math.round(shares*price).toLocaleString()}</p><div class="flex gap-2 font-sans"><button type="button" data-action="edit" data-id="${safeId}" class="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-100 text-slate-400 transition hover:bg-indigo-500 hover:text-white active:scale-90"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button><button type="button" data-action="delete" data-id="${safeId}" class="w-6 h-6 flex items-center justify-center rounded-lg bg-rose-50 text-rose-400 transition hover:bg-rose-500 hover:text-white active:scale-90"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button></div></div></div>`;
-            }).join('') || `<div class="text-center p-24 text-slate-300 font-black text-[10px] uppercase font-sans">기록 없음</div>`;
+                const amountTextClass = isDeposit ? depositTone.textClass : tradeTone.textClass;
+                const leftBorderClass = isDeposit ? depositTone.borderClass : tradeTone.borderClass;
+                const shareMeta = `${Math.abs(shares).toFixed(2)}주 · @₩${price.toLocaleString()}`;
+                const tradeBgClass = isDeposit ? '' : tradeTone.bgClass;
+                return `<div class="glass-card ${tradeBgClass} p-3.5 md:p-4 flex justify-between items-start md:items-center transition hover:shadow-xl border-l-4 gap-2.5 ${leftBorderClass} text-left font-sans"><div class="flex items-center gap-3.5 text-left font-sans min-w-0 flex-1"><div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[12px] border border-slate-100 shadow-sm text-center"><span class="text-${themeColor} flex items-center justify-center">${iconCode}</span></div><div class="text-left font-sans min-w-0"><p class="text-[9px] text-slate-400 font-black mb-0.5 uppercase tracking-widest text-left font-sans">${safeDate} · ${tradeLabel}</p><p class="text-[13px] font-black ${isDeposit ? depositTone.textClass : tradeTone.textClass} text-left font-sans truncate">${isDeposit ? (depositLabel + ' 입금') : safeName}</p><p class="text-[9px] text-slate-400 font-black uppercase mt-0.5 text-left font-sans">${isDeposit ? safeName : shareMeta}</p></div></div><div class="flex flex-col items-end gap-2 text-right font-sans shrink-0 pl-2"><p class="font-black ${amountTextClass} text-sm tracking-tight text-right font-sans">₩${Math.round(Math.abs(shares*price)).toLocaleString()}</p><div class="flex gap-2 font-sans"><button type="button" data-action="edit" data-id="${safeId}" class="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-100 text-slate-400 transition hover:bg-indigo-500 hover:text-white active:scale-90"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button><button type="button" data-action="delete" data-id="${safeId}" class="w-6 h-6 flex items-center justify-center rounded-lg bg-rose-50 text-rose-400 transition hover:bg-rose-500 hover:text-white active:scale-90"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button></div></div></div>`;
+                }).join('');
+                return `<section class="space-y-2"><h4 class="px-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">${escapeHtml(monthKey)}</h4><div class="space-y-2">${itemsHtml}</div></section>`;
+            }).join('');
+
+            container.innerHTML = html || `<div class="text-center p-24 text-slate-300 font-black text-[10px] uppercase font-sans">기록 없음</div>`;
+
+            const loadMoreBtn = getEl('history-load-more');
+            if (loadMoreBtn) {
+                const hasMore = sortedData.length > visibleData.length;
+                loadMoreBtn.classList.toggle('hidden', !hasMore);
+            }
+            updateHistoryFilterUI();
         }
 
         function updateQuickSelectUI() {
@@ -1423,6 +1570,19 @@ if(assetChart){
             const target = e.target.closest('button, .holding-item');
             if(!target) return;
 
+            if(target.classList.contains('history-filter-btn') && target.dataset.historyFilter) {
+                historyFilterDays = target.dataset.historyFilter;
+                historyVisibleCount = 100;
+                renderHistoryList('history-list', transactions);
+                return;
+            }
+
+            if(target.id === 'history-load-more') {
+                historyVisibleCount += 100;
+                renderHistoryList('history-list', transactions);
+                return;
+            }
+
             if(target.classList.contains('holding-item')) {
                 const ticker = target.dataset.ticker;
                 if(ticker) openDetailModal(ticker);
@@ -1466,7 +1626,7 @@ if(assetChart){
             const candidate = urlInput.value.trim();
             const nextSheetsUrl = isValidSheetsUrl(candidate) ? candidate : '';
 
-            const nextFirebaseConfigRaw = firebaseInput.value.trim();
+            const nextFirebaseConfigRaw = firebaseInput.value.trim() || JSON.stringify(DEFAULT_FIREBASE_CONFIG, null, 2);
             const parsedFirebase = parseFirebaseConfig(nextFirebaseConfigRaw);
             if(nextFirebaseConfigRaw && !parsedFirebase) {
                 alert('파이어베이스 설정값 형식이 잘못됐어요.\n프로젝트 설정 > 웹 앱 구성값(JSON)을 그대로 붙여넣어 주세요.');
@@ -1518,14 +1678,15 @@ function animateValue(id, start, end, duration) {
 
 
 window.onload = () => {
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalDateInputValue();
             if(getEl('input-date')) getEl('input-date').value = today;
             if(getEl('div-date')) getEl('div-date').value = today;
-            dedupeAppTitleRow();
+            applyAppVersion();
             initFirebase();
             setDepositCat(3); syncAllData();
 
-            if ('serviceWorker' in navigator) {
+            const debugSwReset = localStorage.getItem('isa_debug_sw_reset') === '1';
+            if (debugSwReset && 'serviceWorker' in navigator) {
                 navigator.serviceWorker.getRegistrations()
                     .then((regs) => regs.forEach((reg) => reg.unregister()))
                     .catch((err) => console.warn('Service worker unregister failed:', err));
