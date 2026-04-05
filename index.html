@@ -884,6 +884,17 @@ const centerTextPlugin = {
             return ['1', '2', '3'].includes(cat) && (name.includes('입금') || name.includes('충전'));
         }
 
+        function getHoldingSharesByTicker(ticker) {
+            const targetTicker = String(ticker || '').trim();
+            if (!targetTicker) return 0;
+            return transactions.reduce((sum, tx) => {
+                if (isDepositTransaction(tx)) return sum;
+                const txTicker = String(tx?.ticker || '').trim();
+                if (txTicker !== targetTicker) return sum;
+                return sum + Number(tx?.shares || 0);
+            }, 0);
+        }
+
         function initFirebase() {
             if (typeof firebase === 'undefined' || !firebase?.initializeApp) {
                 console.warn('Firebase SDK is not available.');
@@ -1256,6 +1267,14 @@ async function postMutation(action, payload = {}) {
             if(!date || !price || !sharesInput) {
                 alert('날짜, 금액, 수량을 모두 입력해 주세요.');
                 return;
+            }
+            if(isSell) {
+                const holdingShares = getHoldingSharesByTicker(detailModalTicker);
+                const sellShares = Math.abs(sharesInput);
+                if(sellShares > holdingShares) {
+                    alert(`보유 수량(${holdingShares.toFixed(2)}주)을 초과해 매도할 수 없습니다.`);
+                    return;
+                }
             }
 
             if(actionBtn) {
