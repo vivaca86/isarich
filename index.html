@@ -1495,8 +1495,8 @@ if(assetChart){
                 };
                 const depositTone = depositToneMap[normalizedCategory] || depositToneMap["3"];
                 const tradeTone = isSell
-                    ? { textClass: 'text-blue-600', borderClass: 'border-l-blue-500', iconClass: 'blue-500', bgClass: 'bg-blue-50/60' }
-                    : { textClass: 'text-rose-600', borderClass: 'border-l-rose-500', iconClass: 'rose-500', bgClass: 'bg-rose-50/60' };
+                    ? { textClass: 'text-slate-900', borderClass: 'border-l-blue-500', iconClass: 'blue-500', bgClass: 'bg-blue-50/60' }
+                    : { textClass: 'text-slate-900', borderClass: 'border-l-rose-500', iconClass: 'rose-500', bgClass: 'bg-rose-50/60' };
                 const stockVisual = getStockVisual(t.name, t.ticker, isSell ? '#3b82f6' : '#ef4444');
                 const stockIcon = `<span class="w-6 h-6 rounded-lg flex items-center justify-center text-white text-[11px] font-black" style="background:${stockVisual.bgColor}">${escapeHtml(stockVisual.label)}</span>`;
                 const iconCode = isDeposit ? CAT_ICONS[normalizedCategory] || '💳' : stockIcon;
