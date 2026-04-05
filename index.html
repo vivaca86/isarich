@@ -792,6 +792,9 @@ const centerTextPlugin = {
         let historyVisibleCount = 100;
         let detailModalTicker = "";
         let detailModalName = "";
+        let transactionsVersion = 0;
+        let portfolioStateCacheVersion = -1;
+        let portfolioStateCache = null;
 
         // 엔진 레벨: 5,000원 단위 · 먹거리 미션 (최대 100,000원)
         function getDividendLevel(amount) {
@@ -997,10 +1000,19 @@ const centerTextPlugin = {
             return { cash, chargedByCat, buyUsedByCat, holdings, totalBuyAmount };
         }
 
+        function getPortfolioState() {
+            if (portfolioStateCache && portfolioStateCacheVersion === transactionsVersion) {
+                return portfolioStateCache;
+            }
+            portfolioStateCache = simulatePortfolioState(transactions);
+            portfolioStateCacheVersion = transactionsVersion;
+            return portfolioStateCache;
+        }
+
         function getHoldingSharesByTicker(ticker) {
             const targetTicker = String(ticker || '').trim();
             if (!targetTicker) return 0;
-            const state = simulatePortfolioState(transactions);
+            const state = getPortfolioState();
             return roundShares(state.holdings?.[targetTicker]?.shares || 0);
         }
 
@@ -1230,6 +1242,7 @@ const centerTextPlugin = {
 
             try {
                 transactions = await loadTransactionsFromFirebase();
+                transactionsVersion += 1;
             } catch(e) {
                 console.error(e);
                 const fallbackCollection = 'isa_history';
@@ -1238,6 +1251,7 @@ const centerTextPlugin = {
                         firebaseCollection = fallbackCollection;
                         localStorage.setItem('isa_firebase_collection', firebaseCollection);
                         transactions = await loadTransactionsFromFirebase();
+                        transactionsVersion += 1;
                         historyRecoveredWithFallback = true;
                     } catch (retryError) {
                         console.error(retryError);
@@ -1283,8 +1297,16 @@ async function postMutation(action, payload = {}) {
 
 
         async function saveStockPurchase() {
-            const date = getEl('input-date').value, shares = Number(getEl('input-shares').value), price = Number(getEl('input-price').value), ticker = getEl('input-ticker').value, name = getEl('input-name').value, editId = getEl('edit-id').value;
-            if (!date || !shares || !price || !ticker) return;
+            const date = getEl('input-date').value;
+            const shares = roundShares(getEl('input-shares').value);
+            const price = Number(getEl('input-price').value);
+            const ticker = getEl('input-ticker').value;
+            const name = getEl('input-name').value;
+            const editId = getEl('edit-id').value;
+            if (!date || !ticker || shares <= 0 || price <= 0) {
+                alert('날짜, 금액(0보다 큼), 수량(0보다 큼)을 입력해 주세요.');
+                return;
+            }
             const btn = getEl('save-btn'); if(btn) { btn.innerText = "처리 중..."; btn.disabled = true; }
             try {
                 if(editId) await postMutation('delete', { id: editId });
@@ -1417,7 +1439,7 @@ async function postMutation(action, payload = {}) {
 
         function updateUI() {
             let totalV = 0, totalD = 0;
-            const state = simulatePortfolioState(transactions);
+            const state = getPortfolioState();
             const h = state.holdings;
             const cashD = state.cash;
             const chargedByCat = state.chargedByCat;
@@ -1721,7 +1743,7 @@ if(assetChart){
             detailModalTicker = ticker;
             detailModalName = String(data[0].name || ticker);
 
-            const state = simulatePortfolioState(transactions);
+            const state = getPortfolioState();
             const alloc = state.holdings?.[ticker]?.alloc || { "1": 0, "2": 0, "3": 0 };
             const c1 = Number(alloc['1'] || 0);
             const c2 = Number(alloc['2'] || 0);
