@@ -755,7 +755,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     <script>
         const APP_VERSION = "1.0.17";
-        const HISTORY_LOAD_LIMIT = 500;
+        const HISTORY_FETCH_PAGE_SIZE = 500;
+        const HISTORY_FETCH_MAX_PAGES = 100;
         const MY_GAS_URL = "https://script.google.com/macros/s/AKfycbxW-WaMughV03d2tarKDoFGkwliIltREbnbiPpA1L-CpvOcXGLpSe-PuZRs2HO4EnbCWw/exec"; 
         const COLORS = ["#3b82f6", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6"];
         const CAT_NAMES = { "1": "원금", "2": "특별", "3": "배당" };
@@ -897,6 +898,13 @@ const centerTextPlugin = {
             const n = Number(value || 0);
             if (!Number.isFinite(n)) return 0;
             return Math.round(n * 100) / 100;
+        }
+
+        function createTxnId() {
+            if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+                return crypto.randomUUID();
+            }
+            return `${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
         }
 
         function simulatePortfolioState(inputTransactions) {
@@ -1071,21 +1079,40 @@ const centerTextPlugin = {
 
         async function loadTransactionsFromFirebase() {
             if(!firestoreDb) throw new Error('파이어베이스 설정이 필요합니다.');
-            let snap;
+            const maxDocs = HISTORY_FETCH_PAGE_SIZE * HISTORY_FETCH_MAX_PAGES;
+            const loadAllByQuery = async ({ firstQuery, nextQuery }) => {
+                const docs = [];
+                let lastDoc = null;
+                let pageCount = 0;
+
+                while (pageCount < HISTORY_FETCH_MAX_PAGES) {
+                    const query = lastDoc ? nextQuery(lastDoc) : firstQuery();
+                    const snap = await query.get();
+                    if (!snap || snap.empty) break;
+                    docs.push(...snap.docs);
+                    pageCount += 1;
+                    lastDoc = snap.docs[snap.docs.length - 1];
+                    if (snap.size < HISTORY_FETCH_PAGE_SIZE || docs.length >= maxDocs) break;
+                }
+                return docs.slice(0, maxDocs);
+            };
+
+            let docs = [];
             try {
-                snap = await firestoreDb
-                    .collection(firebaseCollection)
-                    .orderBy('date', 'desc')
-                    .limit(HISTORY_LOAD_LIMIT)
-                    .get();
+                docs = await loadAllByQuery({
+                    firstQuery: () => firestoreDb.collection(firebaseCollection).orderBy('date', 'desc').limit(HISTORY_FETCH_PAGE_SIZE),
+                    nextQuery: (lastDoc) => firestoreDb.collection(firebaseCollection).orderBy('date', 'desc').startAfter(lastDoc).limit(HISTORY_FETCH_PAGE_SIZE)
+                });
             } catch (e) {
-                console.warn('Ordered history query failed, using fallback query.', e);
-                snap = await firestoreDb
-                    .collection(firebaseCollection)
-                    .limit(HISTORY_LOAD_LIMIT)
-                    .get();
+                console.warn('Date-ordered history query failed, using documentId pagination fallback.', e);
+                const docIdField = firebase?.firestore?.FieldPath?.documentId?.();
+                if (!docIdField) throw e;
+                docs = await loadAllByQuery({
+                    firstQuery: () => firestoreDb.collection(firebaseCollection).orderBy(docIdField).limit(HISTORY_FETCH_PAGE_SIZE),
+                    nextQuery: (lastDoc) => firestoreDb.collection(firebaseCollection).orderBy(docIdField).startAfter(lastDoc.id).limit(HISTORY_FETCH_PAGE_SIZE)
+                });
             }
-            return snap.docs.map(doc => toHistoryRecord({ id: doc.id, ...(doc.data() || {}) }, 'firebase'));
+            return docs.map(doc => toHistoryRecord({ id: doc.id, ...(doc.data() || {}) }, 'firebase'));
         }
 
         async function addTransactionToFirebase(payload) {
@@ -1275,11 +1302,11 @@ const centerTextPlugin = {
                 setTimeout(() => totalValueEl.classList.remove('sync-flash'), 650);
             }
 
-            const limitedHint = transactions.length >= HISTORY_LOAD_LIMIT ? ` · 최근 ${HISTORY_LOAD_LIMIT}건` : '';
-            if(historyRecoveredWithFallback) setSyncStatus("컬렉션 자동 복구 · 기록 동기화됨" + limitedHint);
-            else if(!hasPriceUrl) setSyncStatus("가격 URL 미설정 · 기록만 동기화됨" + limitedHint);
-            else if(priceSyncFailed) setSyncStatus("가격 연결 실패 · 기록은 동기화됨" + limitedHint);
-            else setSyncStatus("최근 업데이트: " + new Date().toLocaleTimeString() + limitedHint);
+            const loadedHint = transactions.length > 0 ? ` · ${transactions.length}건` : '';
+            if(historyRecoveredWithFallback) setSyncStatus("컬렉션 자동 복구 · 기록 동기화됨" + loadedHint);
+            else if(!hasPriceUrl) setSyncStatus("가격 URL 미설정 · 기록만 동기화됨" + loadedHint);
+            else if(priceSyncFailed) setSyncStatus("가격 연결 실패 · 기록은 동기화됨" + loadedHint);
+            else setSyncStatus("최근 업데이트: " + new Date().toLocaleTimeString() + loadedHint);
 
             if(icon) icon.classList.remove('sync-spin');
         }
@@ -1311,7 +1338,7 @@ async function postMutation(action, payload = {}) {
             try {
                 if(editId) await postMutation('delete', { id: editId });
                 await postMutation('add', {
-                    id: Date.now(),
+                    id: createTxnId(),
                     date,
                     ticker,
                     name,
@@ -1347,7 +1374,7 @@ async function postMutation(action, payload = {}) {
             try {
                 if(editId) await postMutation('delete', { id: editId });
                 await postMutation('add', {
-                    id: Date.now(),
+                    id: createTxnId(),
                     date,
                     ticker: 'DEPOSIT',
                     name: '현금 입금',
@@ -1414,7 +1441,7 @@ async function postMutation(action, payload = {}) {
             }
             try {
                 await postMutation('add', {
-                    id: Date.now(),
+                    id: createTxnId(),
                     date,
                     ticker: detailModalTicker,
                     name: detailModalName,
