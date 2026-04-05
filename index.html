@@ -436,6 +436,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                             <div class="text-left font-sans">
                                 <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-left">엔진 상태</p>
                                 <p id="dividend-level-text" class="text-sm md:text-lg font-black text-slate-900 tracking-tight leading-none font-sans text-left">데이터 수신 대기 중</p>
+                                <p id="dividend-next-goal" class="text-[10px] font-black text-blue-500 mt-1 text-left">다음 목표 계산 중...</p>
                             </div>
                         </div>
 
@@ -838,8 +839,8 @@ const centerTextPlugin = {
         let currentMonthlyModeKey = "";
 
         // 엔진 레벨: 5,000원 단위 · 먹거리 미션 (최대 100,000원)
-        function getDividendLevel(amount) {
-            const FOOD_LEVELS = [
+        function getDividendLevels() {
+            return [
                 { icon: "🥚", text: "계란 한 판 스타트" },
                 { icon: "☕", text: "메가커피 아아 1잔" },
                 { icon: "🌭", text: "편의점 핫바+콜라" },
@@ -861,10 +862,26 @@ const centerTextPlugin = {
                 { icon: "🥓", text: "한우 국밥 + 육회" },
                 { icon: "🚀", text: "치킨+피자+햄버거 풀세트" }
             ];
+        }
 
+        function getDividendLevel(amount) {
+            const FOOD_LEVELS = getDividendLevels();
             const safeAmount = Math.max(0, Number(amount) || 0);
             const index = Math.min(Math.floor(safeAmount / 5000), FOOD_LEVELS.length - 1);
             return FOOD_LEVELS[index];
+        }
+
+        function getNextDividendMilestone(amount) {
+            const FOOD_LEVELS = getDividendLevels();
+            const safeAmount = Math.max(0, Number(amount) || 0);
+            const index = Math.min(Math.floor(safeAmount / 5000), FOOD_LEVELS.length - 1);
+            if (index >= FOOD_LEVELS.length - 1) {
+                return { isMax: true, text: '최고 레벨 달성!', remaining: 0, icon: FOOD_LEVELS[index].icon };
+            }
+            const nextIndex = index + 1;
+            const targetAmount = nextIndex * 5000;
+            const remaining = Math.max(0, targetAmount - safeAmount);
+            return { isMax: false, text: FOOD_LEVELS[nextIndex].text, remaining, icon: FOOD_LEVELS[nextIndex].icon };
         }
 
         const DEFAULT_FIREBASE_CONFIG = {
@@ -1765,7 +1782,15 @@ async function postMutation(action, payload = {}) {
             if(emptyBox) emptyBox.classList.toggle('hidden', !noPlan);
             safeSetText('stat-reinvest-rate', `${reinvestRate.toFixed(1)}%`);
             safeSetText('stat-monthly-dividend', `₩${Math.round(totalD).toLocaleString()}`);
-            const level = getDividendLevel(totalD); safeSetText('div-level-icon', level.icon); safeSetText('dividend-level-text', level.text);
+            const level = getDividendLevel(totalD);
+            const nextMilestone = getNextDividendMilestone(totalD);
+            safeSetText('div-level-icon', level.icon);
+            safeSetText('dividend-level-text', level.text);
+            if (nextMilestone.isMax) {
+                safeSetText('dividend-next-goal', '🚀 최고 레벨을 유지 중이에요!');
+            } else {
+                safeSetText('dividend-next-goal', `다음: ${nextMilestone.icon} ${nextMilestone.text} · ₩${Math.round(nextMilestone.remaining).toLocaleString()} 남음`);
+            }
             const bDiv = Math.round(chargedByCat["3"]), bSpec = Math.round(chargedByCat["2"]), bBase = Math.round(chargedByCat["1"]);
             safeSetText('modal-cash-div', `₩${bDiv.toLocaleString()}`); safeSetText('modal-cash-spec', `₩${bSpec.toLocaleString()}`); safeSetText('modal-cash-base', `₩${bBase.toLocaleString()}`);
             safeSetHTML('holdings-list', listHTML || `<div class="text-center p-6 text-slate-300 font-black text-[10px] uppercase font-sans">데이터 없음</div>`);
