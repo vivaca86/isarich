@@ -511,19 +511,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                                 <p id="monthly-check-execution" class="font-black text-slate-900">0%</p>
                             </div>
                             <div class="rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
-                                <p class="font-black text-slate-500">이번 달 매수 실행</p>
-                                <p id="monthly-check-buy-action" class="font-black text-slate-900">대기</p>
-                            </div>
-                            <div class="rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
-                                <p class="font-black text-slate-500">지난 동기화 대비 배당 유입</p>
-                                <p id="monthly-change-dividend-in" class="font-black text-slate-900">±₩0</p>
-                            </div>
-                            <div class="rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
-                                <p class="font-black text-slate-500">지난 동기화 대비 배당 집행</p>
-                                <p id="monthly-change-dividend-used" class="font-black text-slate-900">±₩0</p>
+                                <p class="font-black text-slate-500">매수 실행(월)</p>
+                                <p id="monthly-check-buy-action" class="font-black text-slate-900">0주 · ₩0</p>
                             </div>
                         </div>
-                        <p id="monthly-review-note" class="mt-3 text-[10px] font-black text-slate-400">월간 액션 요약 로딩 중...</p>
+                        <p id="monthly-review-note" class="mt-3 text-[10px] font-black text-slate-400">이 달의 운용 요약 로딩 중...</p>
                     </div>
                 </div>
             </div>
@@ -1093,6 +1085,8 @@ const centerTextPlugin = {
             let dividendIn = 0;
             let dividendUsed = 0;
             let buyActionCount = 0;
+            let buyShares = 0;
+            let buyAmount = 0;
 
             sortedTx.forEach((tx) => {
                 const txMonth = getMonthKey(tx?.date);
@@ -1115,6 +1109,10 @@ const centerTextPlugin = {
 
                 if (shares > 0) {
                     if (txMonth === monthKey) buyActionCount += 1;
+                    if (txMonth === monthKey) {
+                        buyShares = roundShares(buyShares + shares);
+                        buyAmount = roundMoney(buyAmount + amt);
+                    }
                     h.shares = roundShares(h.shares + shares);
                     h.cost = roundMoney(h.cost + amt);
 
@@ -1146,7 +1144,7 @@ const centerTextPlugin = {
                 if (txMonth === monthKey) realizedPnl = roundMoney(realizedPnl + pnl);
             });
 
-            return { monthKey, realizedPnl, dividendIn, dividendUsed, buyActionCount };
+            return { monthKey, realizedPnl, dividendIn, dividendUsed, buyActionCount, buyShares, buyAmount };
         }
 
         function updateMonthlyReviewPanel(monthReport) {
@@ -1164,46 +1162,10 @@ const centerTextPlugin = {
                 ? Math.min(999, (monthReport.dividendUsed / monthReport.dividendIn) * 100)
                 : 0;
             safeSetText('monthly-check-execution', `${executionRate.toFixed(1)}%`);
-            safeSetText('monthly-check-buy-action', monthReport.buyActionCount > 0 ? `${monthReport.buyActionCount}회 실행` : '대기');
+            safeSetText('monthly-check-buy-action', `${monthReport.buyShares.toFixed(2)}주 · ₩${Math.round(monthReport.buyAmount).toLocaleString()}`);
 
-            const snapshotKey = 'isa_monthly_review_snapshot';
-            let prev = null;
-            try {
-                prev = JSON.parse(localStorage.getItem(snapshotKey) || 'null');
-            } catch (_) {
-                prev = null;
-            }
-
-            const sameMonth = prev && prev.monthKey === monthReport.monthKey;
-            const deltaIn = sameMonth ? roundMoney(monthReport.dividendIn - Number(prev.dividendIn || 0)) : monthReport.dividendIn;
-            const deltaUsed = sameMonth ? roundMoney(monthReport.dividendUsed - Number(prev.dividendUsed || 0)) : monthReport.dividendUsed;
-
-            const inText = `${deltaIn >= 0 ? '+' : '-'}₩${Math.round(Math.abs(deltaIn)).toLocaleString()}`;
-            const usedText = `${deltaUsed >= 0 ? '+' : '-'}₩${Math.round(Math.abs(deltaUsed)).toLocaleString()}`;
-            safeSetText('monthly-change-dividend-in', inText);
-            safeSetText('monthly-change-dividend-used', usedText);
-
-            const inEl = getEl('monthly-change-dividend-in');
-            const usedEl = getEl('monthly-change-dividend-used');
-            if (inEl) {
-                inEl.classList.remove('text-rose-600', 'text-blue-600', 'text-slate-900');
-                inEl.classList.add(deltaIn > 0 ? 'text-rose-600' : (deltaIn < 0 ? 'text-blue-600' : 'text-slate-900'));
-            }
-            if (usedEl) {
-                usedEl.classList.remove('text-rose-600', 'text-blue-600', 'text-slate-900');
-                usedEl.classList.add(deltaUsed > 0 ? 'text-rose-600' : (deltaUsed < 0 ? 'text-blue-600' : 'text-slate-900'));
-            }
-
-            const reviewNote = monthReport.buyActionCount > 0
-                ? '이번 달 매수 액션이 실행되었어요. 배당 집행률 변화만 체크하면 됩니다.'
-                : '이번 달 매수 액션이 아직 없습니다. 배당 유입/집행률만 가볍게 확인하세요.';
+            const reviewNote = `이번 달 배당 유입 ₩${Math.round(monthReport.dividendIn).toLocaleString()} 중 ₩${Math.round(monthReport.dividendUsed).toLocaleString()} 집행 (${executionRate.toFixed(1)}%) · 매수 ${monthReport.buyActionCount}회`;
             safeSetText('monthly-review-note', reviewNote);
-
-            localStorage.setItem(snapshotKey, JSON.stringify({
-                monthKey: monthReport.monthKey,
-                dividendIn: monthReport.dividendIn,
-                dividendUsed: monthReport.dividendUsed
-            }));
         }
 
         function getHoldingSharesByTicker(ticker) {
