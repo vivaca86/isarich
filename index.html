@@ -320,47 +320,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             opacity: 1;
         }
 
-        .trend-pill {
-            border-radius: 999px;
-            padding: 2px 8px;
-            font-size: 10px;
-            line-height: 1.2;
-            font-weight: 900;
-            border: 1px solid transparent;
-        }
-
-        .trend-pill-up {
-            background: rgba(239, 68, 68, 0.12);
-            color: #dc2626;
-            border-color: rgba(252, 165, 165, 0.5);
-        }
-
-        .trend-pill-down {
-            background: rgba(37, 99, 235, 0.12);
-            color: #2563eb;
-            border-color: rgba(147, 197, 253, 0.55);
-        }
-
-        .trend-pill-flat {
-            background: rgba(100, 116, 139, 0.12);
-            color: #475569;
-            border-color: rgba(203, 213, 225, 0.7);
-        }
-
-        .spark-track {
-            width: 72px;
-            height: 4px;
-            border-radius: 999px;
-            background: rgba(148, 163, 184, 0.25);
-            overflow: hidden;
-        }
-
-        .spark-fill {
-            height: 100%;
-            border-radius: inherit;
-            transition: width .35s ease;
-        }
-
         #history-list .glass-card {
             border-radius: 18px;
             padding-top: 14px;
@@ -484,7 +443,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
                         <div class="text-right font-sans">
                             <p class="text-[10px] font-black text-slate-400 uppercase mb-1 text-right font-sans">예상 배당</p>
-                            <p class="text-xl md:text-2xl font-black text-blue-600 tracking-tighter text-right font-sans" id="stat-monthly-dividend">₩0</p>
+                            <p class="text-xl md:text-2xl font-black text-emerald-600 tracking-tighter text-right font-sans" id="stat-monthly-dividend">₩0</p>
                         </div>
                     </div>
 
@@ -1067,16 +1026,13 @@ const centerTextPlugin = {
         function renderHoldingCard({ ticker, name, yieldPct, shares, avgPrice, value, profit, prate, itemTrend, avatarColor }) {
             const trendToneClass = prate >= 8 ? 'holding-tone-up' : (prate <= -8 ? 'holding-tone-down' : 'holding-tone-flat');
             const edgeClass = prate >= 8 ? 'bg-gradient-to-b from-rose-400 to-orange-300' : (prate <= -8 ? 'bg-gradient-to-b from-blue-400 to-cyan-300' : 'bg-gradient-to-b from-slate-300 to-slate-200');
-            const pillClass = prate >= 8 ? 'trend-pill-up' : (prate <= -8 ? 'trend-pill-down' : 'trend-pill-flat');
-            const sparkClass = prate >= 8 ? 'bg-gradient-to-r from-rose-500 to-orange-400' : (prate <= -8 ? 'bg-gradient-to-r from-blue-500 to-cyan-400' : 'bg-gradient-to-r from-slate-500 to-slate-400');
-            const sparkWidth = Math.max(12, Math.min(100, Math.abs(prate) * 3));
             const safeName = escapeHtml(name);
             const safeTicker = escapeHtml(ticker);
             const stockVisual = getStockVisual(name, ticker, avatarColor);
             const avatarInitial = escapeHtml(stockVisual.label);
             const signedRate = `${profit >= 0 ? '+' : '-'}${Math.abs(prate).toFixed(1)}%`;
 
-            return `<div class="holding-item ${trendToneClass} relative flex justify-between items-start md:items-center py-3 px-4 rounded-[1.25rem] cursor-pointer group text-left gap-3 border-b-2 border-b-slate-200/80 overflow-hidden" data-ticker="${safeTicker}"><span class="holding-edge absolute left-0 top-0 h-full w-1.5 ${edgeClass}"></span><div class="flex items-center gap-3 text-left min-w-0 flex-1 pl-1"><div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-[11px] shadow-sm" style="background:${stockVisual.bgColor}">${avatarInitial}</div><div class="text-left font-sans min-w-0"><p class="font-black text-slate-800 text-[13px] font-sans truncate">${safeName} <span class="text-blue-500 font-bold text-[9px] ml-0.5 font-sans">[${yieldPct.toFixed(2)}%]</span></p><p class="text-[10px] text-slate-400 font-black mt-0.5 font-sans">${shares.toFixed(2)}주 · ₩${Math.round(avgPrice).toLocaleString()}</p></div></div><div class="text-right font-sans shrink-0 pl-1.5"><p class="font-black ${itemTrend.lightTextClass} text-[13px] text-right font-sans">₩${Math.round(value).toLocaleString()}</p><div class="mt-1 flex items-center justify-end gap-1.5"><span class="trend-pill ${pillClass}">${signedRate}</span><span class="text-[9px] font-black ${itemTrend.lightTextClass}">${itemTrend.iconHtml}</span></div><div class="mt-1.5 flex justify-end"><div class="spark-track"><div class="spark-fill ${sparkClass}" style="width:${sparkWidth}%"></div></div></div></div></div>`;
+            return `<div class="holding-item ${trendToneClass} relative flex justify-between items-start md:items-center py-3 px-4 rounded-[1.25rem] cursor-pointer group text-left gap-3 border-b-2 border-b-slate-200/80 overflow-hidden" data-ticker="${safeTicker}"><span class="holding-edge absolute left-0 top-0 h-full w-1.5 ${edgeClass}"></span><div class="flex items-center gap-3 text-left min-w-0 flex-1 pl-1"><div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-[11px] shadow-sm" style="background:${stockVisual.bgColor}">${avatarInitial}</div><div class="text-left font-sans min-w-0"><p class="font-black text-slate-800 text-[13px] font-sans truncate">${safeName} <span class="text-blue-500 font-bold text-[9px] ml-0.5 font-sans">[${yieldPct.toFixed(2)}%]</span></p><p class="text-[10px] text-slate-400 font-black mt-0.5 font-sans">${shares.toFixed(2)}주 · ₩${Math.round(avgPrice).toLocaleString()}</p></div></div><div class="text-right font-sans shrink-0 pl-1.5"><p class="font-black ${itemTrend.lightTextClass} text-[13px] text-right font-sans">₩${Math.round(value).toLocaleString()}</p><div class="mt-1 flex items-center justify-end gap-1.5"><span class="text-[11px] font-black ${itemTrend.lightTextClass}">${signedRate}</span><span class="text-[9px] font-black ${itemTrend.lightTextClass}">${itemTrend.iconHtml}</span></div></div></div>`;
         }
 
         function switchTab(type) {
