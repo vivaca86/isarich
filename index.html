@@ -338,6 +338,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             background: url('icons/ui/cta-glass.svg') center / contain no-repeat;
         }
 
+        /* Tailwind 로딩 실패 시에도 모달 오버레이가 화면을 막지 않도록 기본 숨김 보장 */
+        #detail-modal,
+        #cash-modal,
+        #settings-modal {
+            display: none;
+        }
+        #detail-modal:not(.hidden),
+        #cash-modal:not(.hidden),
+        #settings-modal:not(.hidden) {
+            display: flex;
+        }
+        .hidden {
+            display: none !important;
+        }
+
 
     </style>
 </head>
@@ -1081,6 +1096,7 @@ const centerTextPlugin = {
             const hasPriceUrl = isValidSheetsUrl(sheetsUrl);
             let priceSyncFailed = false;
             let historyRecoveredWithFallback = false;
+            let historySyncFailed = false;
 
             if(hasPriceUrl) {
                 try {
