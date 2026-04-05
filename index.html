@@ -480,6 +480,27 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                         </div>
                         <div id="chart-legend" class="w-full space-y-2 text-left font-sans"></div>
                     </div>
+
+                    <div class="glass-card p-4 rounded-2xl border border-emerald-100/70 bg-gradient-to-br from-emerald-50/80 to-white text-left font-sans">
+                        <div class="flex items-center justify-between mb-3">
+                            <p class="text-[10px] font-black text-emerald-700 uppercase tracking-widest">월간 운용 리포트</p>
+                            <span id="report-month-label" class="text-[9px] font-black text-emerald-600 bg-emerald-100/80 px-2 py-1 rounded-lg">0000-00</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="rounded-xl border border-slate-100 bg-white/80 p-2.5">
+                                <p class="text-[9px] font-black text-slate-400 uppercase">실현손익</p>
+                                <p id="report-realized-pnl" class="mt-1 text-[12px] font-black text-slate-900">₩0</p>
+                            </div>
+                            <div class="rounded-xl border border-slate-100 bg-white/80 p-2.5">
+                                <p class="text-[9px] font-black text-slate-400 uppercase">배당 유입</p>
+                                <p id="report-dividend-in" class="mt-1 text-[12px] font-black text-emerald-700">₩0</p>
+                            </div>
+                            <div class="rounded-xl border border-slate-100 bg-white/80 p-2.5">
+                                <p class="text-[9px] font-black text-slate-400 uppercase">배당 집행</p>
+                                <p id="report-dividend-used" class="mt-1 text-[12px] font-black text-indigo-700">₩0</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -1017,6 +1038,80 @@ const centerTextPlugin = {
             return portfolioStateCache;
         }
 
+        function getMonthKey(dateLike) {
+            const d = new Date(String(dateLike || ''));
+            if (Number.isNaN(d.getTime())) return '';
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        function getCurrentMonthReport(inputTransactions) {
+            const monthKey = getMonthKey(getLocalDateInputValue());
+            const sortedTx = [...(inputTransactions || [])].sort((a, b) => {
+                const dateDiff = new Date(a.date) - new Date(b.date);
+                if (dateDiff !== 0) return dateDiff;
+                return String(a.id || '').localeCompare(String(b.id || ''));
+            });
+
+            const cash = { "1": 0, "2": 0, "3": 0 };
+            const holdings = {};
+            let realizedPnl = 0;
+            let dividendIn = 0;
+            let dividendUsed = 0;
+
+            sortedTx.forEach((tx) => {
+                const txMonth = getMonthKey(tx?.date);
+                const shares = roundShares(tx?.shares || 0);
+                const price = Number(tx?.price || 0);
+                if (!Number.isFinite(price) || price <= 0) return;
+                const amt = roundMoney(Math.abs(shares * price));
+
+                if (isDepositTransaction(tx)) {
+                    const cat = normalizeCashCategory(tx?.category);
+                    cash[cat] = roundMoney(cash[cat] + amt);
+                    if (txMonth === monthKey && cat === '3') dividendIn = roundMoney(dividendIn + amt);
+                    return;
+                }
+
+                const ticker = String(tx?.ticker || '').trim();
+                if (!ticker || shares === 0) return;
+                if (!holdings[ticker]) holdings[ticker] = { shares: 0, cost: 0 };
+                const h = holdings[ticker];
+
+                if (shares > 0) {
+                    h.shares = roundShares(h.shares + shares);
+                    h.cost = roundMoney(h.cost + amt);
+
+                    let remain = amt;
+                    ['3', '2', '1'].forEach(cat => {
+                        if (remain <= 0) return;
+                        const usable = Math.max(0, cash[cat]);
+                        const used = Math.min(usable, remain);
+                        cash[cat] = roundMoney(cash[cat] - used);
+                        remain = roundMoney(remain - used);
+                        if (txMonth === monthKey && cat === '3') {
+                            dividendUsed = roundMoney(dividendUsed + used);
+                        }
+                    });
+                    if (remain > 0) cash['1'] = roundMoney(cash['1'] - remain);
+                    return;
+                }
+
+                const sellQty = Math.abs(shares);
+                if (h.shares <= 0) return;
+                const actualSellQty = Math.min(sellQty, h.shares);
+                const proceeds = roundMoney(actualSellQty * price);
+                const avgCost = h.shares > 0 ? h.cost / h.shares : 0;
+                const costBasisSold = roundMoney(actualSellQty * avgCost);
+                const pnl = roundMoney(proceeds - costBasisSold);
+
+                h.shares = roundShares(h.shares - actualSellQty);
+                h.cost = roundMoney(Math.max(0, h.cost - costBasisSold));
+                if (txMonth === monthKey) realizedPnl = roundMoney(realizedPnl + pnl);
+            });
+
+            return { monthKey, realizedPnl, dividendIn, dividendUsed };
+        }
+
         function getHoldingSharesByTicker(ticker) {
             const targetTicker = String(ticker || '').trim();
             if (!targetTicker) return 0;
@@ -1519,6 +1614,20 @@ async function postMutation(action, payload = {}) {
             safeSetHTML('stat-profit-pct', `${totProfit>=0?'+':''}${totRate.toFixed(1)}%`);
             safeSetHTML('stat-profit-icon', totalTrend.iconHtml);
             safeSetText('stat-cash-balance', `₩${Math.round(curCash).toLocaleString()}`);
+            const monthReport = getCurrentMonthReport(transactions);
+            safeSetText('report-month-label', monthReport.monthKey || '-');
+            safeSetText('report-realized-pnl', `₩${Math.round(monthReport.realizedPnl).toLocaleString()}`);
+            safeSetText('report-dividend-in', `₩${Math.round(monthReport.dividendIn).toLocaleString()}`);
+            safeSetText('report-dividend-used', `₩${Math.round(monthReport.dividendUsed).toLocaleString()}`);
+
+            const reportPnlEl = getEl('report-realized-pnl');
+            if (reportPnlEl) {
+                reportPnlEl.classList.remove('text-rose-600', 'text-blue-600', 'text-slate-900');
+                reportPnlEl.classList.add(
+                    monthReport.realizedPnl > 0 ? 'text-rose-600' :
+                    monthReport.realizedPnl < 0 ? 'text-blue-600' : 'text-slate-900'
+                );
+            }
             const usableCash = Math.max(0, Math.floor(curCash));
             const tickerA = BUY_PLAN_TICKERS[0], tickerB = BUY_PLAN_TICKERS[1];
             const priceA = Number(marketData[tickerA]?.price || 0);
