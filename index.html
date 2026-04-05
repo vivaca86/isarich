@@ -481,12 +481,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                         <div id="chart-legend" class="w-full space-y-2 text-left font-sans"></div>
                     </div>
 
-                    <div class="glass-card p-4 rounded-2xl border border-emerald-100/70 bg-gradient-to-br from-emerald-50/80 to-white text-left font-sans">
-                        <div class="flex items-center justify-between mb-3">
-                            <p class="text-[10px] font-black text-emerald-700 uppercase tracking-widest">월간 운용 리포트</p>
-                            <span id="report-month-label" class="text-[9px] font-black text-emerald-600 bg-emerald-100/80 px-2 py-1 rounded-lg">0000-00</span>
+                    <div id="monthly-review-panel" class="glass-card p-4 rounded-2xl border border-blue-100/70 bg-gradient-to-br from-blue-50/80 to-white text-left font-sans">
+                        <div class="flex items-center justify-between mb-3 gap-2">
+                            <p class="text-[10px] font-black text-blue-700 uppercase tracking-widest">월간 모드</p>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" data-action="monthly-prev" class="w-6 h-6 rounded-lg border border-blue-200 bg-white text-blue-600 text-[12px] font-black leading-none hover:bg-blue-50 transition">&lt;</button>
+                                <span id="report-month-label" class="text-[9px] font-black text-blue-700 bg-blue-100/80 px-2 py-1 rounded-lg min-w-[56px] text-center">0000-00</span>
+                                <button type="button" data-action="monthly-next" class="w-6 h-6 rounded-lg border border-blue-200 bg-white text-blue-600 text-[12px] font-black leading-none hover:bg-blue-50 transition">&gt;</button>
+                                <span id="monthly-review-badge" class="text-[9px] font-black text-blue-600 bg-blue-100/80 px-2 py-1 rounded-lg">ON</span>
+                            </div>
                         </div>
-                        <div class="grid grid-cols-3 gap-2">
+                        <div class="grid grid-cols-3 gap-2 mb-2.5">
                             <div class="rounded-xl border border-slate-100 bg-white/80 p-2.5">
                                 <p class="text-[9px] font-black text-slate-400 uppercase">실현손익</p>
                                 <p id="report-realized-pnl" class="mt-1 text-[12px] font-black text-slate-900">₩0</p>
@@ -499,13 +504,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                                 <p class="text-[9px] font-black text-slate-400 uppercase">배당 집행</p>
                                 <p id="report-dividend-used" class="mt-1 text-[12px] font-black text-indigo-700">₩0</p>
                             </div>
-                        </div>
-                    </div>
-
-                    <div id="monthly-review-panel" class="glass-card p-4 rounded-2xl border border-blue-100/70 bg-gradient-to-br from-blue-50/80 to-white text-left font-sans">
-                        <div class="flex items-center justify-between mb-3">
-                            <p class="text-[10px] font-black text-blue-700 uppercase tracking-widest">월간 점검 모드</p>
-                            <span id="monthly-review-badge" class="text-[9px] font-black text-blue-600 bg-blue-100/80 px-2 py-1 rounded-lg">ON</span>
                         </div>
                         <div class="space-y-2 text-[11px]">
                             <div class="rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
@@ -845,6 +843,7 @@ const centerTextPlugin = {
         let transactionsVersion = 0;
         let portfolioStateCacheVersion = -1;
         let portfolioStateCache = null;
+        let currentMonthlyModeKey = "";
 
         // 엔진 레벨: 5,000원 단위 · 먹거리 미션 (최대 100,000원)
         function getDividendLevel(amount) {
@@ -1072,8 +1071,16 @@ const centerTextPlugin = {
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         }
 
-        function getCurrentMonthReport(inputTransactions) {
-            const monthKey = getMonthKey(getLocalDateInputValue());
+        function shiftMonthKey(baseMonthKey, delta) {
+            const normalized = String(baseMonthKey || '').trim();
+            const [y, m] = normalized.split('-').map(Number);
+            if (!y || !m) return getMonthKey(getLocalDateInputValue());
+            const d = new Date(y, (m - 1) + Number(delta || 0), 1);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        function getCurrentMonthReport(inputTransactions, targetMonthKey = '') {
+            const monthKey = targetMonthKey || getMonthKey(getLocalDateInputValue());
             const sortedTx = [...(inputTransactions || [])].sort((a, b) => {
                 const dateDiff = new Date(a.date) - new Date(b.date);
                 if (dateDiff !== 0) return dateDiff;
@@ -1701,7 +1708,8 @@ async function postMutation(action, payload = {}) {
             safeSetHTML('stat-profit-pct', `${totProfit>=0?'+':''}${totRate.toFixed(1)}%`);
             safeSetHTML('stat-profit-icon', totalTrend.iconHtml);
             safeSetText('stat-cash-balance', `₩${Math.round(curCash).toLocaleString()}`);
-            const monthReport = getCurrentMonthReport(transactions);
+            if (!currentMonthlyModeKey) currentMonthlyModeKey = getMonthKey(getLocalDateInputValue());
+            const monthReport = getCurrentMonthReport(transactions, currentMonthlyModeKey);
             safeSetText('report-month-label', monthReport.monthKey || '-');
             safeSetText('report-realized-pnl', `₩${Math.round(monthReport.realizedPnl).toLocaleString()}`);
             safeSetText('report-dividend-in', `₩${Math.round(monthReport.dividendIn).toLocaleString()}`);
@@ -2009,6 +2017,18 @@ if(assetChart){
             if(target.id === 'history-load-more') {
                 historyVisibleCount += 100;
                 renderHistoryList('history-list', transactions);
+                return;
+            }
+
+            if(target.dataset.action === 'monthly-prev') {
+                currentMonthlyModeKey = shiftMonthKey(currentMonthlyModeKey || getMonthKey(getLocalDateInputValue()), -1);
+                updateUI();
+                return;
+            }
+
+            if(target.dataset.action === 'monthly-next') {
+                currentMonthlyModeKey = shiftMonthKey(currentMonthlyModeKey || getMonthKey(getLocalDateInputValue()), 1);
+                updateUI();
                 return;
             }
 
