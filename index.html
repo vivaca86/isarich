@@ -1071,7 +1071,11 @@ const centerTextPlugin = {
                 }
             });
 
-            return { cash, chargedByCat, buyUsedByCat, holdings, totalBuyAmount };
+            const totalPositionCost = roundMoney(
+                Object.values(holdings).reduce((sum, holding) => sum + Number(holding?.cost || 0), 0)
+            );
+
+            return { cash, chargedByCat, buyUsedByCat, holdings, totalBuyAmount, totalPositionCost };
         }
 
         function getPortfolioState() {
@@ -1670,12 +1674,13 @@ async function postMutation(action, payload = {}) {
             const cashD = state.cash;
             const chargedByCat = state.chargedByCat;
             const usedByCat = state.buyUsedByCat;
-            const totalC = state.totalBuyAmount;
+            const totalC = state.totalPositionCost;
+            const totalBuyAmount = state.totalBuyAmount;
 
             const usedDiv = usedByCat['3'];
             const curCash = cashD["1"] + cashD["2"] + cashD["3"];
 
-            let reinvestRate = totalC > 0 ? (usedDiv / totalC * 100) : 0;
+            let reinvestRate = totalBuyAmount > 0 ? (usedDiv / totalBuyAmount * 100) : 0;
             if(Math.round(cashD["3"]) > 0) getEl('cash-card-area')?.classList.add('reinvest-highlight');
             else getEl('cash-card-area')?.classList.remove('reinvest-highlight');
 
@@ -1860,6 +1865,12 @@ if(assetChart){
             return 0;
         }
 
+        function getTransactionDateMs(tx) {
+            const dateMs = new Date(String(tx?.date || '')).getTime();
+            if (!Number.isNaN(dateMs)) return dateMs;
+            return getTransactionSortTime(tx);
+        }
+
         function updateHistoryFilterUI() {
             document.querySelectorAll('.history-filter-btn').forEach((btn) => {
                 const isActive = btn.dataset.historyFilter === String(historyFilterDays);
@@ -1872,12 +1883,12 @@ if(assetChart){
             });
         }
 
-        function filterHistoryByRange(data) {
+        function filterHistoryByRange(data, nowMs = Date.now()) {
             if (historyFilterDays === 'all') return data;
             const days = Number(historyFilterDays);
             if (Number.isNaN(days) || days <= 0) return data;
-            const threshold = Date.now() - (days * 24 * 60 * 60 * 1000);
-            return data.filter((tx) => getTransactionSortTime(tx) >= threshold);
+            const threshold = nowMs - (days * 24 * 60 * 60 * 1000);
+            return data.filter((tx) => getTransactionDateMs(tx) >= threshold);
         }
 
         function renderHistoryList(containerId, data) {
@@ -2049,6 +2060,47 @@ if(assetChart){
             }
         };
 
+        window.runSimulationSelfTest = () => {
+            const checks = [];
+
+            const closedPositionTx = [
+                { id: 'buy-1', date: '2026-03-01', ticker: 'TEST', name: 'Test ETF', shares: 1, price: 100, category: 0, side: 'buy' },
+                { id: 'sell-1', date: '2026-03-02', ticker: 'TEST', name: 'Test ETF', shares: -1, price: 110, category: 0, side: 'sell' }
+            ];
+            const closedPositionState = simulatePortfolioState(closedPositionTx);
+            checks.push({
+                name: 'Closed positions reset remaining cost basis',
+                pass: Math.abs(closedPositionState.totalPositionCost) < 0.0001
+            });
+
+            const originalHistoryFilterDays = historyFilterDays;
+            historyFilterDays = '30';
+            const referenceNow = new Date('2026-04-06T00:00:00+09:00').getTime();
+            const filteredByDate = filterHistoryByRange([
+                { id: 'old-trade-recent-created', date: '2026-01-01', createdAtMs: referenceNow, ticker: 'OLD', name: 'Old Trade', shares: 1, price: 1, category: 0 },
+                { id: 'recent-trade-old-created', date: '2026-03-30', createdAtMs: referenceNow - (120 * 24 * 60 * 60 * 1000), ticker: 'NEW', name: 'Recent Trade', shares: 1, price: 1, category: 0 }
+            ], referenceNow);
+            historyFilterDays = originalHistoryFilterDays;
+            checks.push({
+                name: 'History range filters use trade dates',
+                pass: filteredByDate.length === 1 && filteredByDate[0]?.id === 'recent-trade-old-created'
+            });
+
+            const failed = checks.filter((check) => !check.pass);
+            const resultText = failed.length === 0
+                ? `SELF-TEST PASS (${checks.length}/${checks.length})`
+                : `SELF-TEST FAIL (${checks.length - failed.length}/${checks.length}) - ${failed.map((check) => check.name).join(', ')}`;
+            const resultEl = getEl('simulation-test-result');
+            if (resultEl) {
+                resultEl.classList.remove('text-rose-600', 'text-emerald-600', 'text-slate-400');
+                resultEl.classList.add(failed.length === 0 ? 'text-emerald-600' : 'text-rose-600');
+                resultEl.innerText = resultText;
+            }
+            console.log(resultText, checks);
+            document.documentElement?.setAttribute('data-self-test-result', resultText);
+            return { ok: failed.length === 0, checks, resultText };
+        };
+
         document.addEventListener('click', (e) => {
             const target = e.target.closest('button, .holding-item');
             if(!target) return;
@@ -2178,6 +2230,12 @@ window.onload = () => {
                 navigator.serviceWorker.getRegistrations()
                     .then((regs) => regs.forEach((reg) => reg.unregister()))
                     .catch((err) => console.warn('Service worker unregister failed:', err));
+            }
+
+            const autoRunSelfTest = new URLSearchParams(window.location.search).get('selftest') === '1'
+                || localStorage.getItem('isa_auto_self_test') === '1';
+            if (autoRunSelfTest && typeof window.runSimulationSelfTest === 'function') {
+                setTimeout(() => window.runSimulationSelfTest(), 0);
             }
         };
     </script>
