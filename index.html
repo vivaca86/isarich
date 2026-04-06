@@ -320,6 +320,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             opacity: 1;
         }
 
+        .low-power-mode *,
+        .low-power-mode *::before,
+        .low-power-mode *::after {
+            animation: none !important;
+            transition: none !important;
+        }
+
+        .low-power-mode .backdrop-blur-xl,
+        .low-power-mode .backdrop-blur-md {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+
         #history-list .glass-card {
             border-radius: 18px;
             padding-top: 14px;
@@ -794,6 +807,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                     <button type="button" onclick="runSimulationSelfTest()" class="btn-token btn-neutral w-full py-3 bg-white text-slate-700 rounded-xl font-black text-xs border border-slate-200">시뮬레이션 테스트 실행</button>
                     <p id="simulation-test-result" class="mt-2 text-[10px] font-black text-slate-400">테스트 대기</p>
                 </div>
+                <button type="button" onclick="toggleLowPowerMode()" id="low-power-toggle" class="btn-token btn-neutral w-full py-3 bg-white text-slate-700 rounded-xl font-black text-xs border border-slate-200">저전력 모드: OFF</button>
                 <button type="button" onclick="hardRefreshApp()" class="btn-token btn-neutral w-full py-3 bg-white text-slate-700 rounded-xl font-black text-xs border border-slate-200">강력 새로고침(캐시 초기화)</button>
                 <button onclick="saveSettings()" class="btn-token btn-primary-soft w-full py-5 bg-slate-900 text-white rounded-[1.5rem] font-black text-sm shadow-xl active:scale-95 transition mt-4 text-center font-sans">환경 설정 저장</button>
             </div>
@@ -847,6 +861,8 @@ const centerTextPlugin = {
         let portfolioStateCache = null;
         let currentMonthlyModeKey = "";
         const monthlyReportCache = new Map();
+        let isSyncing = false;
+        let lowPowerMode = localStorage.getItem('isa_low_power_mode') === '1';
 
         // 엔진 레벨: 5,000원 단위 · 먹거리 미션 (최대 100,000원)
         function getDividendLevels() {
@@ -1421,6 +1437,13 @@ const centerTextPlugin = {
 
         function safeSetText(id, text) { const el = getEl(id); if (el) el.innerText = text; }
         function safeSetHTML(id, html) { const el = getEl(id); if (el) el.innerHTML = html; }
+        function applyLowPowerMode(enabled) {
+            lowPowerMode = !!enabled;
+            document.body.classList.toggle('low-power-mode', lowPowerMode);
+            localStorage.setItem('isa_low_power_mode', lowPowerMode ? '1' : '0');
+            safeSetText('low-power-toggle', `저전력 모드: ${lowPowerMode ? 'ON' : 'OFF'}`);
+        }
+        window.toggleLowPowerMode = () => applyLowPowerMode(!lowPowerMode);
         function setSyncStatus(text) {
             safeSetText('sync-time', text);
             safeSetText('sync-time-mini', text);
@@ -1480,7 +1503,9 @@ const centerTextPlugin = {
         }
 
         async function syncAllData() {
-            if(!firestoreDb && !initFirebase()) { setSyncStatus("파이어베이스 미연결"); return; }
+            if (isSyncing) return;
+            isSyncing = true;
+            if(!firestoreDb && !initFirebase()) { setSyncStatus("파이어베이스 미연결"); isSyncing = false; return; }
             const icon = getEl('sync-icon'); if(icon) icon.classList.add('sync-spin');
             const hasPriceUrl = isValidSheetsUrl(sheetsUrl);
             let priceSyncFailed = false;
@@ -1516,18 +1541,20 @@ const centerTextPlugin = {
                         console.error(retryError);
                         setSyncStatus("기록 연결 실패");
                         if(icon) icon.classList.remove('sync-spin');
+                        isSyncing = false;
                         return;
                     }
                 } else {
                     setSyncStatus("기록 연결 실패");
                     if(icon) icon.classList.remove('sync-spin');
+                    isSyncing = false;
                     return;
                 }
             }
 
             updateUI(); updateQuickSelectUI();
             const totalValueEl = getEl('stat-total-value');
-            if (totalValueEl) {
+            if (totalValueEl && !lowPowerMode) {
                 totalValueEl.classList.remove('sync-flash');
                 void totalValueEl.offsetWidth;
                 totalValueEl.classList.add('sync-flash');
@@ -1541,6 +1568,7 @@ const centerTextPlugin = {
             else setSyncStatus("최근 업데이트: " + new Date().toLocaleTimeString() + loadedHint);
 
             if(icon) icon.classList.remove('sync-spin');
+            isSyncing = false;
         }
 
 async function postMutation(action, payload = {}) {
@@ -2223,6 +2251,10 @@ if(assetChart){
 function animateValue(id, start, end, duration) {
     const el = document.getElementById(id);
     if (!el) return;
+    if (document.hidden || lowPowerMode) {
+        el.innerText = '₩' + Math.round(end).toLocaleString();
+        return;
+    }
     const range = end - start;
     const startTime = performance.now();
 
@@ -2242,6 +2274,7 @@ window.onload = () => {
             const today = getLocalDateInputValue();
             if(getEl('input-date')) getEl('input-date').value = today;
             if(getEl('div-date')) getEl('div-date').value = today;
+            applyLowPowerMode(lowPowerMode);
             applyAppVersion();
             initFirebase();
             setDepositCat(3); syncAllData();
