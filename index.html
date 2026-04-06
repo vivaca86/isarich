@@ -515,6 +515,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                                 <p class="font-black text-slate-500">매수 실행(월)</p>
                                 <p id="monthly-check-buy-action" class="font-black text-slate-900">0주 · ₩0</p>
                             </div>
+                            <div class="rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
+                                <p class="font-black text-slate-500">매도 실행(월)</p>
+                                <p id="monthly-check-sell-action" class="font-black text-slate-900">0주 · ₩0</p>
+                            </div>
                         </div>
                         <p id="monthly-review-note" class="mt-3 text-[10px] font-black text-slate-400">이 달의 운용 요약 로딩 중...</p>
                     </div>
@@ -1104,6 +1108,9 @@ const centerTextPlugin = {
             let buyActionCount = 0;
             let buyShares = 0;
             let buyAmount = 0;
+            let sellActionCount = 0;
+            let sellShares = 0;
+            let sellAmount = 0;
 
             sortedTx.forEach((tx) => {
                 const txMonth = getMonthKey(tx?.date);
@@ -1155,13 +1162,18 @@ const centerTextPlugin = {
                 const avgCost = h.shares > 0 ? h.cost / h.shares : 0;
                 const costBasisSold = roundMoney(actualSellQty * avgCost);
                 const pnl = roundMoney(proceeds - costBasisSold);
+                if (txMonth === monthKey) {
+                    sellActionCount += 1;
+                    sellShares = roundShares(sellShares + actualSellQty);
+                    sellAmount = roundMoney(sellAmount + proceeds);
+                }
 
                 h.shares = roundShares(h.shares - actualSellQty);
                 h.cost = roundMoney(Math.max(0, h.cost - costBasisSold));
                 if (txMonth === monthKey) realizedPnl = roundMoney(realizedPnl + pnl);
             });
 
-            return { monthKey, realizedPnl, dividendIn, dividendUsed, buyActionCount, buyShares, buyAmount };
+            return { monthKey, realizedPnl, dividendIn, dividendUsed, buyActionCount, buyShares, buyAmount, sellActionCount, sellShares, sellAmount };
         }
 
         function updateMonthlyReviewPanel(monthReport) {
@@ -1180,8 +1192,9 @@ const centerTextPlugin = {
                 : 0;
             safeSetText('monthly-check-execution', `${executionRate.toFixed(1)}%`);
             safeSetText('monthly-check-buy-action', `${monthReport.buyShares.toFixed(2)}주 · ₩${Math.round(monthReport.buyAmount).toLocaleString()}`);
+            safeSetText('monthly-check-sell-action', `${monthReport.sellShares.toFixed(2)}주 · ₩${Math.round(monthReport.sellAmount).toLocaleString()}`);
 
-            const reviewNote = `이번 달 배당 유입 ₩${Math.round(monthReport.dividendIn).toLocaleString()} 중 ₩${Math.round(monthReport.dividendUsed).toLocaleString()} 집행 (${executionRate.toFixed(1)}%) · 매수 ${monthReport.buyActionCount}회`;
+            const reviewNote = `이번 달 배당 유입 ₩${Math.round(monthReport.dividendIn).toLocaleString()} 중 ₩${Math.round(monthReport.dividendUsed).toLocaleString()} 집행 (${executionRate.toFixed(1)}%) · 매수 ${monthReport.buyActionCount}회 / 매도 ${monthReport.sellActionCount}회`;
             safeSetText('monthly-review-note', reviewNote);
         }
 
