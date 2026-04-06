@@ -482,17 +482,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                         <div id="chart-legend" class="w-full space-y-2 text-left font-sans"></div>
                     </div>
 
-                    <div id="monthly-review-panel" class="glass-card p-4 rounded-2xl border border-blue-100/70 bg-gradient-to-br from-blue-50/80 to-white text-left font-sans">
-                        <div class="flex items-center justify-between mb-3 gap-2">
-                            <p class="text-[10px] font-black text-blue-700 uppercase tracking-widest">월간 모드</p>
-                            <div class="flex items-center gap-1.5">
-                                <button type="button" data-action="monthly-prev" class="w-6 h-6 rounded-lg border border-blue-200 bg-white text-blue-600 text-[12px] font-black leading-none hover:bg-blue-50 transition">&lt;</button>
-                                <span id="report-month-label" class="text-[9px] font-black text-blue-700 bg-blue-100/80 px-2 py-1 rounded-lg min-w-[56px] text-center">0000-00</span>
-                                <button type="button" data-action="monthly-next" class="w-6 h-6 rounded-lg border border-blue-200 bg-white text-blue-600 text-[12px] font-black leading-none hover:bg-blue-50 transition">&gt;</button>
-                                <span id="monthly-review-badge" class="text-[9px] font-black text-blue-600 bg-blue-100/80 px-2 py-1 rounded-lg">ON</span>
-                            </div>
+                    <div class="glass-card p-4 rounded-2xl border border-emerald-100/70 bg-gradient-to-br from-emerald-50/80 to-white text-left font-sans">
+                        <div class="flex items-center justify-between mb-3">
+                            <p class="text-[10px] font-black text-emerald-700 uppercase tracking-widest">월간 운용 리포트</p>
+                            <span id="report-month-label" class="text-[9px] font-black text-emerald-600 bg-emerald-100/80 px-2 py-1 rounded-lg">0000-00</span>
                         </div>
-                        <div class="grid grid-cols-3 gap-2 mb-2.5">
+                        <div class="grid grid-cols-3 gap-2">
                             <div class="rounded-xl border border-slate-100 bg-white/80 p-2.5">
                                 <p class="text-[9px] font-black text-slate-400 uppercase">실현손익</p>
                                 <p id="report-realized-pnl" class="mt-1 text-[12px] font-black text-slate-900">₩0</p>
@@ -506,21 +501,32 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                                 <p id="report-dividend-used" class="mt-1 text-[12px] font-black text-indigo-700">₩0</p>
                             </div>
                         </div>
+                    </div>
+
+                    <div id="monthly-review-panel" class="glass-card p-4 rounded-2xl border border-blue-100/70 bg-gradient-to-br from-blue-50/80 to-white text-left font-sans">
+                        <div class="flex items-center justify-between mb-3">
+                            <p class="text-[10px] font-black text-blue-700 uppercase tracking-widest">월간 점검 모드</p>
+                            <span id="monthly-review-badge" class="text-[9px] font-black text-blue-600 bg-blue-100/80 px-2 py-1 rounded-lg">ON</span>
+                        </div>
                         <div class="space-y-2 text-[11px]">
                             <div class="rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
                                 <p class="font-black text-slate-500">배당 집행률</p>
                                 <p id="monthly-check-execution" class="font-black text-slate-900">0%</p>
                             </div>
                             <div class="rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
-                                <p class="font-black text-slate-500">매수 실행(월)</p>
-                                <p id="monthly-check-buy-action" class="font-black text-slate-900">0주 · ₩0</p>
+                                <p class="font-black text-slate-500">이번 달 매수 실행</p>
+                                <p id="monthly-check-buy-action" class="font-black text-slate-900">대기</p>
                             </div>
                             <div class="rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
-                                <p class="font-black text-slate-500">매도 실행(월)</p>
-                                <p id="monthly-check-sell-action" class="font-black text-slate-900">0주 · ₩0</p>
+                                <p class="font-black text-slate-500">지난 동기화 대비 배당 유입</p>
+                                <p id="monthly-change-dividend-in" class="font-black text-slate-900">±₩0</p>
+                            </div>
+                            <div class="rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
+                                <p class="font-black text-slate-500">지난 동기화 대비 배당 집행</p>
+                                <p id="monthly-change-dividend-used" class="font-black text-slate-900">±₩0</p>
                             </div>
                         </div>
-                        <p id="monthly-review-note" class="mt-3 text-[10px] font-black text-slate-400">이 달의 운용 요약 로딩 중...</p>
+                        <p id="monthly-review-note" class="mt-3 text-[10px] font-black text-slate-400">월간 액션 요약 로딩 중...</p>
                     </div>
                 </div>
             </div>
@@ -790,10 +796,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                     <p>2) 프로젝트 설정의 웹 앱 Config JSON을 그대로 붙여넣기</p>
                     <p>3) 저장하면 입금(DEPOSIT)만 Firebase로 저장되고, 미설정 시 기존 시트 방식이 유지됩니다.</p>
                 </div>
-                <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
-                    <button type="button" onclick="runSimulationSelfTest()" class="btn-token btn-neutral w-full py-3 bg-white text-slate-700 rounded-xl font-black text-xs border border-slate-200">시뮬레이션 테스트 실행</button>
-                    <p id="simulation-test-result" class="mt-2 text-[10px] font-black text-slate-400">테스트 대기</p>
-                </div>
                 <button onclick="saveSettings()" class="btn-token btn-primary-soft w-full py-5 bg-slate-900 text-white rounded-[1.5rem] font-black text-sm shadow-xl active:scale-95 transition mt-4 text-center font-sans">환경 설정 저장</button>
             </div>
         </div>
@@ -844,8 +846,6 @@ const centerTextPlugin = {
         let transactionsVersion = 0;
         let portfolioStateCacheVersion = -1;
         let portfolioStateCache = null;
-        let currentMonthlyModeKey = "";
-        const monthlyReportCache = new Map();
 
         // 엔진 레벨: 5,000원 단위 · 먹거리 미션 (최대 100,000원)
         function getDividendLevels() {
@@ -966,14 +966,6 @@ const centerTextPlugin = {
             return Math.round(n * 100) / 100;
         }
 
-        function getSortedTransactions(inputTransactions) {
-            return [...(inputTransactions || [])].sort((a, b) => {
-                const dateDiff = new Date(a.date) - new Date(b.date);
-                if (dateDiff !== 0) return dateDiff;
-                return String(a.id || '').localeCompare(String(b.id || ''));
-            });
-        }
-
         function createTxnId() {
             if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
                 return crypto.randomUUID();
@@ -982,7 +974,11 @@ const centerTextPlugin = {
         }
 
         function simulatePortfolioState(inputTransactions) {
-            const sortedTx = getSortedTransactions(inputTransactions);
+            const sortedTx = [...(inputTransactions || [])].sort((a, b) => {
+                const dateDiff = new Date(a.date) - new Date(b.date);
+                if (dateDiff !== 0) return dateDiff;
+                return String(a.id || '').localeCompare(String(b.id || ''));
+            });
 
             const cash = { "1": 0, "2": 0, "3": 0 };
             const chargedByCat = { "1": 0, "2": 0, "3": 0 };
@@ -1093,60 +1089,13 @@ const centerTextPlugin = {
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         }
 
-        function getCurrentMonthKey() {
-            return getMonthKey(getLocalDateInputValue());
-        }
-
-        function shiftMonthKey(baseMonthKey, delta) {
-            const normalized = String(baseMonthKey || '').trim();
-            const [y, m] = normalized.split('-').map(Number);
-            if (!y || !m) return getMonthKey(getLocalDateInputValue());
-            const d = new Date(y, (m - 1) + Number(delta || 0), 1);
-            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        }
-
-        async function loadMonthlyReportFromFirebase(monthKey) {
-            if (!monthKey || !firestoreDb) return null;
-            if (monthlyReportCache.has(monthKey)) return monthlyReportCache.get(monthKey);
-
-            const [y, m] = String(monthKey).split('-').map(Number);
-            if (!y || !m) return null;
-            const monthEnd = new Date(y, m, 0);
-            const monthEndKey = `${monthEnd.getFullYear()}-${String(monthEnd.getMonth() + 1).padStart(2, '0')}-${String(monthEnd.getDate()).padStart(2, '0')}`;
-            const maxDocs = HISTORY_FETCH_PAGE_SIZE * HISTORY_FETCH_MAX_PAGES;
-
-            try {
-                const docs = [];
-                let lastDoc = null;
-                let pageCount = 0;
-                while (pageCount < HISTORY_FETCH_MAX_PAGES) {
-                    let query = firestoreDb
-                        .collection(firebaseCollection)
-                        .where('date', '<=', monthEndKey)
-                        .orderBy('date', 'desc')
-                        .limit(HISTORY_FETCH_PAGE_SIZE);
-                    if (lastDoc) query = query.startAfter(lastDoc);
-
-                    const snap = await query.get();
-                    if (!snap || snap.empty) break;
-                    docs.push(...snap.docs);
-                    pageCount += 1;
-                    lastDoc = snap.docs[snap.docs.length - 1];
-                    if (snap.size < HISTORY_FETCH_PAGE_SIZE || docs.length >= maxDocs) break;
-                }
-                const records = docs.slice(0, maxDocs).map(doc => toHistoryRecord({ id: doc.id, ...(doc.data() || {}) }, 'firebase'));
-                const report = getCurrentMonthReport(records, monthKey);
-                monthlyReportCache.set(monthKey, report);
-                return report;
-            } catch (e) {
-                console.warn('Monthly report firebase query failed. Falling back to local transactions.', e);
-                return null;
-            }
-        }
-
-        function getCurrentMonthReport(inputTransactions, targetMonthKey = '') {
-            const monthKey = targetMonthKey || getMonthKey(getLocalDateInputValue());
-            const sortedTx = getSortedTransactions(inputTransactions);
+        function getCurrentMonthReport(inputTransactions) {
+            const monthKey = getMonthKey(getLocalDateInputValue());
+            const sortedTx = [...(inputTransactions || [])].sort((a, b) => {
+                const dateDiff = new Date(a.date) - new Date(b.date);
+                if (dateDiff !== 0) return dateDiff;
+                return String(a.id || '').localeCompare(String(b.id || ''));
+            });
 
             const cash = { "1": 0, "2": 0, "3": 0 };
             const holdings = {};
@@ -1154,11 +1103,6 @@ const centerTextPlugin = {
             let dividendIn = 0;
             let dividendUsed = 0;
             let buyActionCount = 0;
-            let buyShares = 0;
-            let buyAmount = 0;
-            let sellActionCount = 0;
-            let sellShares = 0;
-            let sellAmount = 0;
 
             sortedTx.forEach((tx) => {
                 const txMonth = getMonthKey(tx?.date);
@@ -1181,10 +1125,6 @@ const centerTextPlugin = {
 
                 if (shares > 0) {
                     if (txMonth === monthKey) buyActionCount += 1;
-                    if (txMonth === monthKey) {
-                        buyShares = roundShares(buyShares + shares);
-                        buyAmount = roundMoney(buyAmount + amt);
-                    }
                     h.shares = roundShares(h.shares + shares);
                     h.cost = roundMoney(h.cost + amt);
 
@@ -1210,18 +1150,13 @@ const centerTextPlugin = {
                 const avgCost = h.shares > 0 ? h.cost / h.shares : 0;
                 const costBasisSold = roundMoney(actualSellQty * avgCost);
                 const pnl = roundMoney(proceeds - costBasisSold);
-                if (txMonth === monthKey) {
-                    sellActionCount += 1;
-                    sellShares = roundShares(sellShares + actualSellQty);
-                    sellAmount = roundMoney(sellAmount + proceeds);
-                }
 
                 h.shares = roundShares(h.shares - actualSellQty);
                 h.cost = roundMoney(Math.max(0, h.cost - costBasisSold));
                 if (txMonth === monthKey) realizedPnl = roundMoney(realizedPnl + pnl);
             });
 
-            return { monthKey, realizedPnl, dividendIn, dividendUsed, buyActionCount, buyShares, buyAmount, sellActionCount, sellShares, sellAmount };
+            return { monthKey, realizedPnl, dividendIn, dividendUsed, buyActionCount };
         }
 
         function updateMonthlyReviewPanel(monthReport) {
@@ -1239,11 +1174,46 @@ const centerTextPlugin = {
                 ? Math.min(999, (monthReport.dividendUsed / monthReport.dividendIn) * 100)
                 : 0;
             safeSetText('monthly-check-execution', `${executionRate.toFixed(1)}%`);
-            safeSetText('monthly-check-buy-action', `${monthReport.buyShares.toFixed(2)}주 · ₩${Math.round(monthReport.buyAmount).toLocaleString()}`);
-            safeSetText('monthly-check-sell-action', `${monthReport.sellShares.toFixed(2)}주 · ₩${Math.round(monthReport.sellAmount).toLocaleString()}`);
+            safeSetText('monthly-check-buy-action', monthReport.buyActionCount > 0 ? `${monthReport.buyActionCount}회 실행` : '대기');
 
-            const reviewNote = `이번 달 배당 유입 ₩${Math.round(monthReport.dividendIn).toLocaleString()} 중 ₩${Math.round(monthReport.dividendUsed).toLocaleString()} 집행 (${executionRate.toFixed(1)}%) · 매수 ${monthReport.buyActionCount}회 / 매도 ${monthReport.sellActionCount}회`;
+            const snapshotKey = 'isa_monthly_review_snapshot';
+            let prev = null;
+            try {
+                prev = JSON.parse(localStorage.getItem(snapshotKey) || 'null');
+            } catch (_) {
+                prev = null;
+            }
+
+            const sameMonth = prev && prev.monthKey === monthReport.monthKey;
+            const deltaIn = sameMonth ? roundMoney(monthReport.dividendIn - Number(prev.dividendIn || 0)) : monthReport.dividendIn;
+            const deltaUsed = sameMonth ? roundMoney(monthReport.dividendUsed - Number(prev.dividendUsed || 0)) : monthReport.dividendUsed;
+
+            const inText = `${deltaIn >= 0 ? '+' : '-'}₩${Math.round(Math.abs(deltaIn)).toLocaleString()}`;
+            const usedText = `${deltaUsed >= 0 ? '+' : '-'}₩${Math.round(Math.abs(deltaUsed)).toLocaleString()}`;
+            safeSetText('monthly-change-dividend-in', inText);
+            safeSetText('monthly-change-dividend-used', usedText);
+
+            const inEl = getEl('monthly-change-dividend-in');
+            const usedEl = getEl('monthly-change-dividend-used');
+            if (inEl) {
+                inEl.classList.remove('text-rose-600', 'text-blue-600', 'text-slate-900');
+                inEl.classList.add(deltaIn > 0 ? 'text-rose-600' : (deltaIn < 0 ? 'text-blue-600' : 'text-slate-900'));
+            }
+            if (usedEl) {
+                usedEl.classList.remove('text-rose-600', 'text-blue-600', 'text-slate-900');
+                usedEl.classList.add(deltaUsed > 0 ? 'text-rose-600' : (deltaUsed < 0 ? 'text-blue-600' : 'text-slate-900'));
+            }
+
+            const reviewNote = monthReport.buyActionCount > 0
+                ? '이번 달 매수 액션이 실행되었어요. 배당 집행률 변화만 체크하면 됩니다.'
+                : '이번 달 매수 액션이 아직 없습니다. 배당 유입/집행률만 가볍게 확인하세요.';
             safeSetText('monthly-review-note', reviewNote);
+
+            localStorage.setItem(snapshotKey, JSON.stringify({
+                monthKey: monthReport.monthKey,
+                dividendIn: monthReport.dividendIn,
+                dividendUsed: monthReport.dividendUsed
+            }));
         }
 
         function getHoldingSharesByTicker(ticker) {
@@ -1499,7 +1469,6 @@ const centerTextPlugin = {
             try {
                 transactions = await loadTransactionsFromFirebase();
                 transactionsVersion += 1;
-                monthlyReportCache.clear();
             } catch(e) {
                 console.error(e);
                 const fallbackCollection = 'isa_history';
@@ -1509,7 +1478,6 @@ const centerTextPlugin = {
                         localStorage.setItem('isa_firebase_collection', firebaseCollection);
                         transactions = await loadTransactionsFromFirebase();
                         transactionsVersion += 1;
-                        monthlyReportCache.clear();
                         historyRecoveredWithFallback = true;
                     } catch (retryError) {
                         console.error(retryError);
@@ -1750,8 +1718,7 @@ async function postMutation(action, payload = {}) {
             safeSetHTML('stat-profit-pct', `${totProfit>=0?'+':''}${totRate.toFixed(1)}%`);
             safeSetHTML('stat-profit-icon', totalTrend.iconHtml);
             safeSetText('stat-cash-balance', `₩${Math.round(curCash).toLocaleString()}`);
-            if (!currentMonthlyModeKey) currentMonthlyModeKey = getCurrentMonthKey();
-            const monthReport = monthlyReportCache.get(currentMonthlyModeKey) || getCurrentMonthReport(transactions, currentMonthlyModeKey);
+            const monthReport = getCurrentMonthReport(transactions);
             safeSetText('report-month-label', monthReport.monthKey || '-');
             safeSetText('report-realized-pnl', `₩${Math.round(monthReport.realizedPnl).toLocaleString()}`);
             safeSetText('report-dividend-in', `₩${Math.round(monthReport.dividendIn).toLocaleString()}`);
@@ -2096,23 +2063,6 @@ if(assetChart){
             if(target.id === 'history-load-more') {
                 historyVisibleCount += 100;
                 renderHistoryList('history-list', transactions);
-                return;
-            }
-
-            if(target.dataset.action === 'monthly-prev') {
-                currentMonthlyModeKey = shiftMonthKey(currentMonthlyModeKey || getCurrentMonthKey(), -1);
-                updateUI();
-                void loadMonthlyReportFromFirebase(currentMonthlyModeKey).then(() => updateUI());
-                return;
-            }
-
-            if(target.dataset.action === 'monthly-next') {
-                const next = shiftMonthKey(currentMonthlyModeKey || getCurrentMonthKey(), 1);
-                const currentKey = getCurrentMonthKey();
-                if (next > currentKey) return;
-                currentMonthlyModeKey = next;
-                updateUI();
-                void loadMonthlyReportFromFirebase(currentMonthlyModeKey).then(() => updateUI());
                 return;
             }
 
