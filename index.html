@@ -790,6 +790,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                     <p>2) 프로젝트 설정의 웹 앱 Config JSON을 그대로 붙여넣기</p>
                     <p>3) 저장하면 입금(DEPOSIT)만 Firebase로 저장되고, 미설정 시 기존 시트 방식이 유지됩니다.</p>
                 </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                    <button type="button" onclick="runSimulationSelfTest()" class="btn-token btn-neutral w-full py-3 bg-white text-slate-700 rounded-xl font-black text-xs border border-slate-200">시뮬레이션 테스트 실행</button>
+                    <p id="simulation-test-result" class="mt-2 text-[10px] font-black text-slate-400">테스트 대기</p>
+                </div>
                 <button onclick="saveSettings()" class="btn-token btn-primary-soft w-full py-5 bg-slate-900 text-white rounded-[1.5rem] font-black text-sm shadow-xl active:scale-95 transition mt-4 text-center font-sans">환경 설정 저장</button>
             </div>
         </div>
@@ -841,6 +845,7 @@ const centerTextPlugin = {
         let portfolioStateCacheVersion = -1;
         let portfolioStateCache = null;
         let currentMonthlyModeKey = "";
+        const monthlyReportCache = new Map();
 
         // 엔진 레벨: 5,000원 단위 · 먹거리 미션 (최대 100,000원)
         function getDividendLevels() {
@@ -961,6 +966,14 @@ const centerTextPlugin = {
             return Math.round(n * 100) / 100;
         }
 
+        function getSortedTransactions(inputTransactions) {
+            return [...(inputTransactions || [])].sort((a, b) => {
+                const dateDiff = new Date(a.date) - new Date(b.date);
+                if (dateDiff !== 0) return dateDiff;
+                return String(a.id || '').localeCompare(String(b.id || ''));
+            });
+        }
+
         function createTxnId() {
             if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
                 return crypto.randomUUID();
@@ -969,11 +982,7 @@ const centerTextPlugin = {
         }
 
         function simulatePortfolioState(inputTransactions) {
-            const sortedTx = [...(inputTransactions || [])].sort((a, b) => {
-                const dateDiff = new Date(a.date) - new Date(b.date);
-                if (dateDiff !== 0) return dateDiff;
-                return String(a.id || '').localeCompare(String(b.id || ''));
-            });
+            const sortedTx = getSortedTransactions(inputTransactions);
 
             const cash = { "1": 0, "2": 0, "3": 0 };
             const chargedByCat = { "1": 0, "2": 0, "3": 0 };
@@ -1084,6 +1093,10 @@ const centerTextPlugin = {
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         }
 
+        function getCurrentMonthKey() {
+            return getMonthKey(getLocalDateInputValue());
+        }
+
         function shiftMonthKey(baseMonthKey, delta) {
             const normalized = String(baseMonthKey || '').trim();
             const [y, m] = normalized.split('-').map(Number);
@@ -1092,13 +1105,48 @@ const centerTextPlugin = {
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         }
 
+        async function loadMonthlyReportFromFirebase(monthKey) {
+            if (!monthKey || !firestoreDb) return null;
+            if (monthlyReportCache.has(monthKey)) return monthlyReportCache.get(monthKey);
+
+            const [y, m] = String(monthKey).split('-').map(Number);
+            if (!y || !m) return null;
+            const monthEnd = new Date(y, m, 0);
+            const monthEndKey = `${monthEnd.getFullYear()}-${String(monthEnd.getMonth() + 1).padStart(2, '0')}-${String(monthEnd.getDate()).padStart(2, '0')}`;
+            const maxDocs = HISTORY_FETCH_PAGE_SIZE * HISTORY_FETCH_MAX_PAGES;
+
+            try {
+                const docs = [];
+                let lastDoc = null;
+                let pageCount = 0;
+                while (pageCount < HISTORY_FETCH_MAX_PAGES) {
+                    let query = firestoreDb
+                        .collection(firebaseCollection)
+                        .where('date', '<=', monthEndKey)
+                        .orderBy('date', 'desc')
+                        .limit(HISTORY_FETCH_PAGE_SIZE);
+                    if (lastDoc) query = query.startAfter(lastDoc);
+
+                    const snap = await query.get();
+                    if (!snap || snap.empty) break;
+                    docs.push(...snap.docs);
+                    pageCount += 1;
+                    lastDoc = snap.docs[snap.docs.length - 1];
+                    if (snap.size < HISTORY_FETCH_PAGE_SIZE || docs.length >= maxDocs) break;
+                }
+                const records = docs.slice(0, maxDocs).map(doc => toHistoryRecord({ id: doc.id, ...(doc.data() || {}) }, 'firebase'));
+                const report = getCurrentMonthReport(records, monthKey);
+                monthlyReportCache.set(monthKey, report);
+                return report;
+            } catch (e) {
+                console.warn('Monthly report firebase query failed. Falling back to local transactions.', e);
+                return null;
+            }
+        }
+
         function getCurrentMonthReport(inputTransactions, targetMonthKey = '') {
             const monthKey = targetMonthKey || getMonthKey(getLocalDateInputValue());
-            const sortedTx = [...(inputTransactions || [])].sort((a, b) => {
-                const dateDiff = new Date(a.date) - new Date(b.date);
-                if (dateDiff !== 0) return dateDiff;
-                return String(a.id || '').localeCompare(String(b.id || ''));
-            });
+            const sortedTx = getSortedTransactions(inputTransactions);
 
             const cash = { "1": 0, "2": 0, "3": 0 };
             const holdings = {};
@@ -1451,6 +1499,7 @@ const centerTextPlugin = {
             try {
                 transactions = await loadTransactionsFromFirebase();
                 transactionsVersion += 1;
+                monthlyReportCache.clear();
             } catch(e) {
                 console.error(e);
                 const fallbackCollection = 'isa_history';
@@ -1460,6 +1509,7 @@ const centerTextPlugin = {
                         localStorage.setItem('isa_firebase_collection', firebaseCollection);
                         transactions = await loadTransactionsFromFirebase();
                         transactionsVersion += 1;
+                        monthlyReportCache.clear();
                         historyRecoveredWithFallback = true;
                     } catch (retryError) {
                         console.error(retryError);
@@ -1700,8 +1750,8 @@ async function postMutation(action, payload = {}) {
             safeSetHTML('stat-profit-pct', `${totProfit>=0?'+':''}${totRate.toFixed(1)}%`);
             safeSetHTML('stat-profit-icon', totalTrend.iconHtml);
             safeSetText('stat-cash-balance', `₩${Math.round(curCash).toLocaleString()}`);
-            if (!currentMonthlyModeKey) currentMonthlyModeKey = getMonthKey(getLocalDateInputValue());
-            const monthReport = getCurrentMonthReport(transactions, currentMonthlyModeKey);
+            if (!currentMonthlyModeKey) currentMonthlyModeKey = getCurrentMonthKey();
+            const monthReport = monthlyReportCache.get(currentMonthlyModeKey) || getCurrentMonthReport(transactions, currentMonthlyModeKey);
             safeSetText('report-month-label', monthReport.monthKey || '-');
             safeSetText('report-realized-pnl', `₩${Math.round(monthReport.realizedPnl).toLocaleString()}`);
             safeSetText('report-dividend-in', `₩${Math.round(monthReport.dividendIn).toLocaleString()}`);
@@ -2003,6 +2053,35 @@ if(assetChart){
             getEl('detail-modal')?.classList.remove('hidden');
         };
 
+        window.runSimulationSelfTest = () => {
+            const testMonth = getCurrentMonthKey();
+            const sampleTx = [
+                { id: 'd1', date: `${testMonth}-01`, ticker: 'DEPOSIT', name: '현금 입금', shares: 1, price: 100000, category: '3' },
+                { id: 'b1', date: `${testMonth}-02`, ticker: 'TEST', name: '테스트ETF', shares: 10, price: 5000, category: 0 },
+                { id: 's1', date: `${testMonth}-03`, ticker: 'TEST', name: '테스트ETF', shares: -2, price: 5500, category: 0, side: 'sell' }
+            ];
+
+            const state = simulatePortfolioState(sampleTx);
+            const report = getCurrentMonthReport(sampleTx, testMonth);
+
+            const checks = [
+                { name: '보유수량 계산', pass: Math.abs((state.holdings.TEST?.shares || 0) - 8) < 0.0001 },
+                { name: '월간 매수 집계', pass: report.buyActionCount === 1 && report.buyShares >= 10 },
+                { name: '월간 매도 집계', pass: report.sellActionCount === 1 && report.sellShares >= 2 },
+                { name: '배당 집행률 계산', pass: report.dividendIn >= report.dividendUsed }
+            ];
+            const failed = checks.filter(c => !c.pass);
+            const resultText = failed.length === 0
+                ? `✅ 테스트 통과 (${checks.length}/${checks.length})`
+                : `❌ 테스트 실패 (${checks.length - failed.length}/${checks.length}) · ${failed.map(f => f.name).join(', ')}`;
+            const resultEl = getEl('simulation-test-result');
+            if (resultEl) {
+                resultEl.classList.remove('text-rose-600', 'text-emerald-600', 'text-slate-400');
+                resultEl.classList.add(failed.length === 0 ? 'text-emerald-600' : 'text-rose-600');
+                resultEl.innerText = resultText;
+            }
+        };
+
         document.addEventListener('click', (e) => {
             const target = e.target.closest('button, .holding-item');
             if(!target) return;
@@ -2021,14 +2100,19 @@ if(assetChart){
             }
 
             if(target.dataset.action === 'monthly-prev') {
-                currentMonthlyModeKey = shiftMonthKey(currentMonthlyModeKey || getMonthKey(getLocalDateInputValue()), -1);
+                currentMonthlyModeKey = shiftMonthKey(currentMonthlyModeKey || getCurrentMonthKey(), -1);
                 updateUI();
+                void loadMonthlyReportFromFirebase(currentMonthlyModeKey).then(() => updateUI());
                 return;
             }
 
             if(target.dataset.action === 'monthly-next') {
-                currentMonthlyModeKey = shiftMonthKey(currentMonthlyModeKey || getMonthKey(getLocalDateInputValue()), 1);
+                const next = shiftMonthKey(currentMonthlyModeKey || getCurrentMonthKey(), 1);
+                const currentKey = getCurrentMonthKey();
+                if (next > currentKey) return;
+                currentMonthlyModeKey = next;
                 updateUI();
+                void loadMonthlyReportFromFirebase(currentMonthlyModeKey).then(() => updateUI());
                 return;
             }
 
