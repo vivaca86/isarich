@@ -1319,7 +1319,7 @@ const centerTextPlugin = {
 
                 while (pageCount < HISTORY_FETCH_MAX_PAGES) {
                     const query = lastDoc ? nextQuery(lastDoc) : firstQuery();
-                    const snap = await query.get();
+                    const snap = await withTimeout(query.get(), 15000, '기록 조회');
                     if (!snap || snap.empty) break;
                     docs.push(...snap.docs);
                     pageCount += 1;
@@ -1386,6 +1386,16 @@ const centerTextPlugin = {
             } finally {
                 clearTimeout(timer);
             }
+        }
+
+        function withTimeout(promise, timeoutMs = 15000, label = '요청') {
+            let timer = null;
+            const timeoutPromise = new Promise((_, reject) => {
+                timer = setTimeout(() => reject(new Error(`${label} 시간 초과`)), timeoutMs);
+            });
+            return Promise.race([promise, timeoutPromise]).finally(() => {
+                if (timer) clearTimeout(timer);
+            });
         }
 
         async function fetchJsonWithTimeout(url, options = {}, timeoutMs = 12000) {
@@ -1489,8 +1499,9 @@ const centerTextPlugin = {
         }
 
         async function syncAllData() {
-            if (isSyncing) return;
+            if (isSyncing) { setSyncStatus("동기화 진행 중..."); return; }
             isSyncing = true;
+            setSyncStatus("동기화 중...");
             const icon = getEl('sync-icon'); if(icon) icon.classList.add('sync-spin');
             try {
                 if(!firestoreDb && !initFirebase()) { setSyncStatus("파이어베이스 미연결"); return; }
@@ -1547,6 +1558,9 @@ const centerTextPlugin = {
                 else if(!hasPriceUrl) setSyncStatus("가격 URL 미설정 · 기록만 동기화됨" + loadedHint);
                 else if(priceSyncFailed) setSyncStatus("가격 연결 실패 · 기록은 동기화됨" + loadedHint);
                 else setSyncStatus("최근 업데이트: " + new Date().toLocaleTimeString() + loadedHint);
+            } catch (e) {
+                console.error(e);
+                setSyncStatus("동기화 실패 · 잠시 후 다시 시도");
             } finally {
                 if(icon) icon.classList.remove('sync-spin');
                 isSyncing = false;
