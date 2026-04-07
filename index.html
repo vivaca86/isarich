@@ -1444,6 +1444,27 @@ const centerTextPlugin = {
             safeSetText('sync-time', text);
             safeSetText('sync-time-mini', text);
         }
+        function getSyncErrorMeta(error, fallbackCode = 'UNKNOWN') {
+            const message = String(error?.message || error || '알 수 없는 오류');
+            const rawCode = String(error?.code || '').trim();
+            const lower = `${rawCode} ${message}`.toLowerCase();
+
+            if (lower.includes('permission-denied')) return { code: 'PERMISSION_DENIED', reason: '권한 부족(파이어스토어 규칙 확인)' };
+            if (lower.includes('unavailable')) return { code: 'SERVICE_UNAVAILABLE', reason: '서비스 일시 불가' };
+            if (lower.includes('deadline-exceeded') || lower.includes('time out') || lower.includes('시간 초과') || lower.includes('timeout')) return { code: 'TIMEOUT', reason: '요청 시간 초과' };
+            if (lower.includes('failed to fetch') || lower.includes('network') || lower.includes('aborterror')) return { code: 'NETWORK', reason: '네트워크 연결 문제' };
+            if (lower.includes('http 401') || lower.includes('http 403')) return { code: 'AUTH', reason: '인증/권한 오류(HTTP 401/403)' };
+            if (lower.includes('http 404')) return { code: 'NOT_FOUND', reason: '요청 대상 없음(HTTP 404)' };
+            if (lower.includes('http 5')) return { code: 'SERVER_HTTP', reason: '서버 응답 오류(HTTP 5xx)' };
+            if (lower.includes('파이어베이스 설정이 필요')) return { code: 'FIREBASE_CONFIG', reason: '파이어베이스 설정 누락' };
+            return { code: rawCode || fallbackCode, reason: message };
+        }
+        function setSyncFailureStatus(stage, error, fallbackCode = 'UNKNOWN') {
+            const meta = getSyncErrorMeta(error, fallbackCode);
+            const text = `동기화 실패 - ${stage}/${meta.code}: ${meta.reason}`;
+            setSyncStatus(text);
+            console.error(`[SYNC][${stage}][${meta.code}]`, error);
+        }
         function applyAppVersion() {
             document.title = `ISA RICH Premium ver${APP_VERSION}`;
             safeSetText('settings-version', `v${APP_VERSION}`);
@@ -1504,9 +1525,13 @@ const centerTextPlugin = {
             setSyncStatus("동기화 중...");
             const icon = getEl('sync-icon'); if(icon) icon.classList.add('sync-spin');
             try {
-                if(!firestoreDb && !initFirebase()) { setSyncStatus("파이어베이스 미연결"); return; }
+                if(!firestoreDb && !initFirebase()) {
+                    setSyncStatus("동기화 실패 - FIREBASE_INIT: 파이어베이스 미연결");
+                    return;
+                }
                 const hasPriceUrl = isValidSheetsUrl(sheetsUrl);
                 let priceSyncFailed = false;
+                let priceSyncMeta = null;
                 let historyRecoveredWithFallback = false;
 
                 if(hasPriceUrl) {
@@ -1514,7 +1539,8 @@ const centerTextPlugin = {
                         const ts = Date.now();
                         marketData = await fetchJsonWithTimeout(`${sheetsUrl}?action=prices&_t=${ts}`, { redirect: 'follow' });
                     } catch (e) {
-                        console.error(e);
+                        priceSyncMeta = getSyncErrorMeta(e, 'PRICE_FETCH');
+                        console.error(`[SYNC][PRICE_FETCH][${priceSyncMeta.code}]`, e);
                         priceSyncFailed = true;
                     }
                 }
@@ -1534,12 +1560,11 @@ const centerTextPlugin = {
                             monthlyReportCache.clear();
                             historyRecoveredWithFallback = true;
                         } catch (retryError) {
-                            console.error(retryError);
-                            setSyncStatus("기록 연결 실패");
+                            setSyncFailureStatus('HISTORY_LOAD', retryError, 'HISTORY_RETRY');
                             return;
                         }
                     } else {
-                        setSyncStatus("기록 연결 실패");
+                        setSyncFailureStatus('HISTORY_LOAD', e, 'HISTORY_LOAD');
                         return;
                     }
                 }
@@ -1556,11 +1581,10 @@ const centerTextPlugin = {
                 const loadedHint = transactions.length > 0 ? ` · ${transactions.length}건` : '';
                 if(historyRecoveredWithFallback) setSyncStatus("컬렉션 자동 복구 · 기록 동기화됨" + loadedHint);
                 else if(!hasPriceUrl) setSyncStatus("가격 URL 미설정 · 기록만 동기화됨" + loadedHint);
-                else if(priceSyncFailed) setSyncStatus("가격 연결 실패 · 기록은 동기화됨" + loadedHint);
+                else if(priceSyncFailed) setSyncStatus(`가격 연결 실패(${priceSyncMeta?.code || 'PRICE_FETCH'}) · 기록은 동기화됨${loadedHint}`);
                 else setSyncStatus("최근 업데이트: " + new Date().toLocaleTimeString() + loadedHint);
             } catch (e) {
-                console.error(e);
-                setSyncStatus("동기화 실패 · 잠시 후 다시 시도");
+                setSyncFailureStatus('SYNC_ALL', e, 'SYNC_ALL');
             } finally {
                 if(icon) icon.classList.remove('sync-spin');
                 isSyncing = false;
