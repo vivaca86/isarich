@@ -1446,6 +1446,10 @@ const centerTextPlugin = {
             lowPowerMode = !!enabled;
             document.body.classList.toggle('low-power-mode', lowPowerMode);
             document.body.classList.toggle('motion-enabled', shouldAnimateUi());
+            if (assetChart) {
+                assetChart.options.animation = lowPowerMode ? false : { animateRotate: true, duration: 450 };
+                assetChart.update('none');
+            }
             localStorage.setItem('isa_low_power_mode', lowPowerMode ? '1' : '0');
             safeSetText('low-power-toggle', `저전력 모드: ${lowPowerMode ? 'ON' : 'OFF'}`);
         }
@@ -1924,14 +1928,15 @@ async function postMutation(action, payload = {}) {
 if(assetChart){
     assetChart.data.labels = labels;
     assetChart.data.datasets[0].data = data;
-    assetChart.update();
+    assetChart.options.animation = lowPowerMode ? false : { animateRotate: true, duration: 450 };
+    assetChart.update(lowPowerMode ? 'none' : undefined);
 } else {
     assetChart = new Chart(getEl('assetChart').getContext('2d'), {
         plugins:[centerTextPlugin],
  type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: bg, borderWidth: 3, borderColor: '#ffffff' }] }, options: { cutout: '82%', plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false,
                 animation: {
                     animateRotate: true,
-                    duration: 1500
+                    duration: 450
                 }
             } }); }
             }
