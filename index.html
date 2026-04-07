@@ -353,6 +353,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             background: url('icons/ui/cta-glass.svg') center / contain no-repeat;
         }
 
+        /* Tailwind 로딩 실패 시에도 모달 오버레이가 화면을 막지 않도록 기본 숨김 보장 */
+        #detail-modal,
+        #cash-modal,
+        #settings-modal {
+            display: none;
+        }
+        #detail-modal:not(.hidden),
+        #cash-modal:not(.hidden),
+        #settings-modal:not(.hidden) {
+            display: flex;
+        }
+        .hidden {
+            display: none !important;
+        }
+
 
     </style>
 </head>
@@ -1757,7 +1772,7 @@ async function postMutation(action, payload = {}) {
             const usedDiv = usedByCat['3'];
             const curCash = cashD["1"] + cashD["2"] + cashD["3"];
 
-            let reinvestRate = totalC > 0 ? (usedDiv / totalC * 100) : 0;
+            let reinvestRate = totalBuyAmount > 0 ? (usedDiv / totalBuyAmount * 100) : 0;
             if(Math.round(cashD["3"]) > 0) getEl('cash-card-area')?.classList.add('reinvest-highlight');
             else getEl('cash-card-area')?.classList.remove('reinvest-highlight');
 
@@ -2306,6 +2321,12 @@ window.onload = () => {
                 navigator.serviceWorker.getRegistrations()
                     .then((regs) => regs.forEach((reg) => reg.unregister()))
                     .catch((err) => console.warn('Service worker unregister failed:', err));
+            }
+
+            const autoRunSelfTest = new URLSearchParams(window.location.search).get('selftest') === '1'
+                || localStorage.getItem('isa_auto_self_test') === '1';
+            if (autoRunSelfTest && typeof window.runSimulationSelfTest === 'function') {
+                setTimeout(() => window.runSimulationSelfTest(), 0);
             }
         };
         document.addEventListener('visibilitychange', () => {
