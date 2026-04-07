@@ -821,6 +821,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         let transactions = [];
         let marketData = {};
         let assetChart = null;
+        let totalBuyAmount = 0;
 
 // ===== Chart Center Text Plugin =====
 const centerTextPlugin = {
@@ -1457,6 +1458,7 @@ const centerTextPlugin = {
             if (lower.includes('http 404')) return { code: 'NOT_FOUND', reason: '요청 대상 없음(HTTP 404)' };
             if (lower.includes('http 5')) return { code: 'SERVER_HTTP', reason: '서버 응답 오류(HTTP 5xx)' };
             if (lower.includes('파이어베이스 설정이 필요')) return { code: 'FIREBASE_CONFIG', reason: '파이어베이스 설정 누락' };
+            if (lower.includes("can't find variable") || lower.includes('is not defined')) return { code: 'REFERENCE', reason: '정의되지 않은 변수 참조' };
             return { code: rawCode || fallbackCode, reason: message };
         }
         function setSyncFailureStatus(stage, error, fallbackCode = 'UNKNOWN') {
@@ -1752,6 +1754,7 @@ async function postMutation(action, payload = {}) {
             const chargedByCat = state.chargedByCat;
             const usedByCat = state.buyUsedByCat;
             const totalC = state.totalBuyAmount;
+            totalBuyAmount = totalC;
 
             const usedDiv = usedByCat['3'];
             const curCash = cashD["1"] + cashD["2"] + cashD["3"];
