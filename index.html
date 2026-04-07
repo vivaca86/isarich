@@ -30,10 +30,12 @@
             font-family: 'Pretendard', sans-serif; 
             background: linear-gradient(-45deg, #eef2f7, #e0e7ff, #f1f5f9, #eef2f7);
             background-size: 400% 400%;
-            animation: bgMove 12s ease-in-out infinite;
             color: #334155; 
             -webkit-tap-highlight-color: transparent; 
             padding-top: max(8px, env(safe-area-inset-top));
+        }
+        body.motion-enabled {
+            animation: bgMove 24s ease-in-out infinite;
         }
 
         @media (min-width: 1024px) {
@@ -849,7 +851,9 @@ const centerTextPlugin = {
         let currentMonthlyModeKey = "";
         const monthlyReportCache = new Map();
         let isSyncing = false;
-        let lowPowerMode = localStorage.getItem('isa_low_power_mode') === '1';
+        const storedLowPowerMode = localStorage.getItem('isa_low_power_mode');
+        const isLikelyMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+        let lowPowerMode = storedLowPowerMode ? storedLowPowerMode === '1' : isLikelyMobile;
 
         // 엔진 레벨: 5,000원 단위 · 먹거리 미션 (최대 100,000원)
         function getDividendLevels() {
@@ -1434,9 +1438,14 @@ const centerTextPlugin = {
 
         function safeSetText(id, text) { const el = getEl(id); if (el) el.innerText = text; }
         function safeSetHTML(id, html) { const el = getEl(id); if (el) el.innerHTML = html; }
+        function shouldAnimateUi() {
+            const reduceMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            return !lowPowerMode && !document.hidden && !reduceMotion;
+        }
         function applyLowPowerMode(enabled) {
             lowPowerMode = !!enabled;
             document.body.classList.toggle('low-power-mode', lowPowerMode);
+            document.body.classList.toggle('motion-enabled', shouldAnimateUi());
             localStorage.setItem('isa_low_power_mode', lowPowerMode ? '1' : '0');
             safeSetText('low-power-toggle', `저전력 모드: ${lowPowerMode ? 'ON' : 'OFF'}`);
         }
@@ -2315,6 +2324,9 @@ window.onload = () => {
                 setTimeout(() => window.runSimulationSelfTest(), 0);
             }
         };
+        document.addEventListener('visibilitychange', () => {
+            document.body.classList.toggle('motion-enabled', shouldAnimateUi());
+        });
     </script>
 </body>
 </html>
