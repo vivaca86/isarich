@@ -669,6 +669,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                              <input type="number" id="div-amount" placeholder="0" class="premium-input pr-4 font-black text-sm text-left tracking-tight">
                         </div>
                     </div>
+                    <div id="dividend-stock-field">
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left font-sans">배당 종목</label>
+                        <select id="div-ticker" class="premium-input px-4 font-black text-sm text-left">
+                            <option value="DEPOSIT">종목 미지정</option>
+                        </select>
+                        <p class="mt-1 text-[10px] font-black text-slate-400">배당금 선택 시 종목을 지정하면 월간 정리에서 종목별 배당으로 집계됩니다.</p>
+                    </div>
                     <div class="flex gap-2 text-left font-sans">
                         <button onclick="saveWalletDeposit()" id="save-div-btn" class="btn-token btn-primary-soft flex-1 py-5 bg-blue-600 text-white rounded-xl font-black text-sm shadow-xl active:scale-95 transition-all hover:bg-blue-700 text-center uppercase">충전하기</button>
                         <button onclick="exitEditMode()" id="cancel-edit-btn-deposit" class="hidden btn-token btn-neutral px-6 py-5 rounded-2xl font-black text-sm active:scale-95 text-center font-sans">취소</button>
@@ -1631,6 +1638,8 @@ const centerTextPlugin = {
 
         function setDepositCat(n) {
             getEl('wallet-category').value = n;
+            const dividendField = getEl('dividend-stock-field');
+            if (dividendField) dividendField.classList.toggle('hidden', String(n) !== '3');
             [1,2,3].forEach(i => {
                 const btn = getEl('dep-cat-'+i);
                 if(btn) {
@@ -1638,6 +1647,15 @@ const centerTextPlugin = {
                     else btn.className = "flex flex-col items-center gap-2 py-4 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-500 text-[11px] font-black transition text-center hover:border-slate-300";
                 }
             });
+        }
+
+        function updateDividendTickerOptions() {
+            const select = getEl('div-ticker');
+            if (!select) return;
+            const prev = String(select.value || 'DEPOSIT');
+            const tickers = Object.keys(marketData || {});
+            select.innerHTML = `<option value="DEPOSIT">종목 미지정</option>${tickers.map(ticker => `<option value="${escapeHtml(ticker)}">${escapeHtml(String(marketData[ticker]?.name || ticker))}</option>`).join('')}`;
+            select.value = (prev === 'DEPOSIT' || tickers.includes(prev)) ? prev : 'DEPOSIT';
         }
 
         async function syncAllData() {
@@ -1690,7 +1708,7 @@ const centerTextPlugin = {
                     }
                 }
 
-                updateUI(); updateQuickSelectUI();
+                updateUI(); updateQuickSelectUI(); updateDividendTickerOptions();
                 const totalValueEl = getEl('stat-total-value');
                 if (totalValueEl && !lowPowerMode) {
                     totalValueEl.classList.remove('sync-flash');
@@ -1765,20 +1783,28 @@ async function postMutation(action, payload = {}) {
             if(getEl('save-div-btn')) getEl('save-div-btn').innerText = "충전하기";
             if(getEl('cancel-edit-btn')) getEl('cancel-edit-btn').classList.add('hidden');
             if(getEl('cancel-edit-btn-deposit')) getEl('cancel-edit-btn-deposit').classList.add('hidden');
+            if(getEl('div-ticker')) getEl('div-ticker').value = "DEPOSIT";
             selectedTicker = ""; updateQuickSelectUI();
         }
 
         async function saveWalletDeposit() {
             const date = getEl('div-date').value, amount = Number(getEl('div-amount').value), cat = normalizeCashCategory(getEl('wallet-category').value), editId = getEl('edit-id').value;
             if(!date || !amount) return;
+            const selectedDividendTicker = String(getEl('div-ticker')?.value || 'DEPOSIT').trim();
+            const dividendTicker = selectedDividendTicker || 'DEPOSIT';
+            const dividendName = String(marketData?.[dividendTicker]?.name || dividendTicker).trim();
+            const depositTicker = cat === '3' ? dividendTicker : 'DEPOSIT';
+            const depositName = cat === '3'
+                ? (depositTicker === 'DEPOSIT' ? '배당 입금' : `${dividendName} 배당 입금`)
+                : '현금 입금';
             const btn = getEl('save-div-btn'); if(btn) { btn.innerText = "처리 중..."; btn.disabled = true; }
             try {
                 if(editId) await postMutation('delete', { id: editId });
                 await postMutation('add', {
                     id: createTxnId(),
                     date,
-                    ticker: 'DEPOSIT',
-                    name: '현금 입금',
+                    ticker: depositTicker,
+                    name: depositName,
                     shares: 1,
                     price: amount,
                     category: cat
