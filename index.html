@@ -529,7 +529,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                             </button>
                             <div id="monthly-breakdown-sell" class="hidden rounded-xl border border-slate-100 bg-white/80 px-2.5 py-2 space-y-1"></div>
                             <button type="button" data-action="monthly-toggle-dividend" class="w-full rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
-                                <p class="font-black text-slate-500">배당 유입 합계</p>
+                                <div class="flex items-center gap-1.5">
+                                    <p class="font-black text-slate-500">배당 유입 합계</p>
+                                    <span id="monthly-unassigned-badge" class="hidden text-[9px] font-black text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-md">미지정 0건</span>
+                                </div>
                                 <p id="monthly-check-dividend-total" class="font-black text-slate-900">₩0 ▾</p>
                             </button>
                             <div id="monthly-breakdown-dividend" class="hidden rounded-xl border border-slate-100 bg-white/80 px-2.5 py-2 space-y-1"></div>
@@ -851,6 +854,37 @@ const centerTextPlugin = {
         let historyFilterDays = 'all';
         let historyVisibleCount = 100;
         let monthlyBreakdownOpen = { buy: false, sell: false, dividend: false };
+        const MONTHLY_BREAKDOWN_STATE_KEY = 'isa_monthly_breakdown_state';
+
+        function loadMonthlyBreakdownState(monthKey) {
+            try {
+                const all = JSON.parse(localStorage.getItem(MONTHLY_BREAKDOWN_STATE_KEY) || '{}');
+                const saved = all?.[monthKey];
+                if (!saved || typeof saved !== 'object') return { buy: false, sell: false, dividend: false };
+                return {
+                    buy: Boolean(saved.buy),
+                    sell: Boolean(saved.sell),
+                    dividend: Boolean(saved.dividend)
+                };
+            } catch (e) {
+                return { buy: false, sell: false, dividend: false };
+            }
+        }
+
+        function saveMonthlyBreakdownState(monthKey, nextState) {
+            if (!monthKey) return;
+            try {
+                const all = JSON.parse(localStorage.getItem(MONTHLY_BREAKDOWN_STATE_KEY) || '{}');
+                all[monthKey] = {
+                    buy: Boolean(nextState?.buy),
+                    sell: Boolean(nextState?.sell),
+                    dividend: Boolean(nextState?.dividend)
+                };
+                localStorage.setItem(MONTHLY_BREAKDOWN_STATE_KEY, JSON.stringify(all));
+            } catch (e) {
+                console.warn('Failed to persist monthly breakdown state.', e);
+            }
+        }
         let detailModalTicker = "";
         let detailModalName = "";
         let transactionsVersion = 0;
@@ -1176,6 +1210,7 @@ const centerTextPlugin = {
             let sellShares = 0;
             let sellAmount = 0;
             let sellCostBasis = 0;
+            let unassignedDividendCount = 0;
             const tickerMonthlyStats = {};
 
             sortedTx.forEach((tx) => {
@@ -1209,6 +1244,7 @@ const centerTextPlugin = {
                     if (txMonth === monthKey && cat === '3') {
                         dividendIn = roundMoney(dividendIn + amt);
                         const dividendTicker = ticker || 'DIVIDEND';
+                        if (!ticker || ticker === 'DEPOSIT') unassignedDividendCount += 1;
                         if (!tickerMonthlyStats[dividendTicker]) {
                             tickerMonthlyStats[dividendTicker] = {
                                 ticker: dividendTicker,
@@ -1311,6 +1347,7 @@ const centerTextPlugin = {
                 sellAmount,
                 totalReturnAmount,
                 monthlyTotalReturnRate,
+                unassignedDividendCount,
                 tickerBreakdown
             };
         }
@@ -1333,6 +1370,12 @@ const centerTextPlugin = {
             safeSetText('monthly-check-buy-action', `${monthReport.buyShares.toFixed(2)}주 · ₩${Math.round(monthReport.buyAmount).toLocaleString()} ${monthlyBreakdownOpen.buy ? '▴' : '▾'}`);
             safeSetText('monthly-check-sell-action', `${monthReport.sellShares.toFixed(2)}주 · ₩${Math.round(monthReport.sellAmount).toLocaleString()} ${monthlyBreakdownOpen.sell ? '▴' : '▾'}`);
             safeSetText('monthly-check-dividend-total', `₩${Math.round(monthReport.dividendIn || 0).toLocaleString()} ${monthlyBreakdownOpen.dividend ? '▴' : '▾'}`);
+            const unassignedBadge = getEl('monthly-unassigned-badge');
+            if (unassignedBadge) {
+                const count = Number(monthReport.unassignedDividendCount || 0);
+                unassignedBadge.classList.toggle('hidden', count <= 0);
+                if (count > 0) unassignedBadge.innerText = `미지정 ${count}건`;
+            }
 
             const setBreakdown = (id, open, items, lineRenderer, emptyText) => {
                 const box = getEl(id);
@@ -1967,6 +2010,7 @@ async function postMutation(action, payload = {}) {
             safeSetText('stat-cash-balance', `₩${Math.round(curCash).toLocaleString()}`);
             if (!currentMonthlyModeKey) currentMonthlyModeKey = getCurrentMonthKey();
             const monthReport = monthlyReportCache.get(currentMonthlyModeKey) || getCurrentMonthReport(transactions, currentMonthlyModeKey);
+            monthlyBreakdownOpen = loadMonthlyBreakdownState(monthReport.monthKey || currentMonthlyModeKey || getCurrentMonthKey());
             safeSetText('report-month-label', monthReport.monthKey || '-');
             safeSetText('report-realized-pnl', `₩${Math.round(monthReport.realizedPnl).toLocaleString()}`);
             safeSetText('report-dividend-in', `₩${Math.round(monthReport.totalReturnAmount || 0).toLocaleString()} (${Number(monthReport.monthlyTotalReturnRate || 0).toFixed(2)}%)`);
@@ -2338,18 +2382,21 @@ if(assetChart){
 
             if(target.dataset.action === 'monthly-toggle-buy') {
                 monthlyBreakdownOpen.buy = !monthlyBreakdownOpen.buy;
+                saveMonthlyBreakdownState(currentMonthlyModeKey || getCurrentMonthKey(), monthlyBreakdownOpen);
                 updateUI();
                 return;
             }
 
             if(target.dataset.action === 'monthly-toggle-sell') {
                 monthlyBreakdownOpen.sell = !monthlyBreakdownOpen.sell;
+                saveMonthlyBreakdownState(currentMonthlyModeKey || getCurrentMonthKey(), monthlyBreakdownOpen);
                 updateUI();
                 return;
             }
 
             if(target.dataset.action === 'monthly-toggle-dividend') {
                 monthlyBreakdownOpen.dividend = !monthlyBreakdownOpen.dividend;
+                saveMonthlyBreakdownState(currentMonthlyModeKey || getCurrentMonthKey(), monthlyBreakdownOpen);
                 updateUI();
                 return;
             }
