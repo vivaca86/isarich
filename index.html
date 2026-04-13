@@ -499,7 +499,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
                     <div id="monthly-review-panel" class="glass-card p-4 rounded-2xl border border-blue-100/70 bg-gradient-to-br from-blue-50/80 to-white text-left font-sans">
                         <div class="flex items-center justify-between mb-3 gap-2">
-                            <p class="text-[10px] font-black text-blue-700 uppercase tracking-widest">월간 모드</p>
+                            <p class="text-[10px] font-black text-blue-700 uppercase tracking-widest">월간 정리</p>
                             <div class="flex items-center gap-1.5">
                                 <button type="button" data-action="monthly-prev" class="w-6 h-6 rounded-lg border border-blue-200 bg-white text-blue-600 text-[12px] font-black leading-none hover:bg-blue-50 transition">&lt;</button>
                                 <span id="report-month-label" class="text-[9px] font-black text-blue-700 bg-blue-100/80 px-2 py-1 rounded-lg min-w-[56px] text-center">0000-00</span>
@@ -513,28 +513,48 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                                 <p id="report-realized-pnl" class="mt-1 text-[12px] font-black text-slate-900">₩0</p>
                             </div>
                             <div class="rounded-xl border border-slate-100 bg-white/80 p-2.5">
-                                <p class="text-[9px] font-black text-slate-400 uppercase">배당 유입</p>
+                                <p class="text-[9px] font-black text-slate-400 uppercase">총합 수익</p>
                                 <p id="report-dividend-in" class="mt-1 text-[12px] font-black text-emerald-700">₩0</p>
                             </div>
                             <div class="rounded-xl border border-slate-100 bg-white/80 p-2.5">
-                                <p class="text-[9px] font-black text-slate-400 uppercase">배당 집행</p>
+                                <p class="text-[9px] font-black text-slate-400 uppercase">배당 유입</p>
                                 <p id="report-dividend-used" class="mt-1 text-[12px] font-black text-indigo-700">₩0</p>
                             </div>
                         </div>
                         <div class="space-y-2 text-[11px]">
-                            <div class="rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
-                                <p class="font-black text-slate-500">배당 집행률</p>
-                                <p id="monthly-check-execution" class="font-black text-slate-900">0%</p>
-                            </div>
-                            <div class="rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
+                            <button type="button" data-action="monthly-toggle-buy" class="w-full rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
                                 <p class="font-black text-slate-500">매수 실행(월)</p>
-                                <p id="monthly-check-buy-action" class="font-black text-slate-900">0주 · ₩0</p>
+                                <p id="monthly-check-buy-action" class="font-black text-slate-900">0주 · ₩0 ▾</p>
+                            </button>
+                            <div id="monthly-breakdown-buy" class="hidden rounded-xl border border-slate-100 bg-white/80 px-2.5 py-2 space-y-1"></div>
+                            <button type="button" data-action="monthly-toggle-sell" class="w-full rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
+                                <p class="font-black text-slate-500">매도 실행(월)</p>
+                                <p id="monthly-check-sell-action" class="font-black text-slate-900">0주 · ₩0 ▾</p>
+                            </button>
+                            <div id="monthly-breakdown-sell" class="hidden rounded-xl border border-slate-100 bg-white/80 px-2.5 py-2 space-y-1"></div>
+                            <button type="button" data-action="monthly-toggle-dividend" class="w-full rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
+                                <p class="font-black text-slate-500">배당 유입 합계</p>
+                                <p id="monthly-check-dividend-total" class="font-black text-slate-900">₩0 ▾</p>
+                            </button>
+                            <div id="monthly-breakdown-dividend" class="hidden rounded-xl border border-slate-100 bg-white/80 px-2.5 py-2 space-y-1"></div>
+                            <div class="rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
+                                <p class="font-black text-slate-500">매수/매도 평균가</p>
+                                <p id="monthly-check-avg-prices" class="font-black text-slate-900">₩0 / ₩0</p>
                             </div>
                             <div class="rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
-                                <p class="font-black text-slate-500">매도 실행(월)</p>
-                                <p id="monthly-check-sell-action" class="font-black text-slate-900">0주 · ₩0</p>
+                                <p class="font-black text-slate-500">월간 총 수익률</p>
+                                <p id="monthly-check-total-return" class="font-black text-slate-900">0%</p>
+                            </div>
+                            <div class="rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
+                                <p class="font-black text-slate-500">매매 회전율</p>
+                                <p id="monthly-check-turnover" class="font-black text-slate-900">0%</p>
+                            </div>
+                            <div class="rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
+                                <p class="font-black text-slate-500">미지정 배당</p>
+                                <p id="monthly-check-unassigned-dividend" class="font-black text-amber-600">₩0</p>
                             </div>
                         </div>
+                        <div id="monthly-stock-summary" class="mt-2 space-y-1.5 text-[10px]"></div>
                         <p id="monthly-review-note" class="mt-3 text-[10px] font-black text-slate-400">이 달의 운용 요약 로딩 중...</p>
                     </div>
                 </div>
@@ -655,6 +675,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                              <span class="won-symbol">₩</span>
                              <input type="number" id="div-amount" placeholder="0" class="premium-input pr-4 font-black text-sm text-left tracking-tight">
                         </div>
+                    </div>
+                    <div id="dividend-stock-field">
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left font-sans">배당 종목</label>
+                        <select id="div-ticker" class="premium-input px-4 font-black text-sm text-left">
+                            <option value="DEPOSIT">종목 미지정</option>
+                        </select>
+                        <p class="mt-1 text-[10px] font-black text-slate-400">배당금 선택 시 종목을 지정하면 월간 정리에서 종목별 배당으로 집계됩니다.</p>
                     </div>
                     <div class="flex gap-2 text-left font-sans">
                         <button onclick="saveWalletDeposit()" id="save-div-btn" class="btn-token btn-primary-soft flex-1 py-5 bg-blue-600 text-white rounded-xl font-black text-sm shadow-xl active:scale-95 transition-all hover:bg-blue-700 text-center uppercase">충전하기</button>
@@ -843,6 +870,7 @@ const centerTextPlugin = {
         let selectedTicker = "";
         let historyFilterDays = 'all';
         let historyVisibleCount = 100;
+        let monthlyBreakdownOpen = { buy: false, sell: false, dividend: false };
         let detailModalTicker = "";
         let detailModalName = "";
         let transactionsVersion = 0;
@@ -1167,6 +1195,9 @@ const centerTextPlugin = {
             let sellActionCount = 0;
             let sellShares = 0;
             let sellAmount = 0;
+            let sellCostBasis = 0;
+            let unassignedDividendIn = 0;
+            const tickerMonthlyStats = {};
 
             sortedTx.forEach((tx) => {
                 const txMonth = getMonthKey(tx?.date);
@@ -1174,24 +1205,68 @@ const centerTextPlugin = {
                 const price = Number(tx?.price || 0);
                 if (!Number.isFinite(price) || price <= 0) return;
                 const amt = roundMoney(Math.abs(shares * price));
+                const ticker = String(tx?.ticker || '').trim();
+                const tickerName = String(tx?.name || ticker).trim() || ticker;
+
+                if (txMonth === monthKey && ticker && !isDepositTransaction(tx)) {
+                    if (!tickerMonthlyStats[ticker]) {
+                        tickerMonthlyStats[ticker] = {
+                            ticker,
+                            name: tickerName,
+                            dividendIn: 0,
+                            buyShares: 0,
+                            buyAmount: 0,
+                            sellShares: 0,
+                            sellAmount: 0,
+                            sellCostBasis: 0,
+                            realizedPnl: 0
+                        };
+                    }
+                }
 
                 if (isDepositTransaction(tx)) {
                     const cat = normalizeCashCategory(tx?.category);
                     cash[cat] = roundMoney(cash[cat] + amt);
-                    if (txMonth === monthKey && cat === '3') dividendIn = roundMoney(dividendIn + amt);
+                    if (txMonth === monthKey && cat === '3') {
+                        dividendIn = roundMoney(dividendIn + amt);
+                        const dividendTicker = ticker || 'DIVIDEND';
+                        if (dividendTicker === 'DEPOSIT') {
+                            unassignedDividendIn = roundMoney(unassignedDividendIn + amt);
+                        }
+                        if (!tickerMonthlyStats[dividendTicker]) {
+                            tickerMonthlyStats[dividendTicker] = {
+                                ticker: dividendTicker,
+                                name: dividendTicker === 'DEPOSIT'
+                                    ? '미지정 배당'
+                                    : (String(tx?.name || '배당 입금').trim() || '배당 입금'),
+                                dividendIn: 0,
+                                buyShares: 0,
+                                buyAmount: 0,
+                                sellShares: 0,
+                                sellAmount: 0,
+                                sellCostBasis: 0,
+                                realizedPnl: 0
+                            };
+                        }
+                        tickerMonthlyStats[dividendTicker].dividendIn = roundMoney(tickerMonthlyStats[dividendTicker].dividendIn + amt);
+                    }
                     return;
                 }
 
-                const ticker = String(tx?.ticker || '').trim();
                 if (!ticker || shares === 0) return;
                 if (!holdings[ticker]) holdings[ticker] = { shares: 0, cost: 0 };
                 const h = holdings[ticker];
+                const tickerStat = tickerMonthlyStats[ticker];
 
                 if (shares > 0) {
                     if (txMonth === monthKey) buyActionCount += 1;
                     if (txMonth === monthKey) {
                         buyShares = roundShares(buyShares + shares);
                         buyAmount = roundMoney(buyAmount + amt);
+                        if (tickerStat) {
+                            tickerStat.buyShares = roundShares(tickerStat.buyShares + shares);
+                            tickerStat.buyAmount = roundMoney(tickerStat.buyAmount + amt);
+                        }
                     }
                     h.shares = roundShares(h.shares + shares);
                     h.cost = roundMoney(h.cost + amt);
@@ -1222,6 +1297,13 @@ const centerTextPlugin = {
                     sellActionCount += 1;
                     sellShares = roundShares(sellShares + actualSellQty);
                     sellAmount = roundMoney(sellAmount + proceeds);
+                    sellCostBasis = roundMoney(sellCostBasis + costBasisSold);
+                    if (tickerStat) {
+                        tickerStat.sellShares = roundShares(tickerStat.sellShares + actualSellQty);
+                        tickerStat.sellAmount = roundMoney(tickerStat.sellAmount + proceeds);
+                        tickerStat.sellCostBasis = roundMoney(tickerStat.sellCostBasis + costBasisSold);
+                        tickerStat.realizedPnl = roundMoney(tickerStat.realizedPnl + pnl);
+                    }
                 }
 
                 h.shares = roundShares(h.shares - actualSellQty);
@@ -1229,7 +1311,41 @@ const centerTextPlugin = {
                 if (txMonth === monthKey) realizedPnl = roundMoney(realizedPnl + pnl);
             });
 
-            return { monthKey, realizedPnl, dividendIn, dividendUsed, buyActionCount, buyShares, buyAmount, sellActionCount, sellShares, sellAmount };
+            const avgBuyPrice = buyShares > 0 ? roundMoney(buyAmount / buyShares) : 0;
+            const avgSellPrice = sellShares > 0 ? roundMoney(sellAmount / sellShares) : 0;
+            const monthlyBase = Math.max(1, roundMoney(buyAmount + sellCostBasis));
+            const totalReturnAmount = roundMoney(realizedPnl + dividendIn);
+            const monthlyTotalReturnRate = ((realizedPnl + dividendIn) / monthlyBase) * 100;
+            const turnoverRate = buyAmount > 0 ? (sellAmount / buyAmount) * 100 : 0;
+            const tickerBreakdown = Object.values(tickerMonthlyStats)
+                .filter(item => item.dividendIn > 0 || item.buyShares > 0 || item.sellShares > 0)
+                .map(item => ({
+                    ...item,
+                    avgBuyPrice: item.buyShares > 0 ? roundMoney(item.buyAmount / item.buyShares) : 0,
+                    avgSellPrice: item.sellShares > 0 ? roundMoney(item.sellAmount / item.sellShares) : 0,
+                    realizedReturnRate: item.sellCostBasis > 0 ? (item.realizedPnl / item.sellCostBasis) * 100 : 0
+                }))
+                .sort((a, b) => (b.dividendIn + b.buyAmount + b.sellAmount) - (a.dividendIn + a.buyAmount + a.sellAmount));
+
+            return {
+                monthKey,
+                realizedPnl,
+                dividendIn,
+                dividendUsed,
+                buyActionCount,
+                buyShares,
+                buyAmount,
+                sellActionCount,
+                sellShares,
+                sellAmount,
+                avgBuyPrice,
+                avgSellPrice,
+                totalReturnAmount,
+                monthlyTotalReturnRate,
+                turnoverRate,
+                unassignedDividendIn,
+                tickerBreakdown
+            };
         }
 
         function updateMonthlyReviewPanel(monthReport) {
@@ -1243,14 +1359,65 @@ const centerTextPlugin = {
             }
             panel.classList.remove('hidden');
 
-            const executionRate = monthReport.dividendIn > 0
-                ? Math.min(999, (monthReport.dividendUsed / monthReport.dividendIn) * 100)
-                : 0;
-            safeSetText('monthly-check-execution', `${executionRate.toFixed(1)}%`);
-            safeSetText('monthly-check-buy-action', `${monthReport.buyShares.toFixed(2)}주 · ₩${Math.round(monthReport.buyAmount).toLocaleString()}`);
-            safeSetText('monthly-check-sell-action', `${monthReport.sellShares.toFixed(2)}주 · ₩${Math.round(monthReport.sellAmount).toLocaleString()}`);
+            const buyItems = (monthReport.tickerBreakdown || []).filter(item => Number(item.buyShares || 0) > 0);
+            const sellItems = (monthReport.tickerBreakdown || []).filter(item => Number(item.sellShares || 0) > 0);
+            const dividendItems = (monthReport.tickerBreakdown || []).filter(item => Number(item.dividendIn || 0) > 0);
 
-            const reviewNote = `이번 달 배당 유입 ₩${Math.round(monthReport.dividendIn).toLocaleString()} 중 ₩${Math.round(monthReport.dividendUsed).toLocaleString()} 집행 (${executionRate.toFixed(1)}%) · 매수 ${monthReport.buyActionCount}회 / 매도 ${monthReport.sellActionCount}회`;
+            safeSetText('monthly-check-buy-action', `${monthReport.buyShares.toFixed(2)}주 · ₩${Math.round(monthReport.buyAmount).toLocaleString()} ${monthlyBreakdownOpen.buy ? '▴' : '▾'}`);
+            safeSetText('monthly-check-sell-action', `${monthReport.sellShares.toFixed(2)}주 · ₩${Math.round(monthReport.sellAmount).toLocaleString()} ${monthlyBreakdownOpen.sell ? '▴' : '▾'}`);
+            safeSetText('monthly-check-dividend-total', `₩${Math.round(monthReport.dividendIn || 0).toLocaleString()} ${monthlyBreakdownOpen.dividend ? '▴' : '▾'}`);
+            safeSetText('monthly-check-avg-prices', `₩${Math.round(monthReport.avgBuyPrice || 0).toLocaleString()} / ₩${Math.round(monthReport.avgSellPrice || 0).toLocaleString()}`);
+            safeSetText('monthly-check-total-return', `${Number(monthReport.monthlyTotalReturnRate || 0).toFixed(2)}%`);
+            safeSetText('monthly-check-turnover', `${Number(monthReport.turnoverRate || 0).toFixed(1)}%`);
+            safeSetText('monthly-check-unassigned-dividend', `₩${Math.round(monthReport.unassignedDividendIn || 0).toLocaleString()}`);
+
+            const setBreakdown = (id, open, items, lineRenderer, emptyText) => {
+                const box = getEl(id);
+                if (!box) return;
+                box.classList.toggle('hidden', !open);
+                if (!open) return;
+                box.innerHTML = items.length
+                    ? items.map(lineRenderer).join('')
+                    : `<p class="text-[10px] font-black text-slate-400">${emptyText}</p>`;
+            };
+
+            setBreakdown(
+                'monthly-breakdown-buy',
+                monthlyBreakdownOpen.buy,
+                buyItems,
+                (item) => `<div class="flex justify-between items-center gap-2 text-[10px]">
+                        <p class="font-black text-slate-600 truncate">${escapeHtml(item.name || item.ticker)}</p>
+                        <p class="font-black text-slate-500">${Number(item.buyShares || 0).toFixed(2)}주 · 평균 ₩${Math.round(item.avgBuyPrice || 0).toLocaleString()}</p>
+                    </div>`,
+                '이 달 매수 내역이 없습니다.'
+            );
+            setBreakdown(
+                'monthly-breakdown-sell',
+                monthlyBreakdownOpen.sell,
+                sellItems,
+                (item) => `<div class="flex justify-between items-center gap-2 text-[10px]">
+                        <p class="font-black text-slate-600 truncate">${escapeHtml(item.name || item.ticker)}</p>
+                        <p class="font-black text-slate-500">${Number(item.sellShares || 0).toFixed(2)}주 · 평균 ₩${Math.round(item.avgSellPrice || 0).toLocaleString()}</p>
+                    </div>`,
+                '이 달 매도 내역이 없습니다.'
+            );
+            setBreakdown(
+                'monthly-breakdown-dividend',
+                monthlyBreakdownOpen.dividend,
+                dividendItems,
+                (item) => `<div class="flex justify-between items-center gap-2 text-[10px]">
+                        <p class="font-black text-slate-600 truncate">${escapeHtml(item.name || item.ticker)}</p>
+                        <p class="font-black text-slate-500">₩${Math.round(item.dividendIn || 0).toLocaleString()}</p>
+                    </div>`,
+                '이 달 배당 유입 내역이 없습니다.'
+            );
+
+            const summaryBox = getEl('monthly-stock-summary');
+            if (summaryBox) {
+                summaryBox.innerHTML = '';
+            }
+
+            const reviewNote = `이번 달 총합 수익 ₩${Math.round(monthReport.totalReturnAmount || 0).toLocaleString()} · 배당 유입 ₩${Math.round(monthReport.dividendIn).toLocaleString()} · 매수 ${monthReport.buyActionCount}회 / 매도 ${monthReport.sellActionCount}회`;
             safeSetText('monthly-review-note', reviewNote);
         }
 
@@ -1355,6 +1522,10 @@ const centerTextPlugin = {
         async function addTransactionToFirebase(payload) {
             if(!firestoreDb) throw new Error('파이어베이스 설정이 필요합니다.');
             const id = String(payload.id ?? Date.now());
+            const keepCreatedAtMs = Number(payload.keepCreatedAtMs || 0);
+            const createdAtValue = keepCreatedAtMs > 0
+                ? firebase.firestore.Timestamp.fromMillis(keepCreatedAtMs)
+                : firebase.firestore.FieldValue.serverTimestamp();
             const doc = {
                 date: payload.date,
                 ticker: String(payload.ticker || ''),
@@ -1362,7 +1533,7 @@ const centerTextPlugin = {
                 shares: Number(payload.shares || 0),
                 price: Number(payload.price || 0),
                 category: normalizeCashCategory(payload.category),
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                createdAt: createdAtValue
             };
             await firestoreDb.collection(firebaseCollection).doc(id).set(doc);
             return id;
@@ -1525,6 +1696,8 @@ const centerTextPlugin = {
 
         function setDepositCat(n) {
             getEl('wallet-category').value = n;
+            const dividendField = getEl('dividend-stock-field');
+            if (dividendField) dividendField.classList.toggle('hidden', String(n) !== '3');
             [1,2,3].forEach(i => {
                 const btn = getEl('dep-cat-'+i);
                 if(btn) {
@@ -1532,6 +1705,15 @@ const centerTextPlugin = {
                     else btn.className = "flex flex-col items-center gap-2 py-4 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-500 text-[11px] font-black transition text-center hover:border-slate-300";
                 }
             });
+        }
+
+        function updateDividendTickerOptions() {
+            const select = getEl('div-ticker');
+            if (!select) return;
+            const prev = String(select.value || 'DEPOSIT');
+            const tickers = Object.keys(marketData || {});
+            select.innerHTML = `<option value="DEPOSIT">종목 미지정</option>${tickers.map(ticker => `<option value="${escapeHtml(ticker)}">${escapeHtml(String(marketData[ticker]?.name || ticker))}</option>`).join('')}`;
+            select.value = (prev === 'DEPOSIT' || tickers.includes(prev)) ? prev : 'DEPOSIT';
         }
 
         async function syncAllData() {
@@ -1584,7 +1766,7 @@ const centerTextPlugin = {
                     }
                 }
 
-                updateUI(); updateQuickSelectUI();
+                updateUI(); updateQuickSelectUI(); updateDividendTickerOptions();
                 const totalValueEl = getEl('stat-total-value');
                 if (totalValueEl && !lowPowerMode) {
                     totalValueEl.classList.remove('sync-flash');
@@ -1625,21 +1807,22 @@ async function postMutation(action, payload = {}) {
             const ticker = getEl('input-ticker').value;
             const name = getEl('input-name').value;
             const editId = getEl('edit-id').value;
+            const originalTx = editId ? transactions.find(x => String(x.id) === String(editId)) : null;
             if (!date || !ticker || shares <= 0 || price <= 0) {
                 alert('날짜, 금액(0보다 큼), 수량(0보다 큼)을 입력해 주세요.');
                 return;
             }
             const btn = getEl('save-btn'); if(btn) { btn.innerText = "처리 중..."; btn.disabled = true; }
             try {
-                if(editId) await postMutation('delete', { id: editId });
                 await postMutation('add', {
-                    id: createTxnId(),
+                    id: editId || createTxnId(),
                     date,
                     ticker,
                     name,
                     shares,
                     price,
-                    category: 0
+                    category: 0,
+                    keepCreatedAtMs: Number(originalTx?.createdAtMs || 0)
                 });
                 resetPurchaseForm(); syncAllData(); showSection('dashboard');
             } catch(e) {
@@ -1659,23 +1842,32 @@ async function postMutation(action, payload = {}) {
             if(getEl('save-div-btn')) getEl('save-div-btn').innerText = "충전하기";
             if(getEl('cancel-edit-btn')) getEl('cancel-edit-btn').classList.add('hidden');
             if(getEl('cancel-edit-btn-deposit')) getEl('cancel-edit-btn-deposit').classList.add('hidden');
+            if(getEl('div-ticker')) getEl('div-ticker').value = "DEPOSIT";
             selectedTicker = ""; updateQuickSelectUI();
         }
 
         async function saveWalletDeposit() {
             const date = getEl('div-date').value, amount = Number(getEl('div-amount').value), cat = normalizeCashCategory(getEl('wallet-category').value), editId = getEl('edit-id').value;
+            const originalTx = editId ? transactions.find(x => String(x.id) === String(editId)) : null;
             if(!date || !amount) return;
+            const selectedDividendTicker = String(getEl('div-ticker')?.value || 'DEPOSIT').trim();
+            const dividendTicker = selectedDividendTicker || 'DEPOSIT';
+            const dividendName = String(marketData?.[dividendTicker]?.name || dividendTicker).trim();
+            const depositTicker = cat === '3' ? dividendTicker : 'DEPOSIT';
+            const depositName = cat === '3'
+                ? (depositTicker === 'DEPOSIT' ? '배당 입금' : `${dividendName} 배당 입금`)
+                : '현금 입금';
             const btn = getEl('save-div-btn'); if(btn) { btn.innerText = "처리 중..."; btn.disabled = true; }
             try {
-                if(editId) await postMutation('delete', { id: editId });
                 await postMutation('add', {
-                    id: createTxnId(),
+                    id: editId || createTxnId(),
                     date,
-                    ticker: 'DEPOSIT',
-                    name: '현금 입금',
+                    ticker: depositTicker,
+                    name: depositName,
                     shares: 1,
                     price: amount,
-                    category: cat
+                    category: cat,
+                    keepCreatedAtMs: Number(originalTx?.createdAtMs || 0)
                 });
                 resetPurchaseForm(); syncAllData(); showSection('dashboard');
             } catch(e) {
@@ -1819,8 +2011,8 @@ async function postMutation(action, payload = {}) {
             const monthReport = monthlyReportCache.get(currentMonthlyModeKey) || getCurrentMonthReport(transactions, currentMonthlyModeKey);
             safeSetText('report-month-label', monthReport.monthKey || '-');
             safeSetText('report-realized-pnl', `₩${Math.round(monthReport.realizedPnl).toLocaleString()}`);
-            safeSetText('report-dividend-in', `₩${Math.round(monthReport.dividendIn).toLocaleString()}`);
-            safeSetText('report-dividend-used', `₩${Math.round(monthReport.dividendUsed).toLocaleString()}`);
+            safeSetText('report-dividend-in', `₩${Math.round(monthReport.totalReturnAmount || 0).toLocaleString()}`);
+            safeSetText('report-dividend-used', `₩${Math.round(monthReport.dividendIn).toLocaleString()}`);
             updateMonthlyReviewPanel(monthReport);
 
             const reportPnlEl = getEl('report-realized-pnl');
@@ -2063,7 +2255,12 @@ if(assetChart){
             if(isDeposit) {
                 showSection('transaction'); switchTab('deposit');
                 getEl('div-date').value = String(t.date).substring(0,10); getEl('div-amount').value = t.price;
-                setDepositCat(normalizeCashCategory(t.category)); getEl('edit-id').value = id; getEl('save-div-btn').innerText = "수정 저장"; getEl('cancel-edit-btn-deposit').classList.remove('hidden');
+                setDepositCat(normalizeCashCategory(t.category));
+                if (normalizeCashCategory(t.category) === '3' && getEl('div-ticker')) {
+                    const depositTicker = String(t.ticker || 'DEPOSIT').trim() || 'DEPOSIT';
+                    getEl('div-ticker').value = depositTicker;
+                }
+                getEl('edit-id').value = id; getEl('save-div-btn').innerText = "수정 저장"; getEl('cancel-edit-btn-deposit').classList.remove('hidden');
             } else {
                 showSection('transaction'); switchTab('purchase');
                 getEl('input-date').value = String(t.date).substring(0,10); getEl('input-ticker').value = t.ticker; getEl('input-name').value = t.name; getEl('input-shares').value = t.shares; getEl('input-price').value = t.price;
@@ -2179,6 +2376,24 @@ if(assetChart){
                 currentMonthlyModeKey = next;
                 updateUI();
                 void loadMonthlyReportFromFirebase(currentMonthlyModeKey).then(() => updateUI());
+                return;
+            }
+
+            if(target.dataset.action === 'monthly-toggle-buy') {
+                monthlyBreakdownOpen.buy = !monthlyBreakdownOpen.buy;
+                updateUI();
+                return;
+            }
+
+            if(target.dataset.action === 'monthly-toggle-sell') {
+                monthlyBreakdownOpen.sell = !monthlyBreakdownOpen.sell;
+                updateUI();
+                return;
+            }
+
+            if(target.dataset.action === 'monthly-toggle-dividend') {
+                monthlyBreakdownOpen.dividend = !monthlyBreakdownOpen.dividend;
+                updateUI();
                 return;
             }
 
