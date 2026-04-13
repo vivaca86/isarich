@@ -546,6 +546,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                                 <p class="font-black text-slate-500">매매 회전율</p>
                                 <p id="monthly-check-turnover" class="font-black text-slate-900">0%</p>
                             </div>
+                            <div class="rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
+                                <p class="font-black text-slate-500">미지정 배당</p>
+                                <p id="monthly-check-unassigned-dividend" class="font-black text-amber-600">₩0</p>
+                            </div>
                         </div>
                         <div id="monthly-stock-summary" class="mt-2 space-y-1.5 text-[10px]"></div>
                         <p id="monthly-review-note" class="mt-3 text-[10px] font-black text-slate-400">이 달의 운용 요약 로딩 중...</p>
@@ -1188,6 +1192,7 @@ const centerTextPlugin = {
             let sellShares = 0;
             let sellAmount = 0;
             let sellCostBasis = 0;
+            let unassignedDividendIn = 0;
             const tickerMonthlyStats = {};
 
             sortedTx.forEach((tx) => {
@@ -1221,10 +1226,15 @@ const centerTextPlugin = {
                     if (txMonth === monthKey && cat === '3') {
                         dividendIn = roundMoney(dividendIn + amt);
                         const dividendTicker = ticker || 'DIVIDEND';
+                        if (dividendTicker === 'DEPOSIT') {
+                            unassignedDividendIn = roundMoney(unassignedDividendIn + amt);
+                        }
                         if (!tickerMonthlyStats[dividendTicker]) {
                             tickerMonthlyStats[dividendTicker] = {
                                 ticker: dividendTicker,
-                                name: String(tx?.name || '배당 입금').trim() || '배당 입금',
+                                name: dividendTicker === 'DEPOSIT'
+                                    ? '미지정 배당'
+                                    : (String(tx?.name || '배당 입금').trim() || '배당 입금'),
                                 dividendIn: 0,
                                 buyShares: 0,
                                 buyAmount: 0,
@@ -1327,6 +1337,7 @@ const centerTextPlugin = {
                 avgSellPrice,
                 monthlyTotalReturnRate,
                 turnoverRate,
+                unassignedDividendIn,
                 tickerBreakdown
             };
         }
@@ -1351,6 +1362,7 @@ const centerTextPlugin = {
             safeSetText('monthly-check-avg-prices', `₩${Math.round(monthReport.avgBuyPrice || 0).toLocaleString()} / ₩${Math.round(monthReport.avgSellPrice || 0).toLocaleString()}`);
             safeSetText('monthly-check-total-return', `${Number(monthReport.monthlyTotalReturnRate || 0).toFixed(2)}%`);
             safeSetText('monthly-check-turnover', `${Number(monthReport.turnoverRate || 0).toFixed(1)}%`);
+            safeSetText('monthly-check-unassigned-dividend', `₩${Math.round(monthReport.unassignedDividendIn || 0).toLocaleString()}`);
 
             const summaryBox = getEl('monthly-stock-summary');
             if (summaryBox) {
@@ -2195,7 +2207,12 @@ if(assetChart){
             if(isDeposit) {
                 showSection('transaction'); switchTab('deposit');
                 getEl('div-date').value = String(t.date).substring(0,10); getEl('div-amount').value = t.price;
-                setDepositCat(normalizeCashCategory(t.category)); getEl('edit-id').value = id; getEl('save-div-btn').innerText = "수정 저장"; getEl('cancel-edit-btn-deposit').classList.remove('hidden');
+                setDepositCat(normalizeCashCategory(t.category));
+                if (normalizeCashCategory(t.category) === '3' && getEl('div-ticker')) {
+                    const depositTicker = String(t.ticker || 'DEPOSIT').trim() || 'DEPOSIT';
+                    getEl('div-ticker').value = depositTicker;
+                }
+                getEl('edit-id').value = id; getEl('save-div-btn').innerText = "수정 저장"; getEl('cancel-edit-btn-deposit').classList.remove('hidden');
             } else {
                 showSection('transaction'); switchTab('purchase');
                 getEl('input-date').value = String(t.date).substring(0,10); getEl('input-ticker').value = t.ticker; getEl('input-name').value = t.name; getEl('input-shares').value = t.shares; getEl('input-price').value = t.price;
