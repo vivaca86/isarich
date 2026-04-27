@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ISA RICH">
-    <title>ISA RICH Premium ver1.0.17</title>
+    <title>ISA RICH Premium ver1.0.18</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/svg+xml" href="icons/app-icon.svg">
     <link rel="apple-touch-icon" href="icons/app-icon.svg">
@@ -813,7 +813,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     </div>
 
     <script>
-        const APP_VERSION = "1.0.17";
+        const APP_VERSION = "1.0.18";
         // Rollback switch: set false to hide/remove monthly review mode instantly.
         const ENABLE_MONTHLY_REVIEW_MODE = true;
         const HISTORY_FETCH_PAGE_SIZE = 500;
@@ -1460,7 +1460,7 @@ const centerTextPlugin = {
         }
 
         function toHistoryRecord(item, source = 'firebase') {
-            const createdAtRaw = item?.createdAt;
+            const createdAtRaw = item?.createdAt ?? item?.createdAtMs;
             const createdAtMs = (() => {
                 if (typeof createdAtRaw?.toMillis === 'function') return Number(createdAtRaw.toMillis());
                 if (createdAtRaw && typeof createdAtRaw.seconds === 'number') return Number(createdAtRaw.seconds) * 1000;
@@ -1477,9 +1477,47 @@ const centerTextPlugin = {
                 shares: Number(item.shares || 0),
                 price: Number(item.price || 0),
                 category: normalizeCashCategory(item.category),
+                side: String(item.side || item.type || '').trim(),
                 createdAtMs,
                 source
             };
+        }
+
+        function hasTransaction(id) {
+            const safeId = String(id || '');
+            return !!safeId && transactions.some(tx => String(tx.id) === safeId);
+        }
+
+        function removeLocalTransaction(id) {
+            const safeId = String(id || '');
+            if(!safeId) return;
+            transactions = transactions.filter(tx => String(tx.id) !== safeId);
+            transactionsVersion += 1;
+            updateUI();
+            updateQuickSelectUI();
+        }
+
+        function upsertLocalTransaction(payload, id, source = 'pending') {
+            const safeId = String(id || payload?.id || createTxnId());
+            const record = toHistoryRecord({
+                ...payload,
+                id: safeId,
+                createdAtMs: Date.now()
+            }, source);
+            transactions = [
+                record,
+                ...transactions.filter(tx => String(tx.id) !== safeId)
+            ];
+            transactionsVersion += 1;
+            updateUI();
+            updateQuickSelectUI();
+            return record;
+        }
+
+        async function syncAfterAdd(payload, id) {
+            upsertLocalTransaction(payload, id);
+            await syncAllData();
+            if(!hasTransaction(id)) upsertLocalTransaction(payload, id);
         }
 
         async function loadTransactionsFromFirebase() {
@@ -1536,6 +1574,8 @@ const centerTextPlugin = {
                 category: normalizeCashCategory(payload.category),
                 createdAt: createdAtValue
             };
+            if(payload.side) doc.side = String(payload.side);
+            if(payload.type) doc.type = String(payload.type);
             await firestoreDb.collection(firebaseCollection).doc(id).set(doc);
             return id;
         }
@@ -1815,7 +1855,7 @@ async function postMutation(action, payload = {}) {
             }
             const btn = getEl('save-btn'); if(btn) { btn.innerText = "처리 중..."; btn.disabled = true; }
             try {
-                await postMutation('add', {
+                const payload = {
                     id: editId || createTxnId(),
                     date,
                     ticker,
@@ -1823,9 +1863,12 @@ async function postMutation(action, payload = {}) {
                     shares,
                     price,
                     category: 0,
+                    side: 'buy',
                     keepCreatedAtMs: Number(originalTx?.createdAtMs || 0)
-                });
-                resetPurchaseForm(); syncAllData(); showSection('dashboard');
+                };
+                const savedId = await postMutation('add', payload);
+                await syncAfterAdd(payload, savedId);
+                resetPurchaseForm(); showSection('dashboard');
             } catch(e) {
                 console.error(e);
                 alert('저장 실패: ' + (e?.message || '네트워크 오류'));
@@ -1860,7 +1903,7 @@ async function postMutation(action, payload = {}) {
                 : '현금 입금';
             const btn = getEl('save-div-btn'); if(btn) { btn.innerText = "처리 중..."; btn.disabled = true; }
             try {
-                await postMutation('add', {
+                const payload = {
                     id: editId || createTxnId(),
                     date,
                     ticker: depositTicker,
@@ -1869,8 +1912,10 @@ async function postMutation(action, payload = {}) {
                     price: amount,
                     category: cat,
                     keepCreatedAtMs: Number(originalTx?.createdAtMs || 0)
-                });
-                resetPurchaseForm(); syncAllData(); showSection('dashboard');
+                };
+                const savedId = await postMutation('add', payload);
+                await syncAfterAdd(payload, savedId);
+                resetPurchaseForm(); showSection('dashboard');
             } catch(e) {
                 console.error(e);
                 alert('충전 실패: ' + (e?.message || '네트워크 오류'));
@@ -1928,7 +1973,7 @@ async function postMutation(action, payload = {}) {
                 actionBtn.innerText = "처리 중...";
             }
             try {
-                await postMutation('add', {
+                const payload = {
                     id: createTxnId(),
                     date,
                     ticker: detailModalTicker,
@@ -1937,9 +1982,10 @@ async function postMutation(action, payload = {}) {
                     price,
                     category: 0,
                     side: isSell ? 'sell' : 'buy'
-                });
+                };
+                const savedId = await postMutation('add', payload);
+                await syncAfterAdd(payload, savedId);
                 if(getEl('detail-trade-shares')) getEl('detail-trade-shares').value = '';
-                await syncAllData();
                 openDetailModal(detailModalTicker);
                 switchDetailTab('history');
             } catch (e) {
