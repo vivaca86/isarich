@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ISA RICH">
-    <title>ISA RICH Premium ver1.0.18</title>
+    <title>ISA RICH Premium ver1.0.19</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/svg+xml" href="icons/app-icon.svg">
     <link rel="apple-touch-icon" href="icons/app-icon.svg">
@@ -813,7 +813,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     </div>
 
     <script>
-        const APP_VERSION = "1.0.18";
+        const APP_VERSION = "1.0.19";
         // Rollback switch: set false to hide/remove monthly review mode instantly.
         const ENABLE_MONTHLY_REVIEW_MODE = true;
         const HISTORY_FETCH_PAGE_SIZE = 500;
@@ -829,8 +829,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
         const BUY_PLAN_TICKERS = ['486290', '474220'];
         const BUY_PLAN_WEIGHTS = [0.6, 0.4];
+        const PENDING_TX_STORAGE_KEY = 'isa_pending_transactions_v1';
 
         let transactions = [];
+        let pendingTransactions = new Map();
         let marketData = {};
         let assetChart = null;
         let totalBuyAmount = 0;
@@ -1488,9 +1490,61 @@ const centerTextPlugin = {
             return !!safeId && transactions.some(tx => String(tx.id) === safeId);
         }
 
+        function persistPendingTransactions() {
+            try {
+                localStorage.setItem(PENDING_TX_STORAGE_KEY, JSON.stringify([...pendingTransactions.values()]));
+            } catch (_) {}
+        }
+
+        function restorePendingTransactions() {
+            try {
+                const raw = JSON.parse(localStorage.getItem(PENDING_TX_STORAGE_KEY) || '[]');
+                pendingTransactions = new Map();
+                (Array.isArray(raw) ? raw : []).forEach(item => {
+                    const record = toHistoryRecord(item, 'pending');
+                    if(record.id && record.date && record.ticker) {
+                        pendingTransactions.set(String(record.id), record);
+                    }
+                });
+            } catch (_) {
+                pendingTransactions = new Map();
+            }
+        }
+
+        function trackPendingTransaction(record) {
+            if(!record?.id) return;
+            pendingTransactions.set(String(record.id), record);
+            persistPendingTransactions();
+        }
+
+        function clearPendingTransaction(id) {
+            const safeId = String(id || '');
+            if(!safeId) return;
+            if(pendingTransactions.delete(safeId)) persistPendingTransactions();
+        }
+
+        function mergePendingTransactions(loadedTransactions) {
+            const merged = [...(loadedTransactions || [])];
+            const loadedIds = new Set(merged.map(tx => String(tx.id || '')));
+            let changedPending = false;
+
+            pendingTransactions.forEach((record, id) => {
+                if(loadedIds.has(String(id))) {
+                    pendingTransactions.delete(String(id));
+                    changedPending = true;
+                } else {
+                    merged.unshift(record);
+                }
+            });
+
+            if(changedPending) persistPendingTransactions();
+            return merged;
+        }
+
         function removeLocalTransaction(id) {
             const safeId = String(id || '');
             if(!safeId) return;
+            clearPendingTransaction(safeId);
             transactions = transactions.filter(tx => String(tx.id) !== safeId);
             transactionsVersion += 1;
             updateUI();
@@ -1511,6 +1565,7 @@ const centerTextPlugin = {
             transactionsVersion += 1;
             updateUI();
             updateQuickSelectUI();
+            if(source === 'pending') trackPendingTransaction(record);
             return record;
         }
 
@@ -1784,7 +1839,7 @@ const centerTextPlugin = {
                 }
 
                 try {
-                    transactions = await loadTransactionsFromFirebase();
+                    transactions = mergePendingTransactions(await loadTransactionsFromFirebase());
                     transactionsVersion += 1;
                     monthlyReportCache.clear();
                 } catch(e) {
@@ -1793,7 +1848,7 @@ const centerTextPlugin = {
                     if(firebaseCollection !== fallbackCollection) {
                         try {
                             firebaseCollection = fallbackCollection;
-                            transactions = await loadTransactionsFromFirebase();
+                            transactions = mergePendingTransactions(await loadTransactionsFromFirebase());
                             transactionsVersion += 1;
                             monthlyReportCache.clear();
                             historyRecoveredWithFallback = true;
@@ -2579,6 +2634,7 @@ window.onload = () => {
             applyLowPowerMode(lowPowerMode);
             applyAppVersion();
             initFirebase();
+            restorePendingTransactions();
             setDepositCat(3); syncAllData();
 
             const debugSwReset = localStorage.getItem('isa_debug_sw_reset') === '1';
