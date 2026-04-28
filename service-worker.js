@@ -1,10 +1,12 @@
 const CACHE_PREFIX = 'isa-rich-cache-';
-const CACHE_VERSION = 'v19-performance-cache';
+const CACHE_VERSION = 'v20-split-assets';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const OFFLINE_URLS = [
   './',
   './index.html',
   './config.js',
+  './assets/styles.css?v=20260429a',
+  './assets/app.js?v=20260429a',
   './manifest.webmanifest',
   './icons/app-icon.svg',
   './icons/ui/card-base.svg',
