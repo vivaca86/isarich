@@ -1,11 +1,15 @@
 const CACHE_PREFIX = 'isa-rich-cache-';
-const CACHE_VERSION = 'v17';
+const CACHE_VERSION = 'v19-performance-cache';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const OFFLINE_URLS = [
   './',
   './index.html',
+  './config.js',
   './manifest.webmanifest',
-  './icons/app-icon.svg'
+  './icons/app-icon.svg',
+  './icons/ui/card-base.svg',
+  './icons/ui/card-dividend.svg',
+  './icons/ui/card-special.svg'
 ];
 
 self.addEventListener('install', (event) => {

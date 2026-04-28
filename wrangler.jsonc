@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "isarich-price-cache",
+  "main": "workers/price-cache.js",
+  "compatibility_date": "2026-04-28",
+  "kv_namespaces": [
+    {
+      "binding": "ISARICH_PRICE_CACHE",
+      "id": "d0d0bbd399d1425f8f3d6469c9fff395"
+    }
+  ],
+  "vars": {
+    "PRICE_CACHE_TTL_SECONDS": "300"
+  }
+}
