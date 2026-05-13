@@ -1,12 +1,12 @@
 const CACHE_PREFIX = 'isa-rich-cache-';
-const CACHE_VERSION = 'v20-split-assets';
+const CACHE_VERSION = 'v22-dashboard-history-security';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const OFFLINE_URLS = [
   './',
   './index.html',
-  './config.js',
-  './assets/styles.css?v=20260429a',
-  './assets/app.js?v=20260429a',
+  './config.js?v=20260513b',
+  './assets/styles.css?v=20260513b',
+  './assets/app.js?v=20260513b',
   './manifest.webmanifest',
   './icons/app-icon.svg',
   './icons/ui/card-base.svg',

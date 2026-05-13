@@ -7,18 +7,19 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ISA RICH">
-    <title>ISA RICH Premium ver1.0.20</title>
+    <title>ISA RICH Premium ver1.0.23</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/svg+xml" href="icons/app-icon.svg">
     <link rel="apple-touch-icon" href="icons/app-icon.svg">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-    <script src="./config.js?v=20260428a"></script>
+    <script src="./config.js?v=20260513b"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-    <link rel="stylesheet" href="./assets/styles.css?v=20260429a">
+    <link rel="stylesheet" href="./assets/styles.css?v=20260513b">
 </head>
 <body class="pb-24 lg:pb-0 lg:pl-20 text-left font-sans">
 
@@ -443,6 +444,7 @@
                 <p class="text-[10px] text-blue-600 mt-3 flex items-center gap-1.5 font-black uppercase tracking-widest text-left" id="sync-time">
                     <i class="fa-solid fa-rotate-right"></i> 동기화 대기 중
                 </p>
+                <p id="auth-status" class="mt-1 text-[9px] text-slate-400 font-black uppercase tracking-widest text-left">인증 확인 중</p>
             </div>
 
             <div class="space-y-6 text-left font-sans">
@@ -460,6 +462,6 @@
             </div>
         </div>
     </div>
-    <script src="./assets/app.js?v=20260429a"></script>
+    <script src="./assets/app.js?v=20260513b"></script>
 </body>
 </html>

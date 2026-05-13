@@ -1,4 +1,4 @@
-        const APP_VERSION = "1.0.21";
+        const APP_VERSION = "1.0.23";
         // Rollback switch: set false to hide/remove monthly review mode instantly.
         const ENABLE_MONTHLY_REVIEW_MODE = true;
         const HISTORY_FETCH_PAGE_SIZE = 500;
@@ -290,6 +290,8 @@ const centerTextPlugin = {
         let firebaseConfigRaw = JSON.stringify(DEFAULT_FIREBASE_CONFIG, null, 2);
         let firebaseCollection = 'isa_history';
         let firestoreDb = null;
+        let firebaseAuth = null;
+        let firebaseUser = null;
 
         function isValidSheetsUrl(url) {
             if (!url) return false;
@@ -807,10 +809,49 @@ const centerTextPlugin = {
             return roundShares(state.holdings?.[targetTicker]?.shares || 0);
         }
 
+        function getOpenPositionCostBasis(holdings) {
+            return Object.values(holdings || {}).reduce((sum, item) => {
+                if (!item || Number(item.shares || 0) <= 0) return sum;
+                return roundMoney(sum + Number(item.cost || 0));
+            }, 0);
+        }
+
+        function updateAuthStatus(text) {
+            safeSetText('auth-status', text);
+        }
+
+        async function ensureFirebaseAuth() {
+            if (!firebaseAuth || typeof firebaseAuth.signInAnonymously !== 'function') {
+                updateAuthStatus('인증 SDK 없음 · 기존 연결 모드');
+                return true;
+            }
+
+            try {
+                if (firebaseAuth.currentUser) {
+                    firebaseUser = firebaseAuth.currentUser;
+                    updateAuthStatus(`인증됨 · UID ${firebaseUser.uid}`);
+                    return true;
+                }
+
+                const credential = await firebaseAuth.signInAnonymously();
+                firebaseUser = credential?.user || firebaseAuth.currentUser || null;
+                updateAuthStatus(firebaseUser ? `인증됨 · UID ${firebaseUser.uid}` : '인증됨');
+                return true;
+            } catch (e) {
+                firebaseUser = null;
+                updateAuthStatus('익명 인증 실패 · 기존 규칙이면 계속 동작');
+                console.info('Firebase anonymous auth is not active. Continuing with the current Firestore rules.', e);
+                return false;
+            }
+        }
+
         function initFirebase() {
             if (typeof firebase === 'undefined' || !firebase?.initializeApp) {
                 console.warn('Firebase SDK is not available.');
                 firestoreDb = null;
+                firebaseAuth = null;
+                firebaseUser = null;
+                updateAuthStatus('Firebase SDK 없음');
                 return false;
             }
 
@@ -822,6 +863,9 @@ const centerTextPlugin = {
                     const appName = `isa-rich-${config.projectId}`;
                     const app = firebase.apps.find(a => a.name === appName) || firebase.initializeApp(config, appName);
                     firestoreDb = app.firestore();
+                    firebaseAuth = typeof app.auth === 'function' ? app.auth() : null;
+                    firebaseUser = firebaseAuth?.currentUser || null;
+                    updateAuthStatus(firebaseAuth ? '인증 준비 완료' : '인증 SDK 없음 · 기존 연결 모드');
 
                     if (!parsed || parsed.projectId !== config.projectId) {
                         firebaseConfigRaw = JSON.stringify(config, null, 2);
@@ -834,6 +878,9 @@ const centerTextPlugin = {
             }
 
             firestoreDb = null;
+            firebaseAuth = null;
+            firebaseUser = null;
+            updateAuthStatus('Firebase 연결 실패');
             return false;
         }
 
@@ -1206,6 +1253,7 @@ const centerTextPlugin = {
                     setSyncStatus("동기화 실패 - FIREBASE_INIT: 파이어베이스 미연결");
                     return;
                 }
+                await ensureFirebaseAuth();
                 const hasPriceUrl = Boolean(PRICE_CACHE_URL) || isValidSheetsUrl(sheetsUrl);
                 let priceSyncFailed = false;
                 let priceSyncMeta = null;
@@ -1273,6 +1321,7 @@ async function postMutation(action, payload = {}) {
   if(!firestoreDb) {
     throw new Error('파이어베이스 설정 후 다시 시도해 주세요.');
   }
+  await ensureFirebaseAuth();
 
   if(action === 'add') return await addTransactionToFirebase(payload);
   if(action === 'delete') return await deleteTransactionFromFirebase(payload.id);
@@ -1445,8 +1494,9 @@ async function postMutation(action, payload = {}) {
             const cashD = state.cash;
             const chargedByCat = state.chargedByCat;
             const usedByCat = state.buyUsedByCat;
-            const totalC = state.totalBuyAmount;
-            totalBuyAmount = totalC;
+            const cumulativeBuyAmount = state.totalBuyAmount;
+            const openCostBasis = getOpenPositionCostBasis(h);
+            totalBuyAmount = cumulativeBuyAmount;
 
             const usedDiv = usedByCat['3'];
             const curCash = cashD["1"] + cashD["2"] + cashD["3"];
@@ -1458,9 +1508,12 @@ async function postMutation(action, payload = {}) {
             let listHTML = "", labels = [], data = [], bg = [];
             Object.keys(h).forEach((k, i) => {
                 const d = h[k]; if (d.shares <= 0) return;
-                const m = marketData[k] || { price: 0, yield: 0 };
+                const m = marketData[k] || {};
+                const avgPrice = d.shares > 0 ? d.cost / d.shares : 0;
+                const rawMarketPrice = Number(m.price || 0);
+                const marketPrice = Number.isFinite(rawMarketPrice) && rawMarketPrice > 0 ? rawMarketPrice : avgPrice;
                 let yieldPct = Number(m.yield || 0); if(yieldPct < 1 && yieldPct > 0) yieldPct *= 100;
-                const val = d.shares * m.price, profit = val - d.cost, prate = d.cost > 0 ? (profit/d.cost)*100 : 0, div = val * (yieldPct/100/12);
+                const val = d.shares * marketPrice, profit = val - d.cost, prate = d.cost > 0 ? (profit/d.cost)*100 : 0, div = val * (yieldPct/100/12);
                 const itemTrend = getTrendVisual(prate);
                 totalV += val; totalD += div;
                 labels.push(d.name); data.push(val); bg.push(COLORS[i % COLORS.length]);
@@ -1469,7 +1522,7 @@ async function postMutation(action, payload = {}) {
                     name: d.name,
                     yieldPct,
                     shares: d.shares,
-                    avgPrice: d.cost / d.shares,
+                    avgPrice,
                     value: val,
                     profit,
                     prate,
@@ -1478,7 +1531,7 @@ async function postMutation(action, payload = {}) {
                 });
             });
             animateValue('stat-total-value', 0, Math.round(totalV), 900);
-            const totProfit = totalV - totalC, totRate = totalC > 0 ? (totProfit/totalC)*100 : 0;
+            const totProfit = totalV - openCostBasis, totRate = openCostBasis > 0 ? (totProfit/openCostBasis)*100 : 0;
             const totalTrend = getTrendVisual(totRate);
             safeSetText('stat-profit-amount', `₩${Math.round(Math.abs(totProfit)).toLocaleString()}`);
             const amountBox = getEl('stat-profit-amount');
@@ -1619,10 +1672,18 @@ if(assetChart){
                 }
             } }); }
             }
-            safeSetHTML('chart-legend', labels.map((l, i) => `<div class="flex justify-between text-[10px] mb-2 font-black transition hover:translate-x-1 text-left font-sans"><span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full" style="background:${bg[i]}"></span><span class="truncate w-24 text-slate-500 font-sans">${escapeHtml(l)}</span></span><span class="text-slate-800 text-right font-sans">${((data[i]/totalV)*100).toFixed(1)}%</span></div>`).join(''));
+            safeSetHTML('chart-legend', labels.map((l, i) => {
+                const pct = totalV > 0 ? (data[i] / totalV) * 100 : 0;
+                return `<div class="flex justify-between text-[10px] mb-2 font-black transition hover:translate-x-1 text-left font-sans"><span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full" style="background:${bg[i]}"></span><span class="truncate w-24 text-slate-500 font-sans">${escapeHtml(l)}</span></span><span class="text-slate-800 text-right font-sans">${pct.toFixed(1)}%</span></div>`;
+            }).join(''));
             renderHistoryList('history-list', transactions);
 
 
+        }
+
+        function getTradeDateTime(tx) {
+            const dateMs = new Date(String(tx?.date || '')).getTime();
+            return Number.isNaN(dateMs) ? 0 : dateMs;
         }
 
         function getTransactionSortTime(tx) {
@@ -1632,10 +1693,7 @@ if(assetChart){
             const idNum = Number(tx?.id);
             if (!Number.isNaN(idNum) && idNum > 0) return idNum;
 
-            const dateMs = new Date(String(tx?.date || '')).getTime();
-            if (!Number.isNaN(dateMs)) return dateMs;
-
-            return 0;
+            return getTradeDateTime(tx);
         }
 
         function updateHistoryFilterUI() {
@@ -1655,7 +1713,7 @@ if(assetChart){
             const days = Number(historyFilterDays);
             if (Number.isNaN(days) || days <= 0) return data;
             const threshold = Date.now() - (days * 24 * 60 * 60 * 1000);
-            return data.filter((tx) => getTransactionSortTime(tx) >= threshold);
+            return data.filter((tx) => getTradeDateTime(tx) >= threshold);
         }
 
         function renderHistoryList(containerId, data) {
@@ -1817,12 +1875,35 @@ if(assetChart){
                 { id: 'b1', date: `${testMonth}-02`, ticker: 'TEST', name: '테스트ETF', shares: 10, price: 5000, category: 0 },
                 { id: 's1', date: `${testMonth}-03`, ticker: 'TEST', name: '테스트ETF', shares: -2, price: 5500, category: 0, side: 'sell' }
             ];
+            const closedTx = [
+                { id: 'd2', date: `${testMonth}-01`, ticker: 'DEPOSIT', name: '현금 입금', shares: 1, price: 100000, category: '1' },
+                { id: 'b2', date: `${testMonth}-02`, ticker: 'CLOSED', name: '청산테스트', shares: 10, price: 1000, category: 0, side: 'buy' },
+                { id: 's2', date: `${testMonth}-03`, ticker: 'CLOSED', name: '청산테스트', shares: -10, price: 1500, category: 0, side: 'sell' }
+            ];
+            const oldTradeEnteredNow = {
+                id: 'hist-old',
+                date: '2024-01-01',
+                ticker: 'HIST',
+                name: '날짜필터',
+                shares: 1,
+                price: 1000,
+                category: 0,
+                side: 'buy',
+                createdAtMs: Date.now()
+            };
 
             const state = simulatePortfolioState(sampleTx);
+            const closedState = simulatePortfolioState(closedTx);
             const report = getCurrentMonthReport(sampleTx, testMonth);
+            const currentHistoryFilter = historyFilterDays;
+            historyFilterDays = '30';
+            const filteredOldTrade = filterHistoryByRange([oldTradeEnteredNow]);
+            historyFilterDays = currentHistoryFilter;
 
             const checks = [
                 { name: '보유수량 계산', pass: Math.abs((state.holdings.TEST?.shares || 0) - 8) < 0.0001 },
+                { name: '청산 원가 계산', pass: getOpenPositionCostBasis(closedState.holdings) === 0 },
+                { name: '거래일 필터 계산', pass: filteredOldTrade.length === 0 },
                 { name: '월간 매수 집계', pass: report.buyActionCount === 1 && report.buyShares >= 10 },
                 { name: '월간 매도 집계', pass: report.sellActionCount === 1 && report.sellShares >= 2 },
                 { name: '배당 집행률 계산', pass: report.dividendIn >= report.dividendUsed }
