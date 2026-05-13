@@ -1,11 +1,13 @@
 const CACHE_PREFIX = 'isa-rich-cache-';
-const CACHE_VERSION = 'v22-dashboard-history-security';
+const CACHE_VERSION = 'v23-test-page';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const OFFLINE_URLS = [
   './',
   './index.html',
+  './test.html',
   './config.js?v=20260513b',
   './assets/styles.css?v=20260513b',
+  './assets/test-styles.css?v=20260513a',
   './assets/app.js?v=20260513b',
   './manifest.webmanifest',
   './icons/app-icon.svg',
@@ -60,10 +62,12 @@ self.addEventListener('fetch', (event) => {
 
         const networkResponse = await fetch(event.request);
         const cache = await caches.open(CACHE_NAME);
-        cache.put('./index.html', networkResponse.clone());
+        const fallbackUrl = url.pathname.endsWith('/test.html') ? './test.html' : './index.html';
+        cache.put(fallbackUrl, networkResponse.clone());
         return networkResponse;
       } catch (error) {
-        const cachedPage = await caches.match('./index.html');
+        const fallbackUrl = url.pathname.endsWith('/test.html') ? './test.html' : './index.html';
+        const cachedPage = await caches.match(fallbackUrl);
         return cachedPage || Response.error();
       }
     })());

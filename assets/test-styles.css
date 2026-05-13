@@ -1,0 +1,28 @@
+/*
+ * Design sandbox overrides for test.html.
+ * Keep production styling in assets/styles.css; experiment here first.
+ */
+
+body.test-page::before {
+    content: "TEST";
+    position: fixed;
+    right: 14px;
+    top: max(10px, env(safe-area-inset-top));
+    z-index: 120;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.78);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    box-shadow: 0 10px 26px -18px rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(12px);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0;
+    pointer-events: none;
+}
+
+body.test-page {
+    outline: 3px solid rgba(59, 130, 246, 0.16);
+    outline-offset: -3px;
+}

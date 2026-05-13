@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="robots" content="noindex,nofollow">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ISA RICH TEST">
+    <title>ISA RICH Design Test</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/svg+xml" href="icons/app-icon.svg">
+    <link rel="apple-touch-icon" href="icons/app-icon.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+    <script src="./config.js?v=20260513b"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="./assets/styles.css?v=20260513b">
+    <link rel="stylesheet" href="./assets/test-styles.css?v=20260513a">
+</head>
+<body class="test-page pb-24 lg:pb-0 lg:pl-20 text-left font-sans">
+
+
+    <!-- PC 사이드바 -->
+    <aside id="main-sidebar" class="hidden lg:flex fixed left-0 top-0 h-full w-20 bg-white/80 backdrop-blur-xl border-r border-slate-200/50 flex-col items-center py-10 z-50">
+        <div class="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white text-xl shadow-lg mb-10 transition hover:scale-110 cursor-pointer">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+        </div>
+        <nav class="flex flex-col gap-10 w-full text-center">
+            <button onclick="showSection('dashboard')" id="pc-nav-dashboard" class="pc-nav-item w-full py-2 text-blue-600 border-r-4 border-blue-600 transition-all flex justify-center"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></button>
+            <button onclick="showSection('history')" id="pc-nav-history" class="pc-nav-item w-full py-2 text-slate-300 hover:text-slate-600 transition-all flex justify-center"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+            <button onclick="showSection('transaction')" id="pc-nav-transaction" class="pc-nav-item w-full py-2 text-slate-300 hover:text-slate-600 transition-all flex justify-center"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></button>
+        </nav>
+        <div class="mt-auto pb-10 flex justify-center">
+            <button onclick="openSettings()" class="text-slate-300 hover:text-slate-600 p-3 transition hover:rotate-90"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+        </div>
+    </aside>
+
+    <!-- 모바일 하단바 -->
+    <nav class="lg:hidden fixed bottom-6 left-6 right-6 h-16 rounded-[20px] bg-white/80 backdrop-blur-xl border border-white/50 shadow-[0_15px_40px_-5px_rgba(0,0,0,0.1)] flex justify-around items-center z-50 px-2 font-sans">
+        <button onclick="showSection('dashboard')" id="mob-nav-dashboard" class="nav-item active flex flex-col items-center gap-1 w-14 text-blue-600">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+            <span class="text-[8px] font-black uppercase">대시보드</span>
+        </button>
+        <button onclick="showSection('history')" id="mob-nav-history" class="nav-item text-slate-300 flex flex-col items-center gap-1 w-14">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>
+            <span class="text-[8px] font-black uppercase">기록</span>
+        </button>
+        <button onclick="showSection('transaction')" id="mob-nav-transaction" class="nav-item text-slate-300 flex flex-col items-center gap-1 w-14">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>
+            <span class="text-[8px] font-black uppercase">거래</span>
+        </button>
+        <button onclick="openSettings()" class="nav-item text-slate-300 flex flex-col items-center gap-1 w-14">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span class="text-[8px] font-black uppercase">설정</span>
+        </button>
+    </nav>
+
+    <main class="max-w-screen-xl mx-auto p-4 lg:p-12 text-left min-h-screen">
+        
+        <!-- 대시보드 -->
+        <section id="section-dashboard" class="animate-fade-up space-y-3 text-left font-sans">
+            <div id="dashboard-sync-mini" class="flex items-center gap-2 px-1 py-0.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-500/80"></span>
+                <p id="sync-time-mini" class="text-[10px] text-blue-600/90 font-black uppercase tracking-widest">동기화 대기 중</p>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start font-sans text-left">
+                <div class="lg:col-span-8 space-y-3 text-left">
+                    <div class="bg-slate-900 rounded-[2.1rem] p-7 md:p-9 text-white shadow-2xl relative overflow-hidden group text-left">
+                        <div class="absolute -right-20 -top-20 w-80 h-80 bg-blue-500/10 rounded-full blur-[100px] group-hover:bg-blue-500/20 transition-all duration-1000"></div>
+                        <div class="hero-corner-art" aria-hidden="true"></div>
+                        <div class="relative z-10 text-left">
+                            <span class="text-slate-500 text-[10px] font-black tracking-[0.25em] uppercase mb-1.5 block text-left">총 자산</span>
+                            <div class="flex items-baseline gap-2.5 text-left">
+                                <h1 class="text-4xl md:text-5xl font-black tracking-tighter font-sans text-left" id="stat-total-value">₩0</h1>
+                            </div>
+                            <div class="flex items-center gap-2 mt-2 mb-5 text-left font-sans">
+                                <span id="stat-profit-icon" class="text-sm"><i class="fa-solid fa-minus"></i></span>
+                                <span id="stat-profit-amount" class="text-sm font-bold text-white/80 tracking-tight">₩0</span>
+                                <div id="stat-profit-pct" class="text-[11px] font-black text-white/60">0.0%</div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 border-t border-white/10 pt-2.5 md:pt-3 text-left">
+                                <div onclick="openCashModal()" id="cash-card-area" class="cursor-pointer active:scale-95 transition hover:bg-white/5 p-2 rounded-xl text-left">
+                                    <p class="text-[6px] text-slate-300/90 mb-0.5 uppercase font-black tracking-[0.2em] text-left">현금 잔고 <i class="fa-solid fa-chevron-right ml-0.5 text-[7px] opacity-30 text-center"></i></p>
+                                    <p class="font-black text-base font-sans tracking-tight text-left" id="stat-cash-balance">₩0</p>
+                                </div>
+                                <div class="text-right p-2 font-sans">
+                                    <p class="text-[6px] text-slate-300/90 mb-0.5 uppercase font-black tracking-[0.2em] text-right">재투자율</p>
+                                    <p class="font-black text-base text-emerald-300 tracking-tight text-right font-sans" id="stat-reinvest-rate">0%</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-4 md:p-5 flex justify-between items-center group relative overflow-hidden text-left font-sans">
+                        <div class="flex items-center gap-5 text-left font-sans">
+                            <div class="w-11 h-11 md:w-14 md:h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl shadow-xl shadow-blue-500/20 transition group-hover:rotate-3 text-white text-center font-sans" id="div-level-icon">🌱</div>
+                            <div class="text-left font-sans">
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-left">엔진 상태</p>
+                                <p id="dividend-level-text" class="text-sm md:text-lg font-black text-slate-900 tracking-tight leading-none font-sans text-left">데이터 수신 대기 중</p>
+                                <p id="dividend-next-goal" class="text-[10px] font-black text-blue-500 mt-1 text-left">다음 목표 계산 중...</p>
+                            </div>
+                        </div>
+
+
+
+                        <div class="text-right font-sans">
+                            <p class="text-[10px] font-black text-slate-400 uppercase mb-1 text-right font-sans">예상 배당</p>
+                            <p class="text-xl md:text-2xl font-black text-emerald-600 tracking-tighter text-right font-sans" id="stat-monthly-dividend">₩0</p>
+                        </div>
+                    </div>
+
+                    <div class="p-3 text-left font-sans bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 text-white border border-indigo-400/20 shadow-2xl rounded-[1.5rem]">
+                        <div id="cash-buy-empty" class="hidden rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-[11px] font-bold text-white/80">
+                            지금 현금으로는 매수 가능한 수량이 없어요.
+                        </div>
+                        <div class="space-y-1.5" id="cash-buy-plans">
+                            <div id="plan-a-card" class="rounded-lg px-3 py-2 border border-cyan-200/40 bg-white/10 flex items-center justify-between gap-3">
+                                <p class="text-[11px] font-black text-white truncate" id="buy-plan-a-title">종목 A</p>
+                                <p class="text-[11px] font-black text-cyan-200 text-right whitespace-nowrap" id="buy-plan-a">0주 매수 (₩0)</p>
+                            </div>
+                            <div id="plan-b-card" class="rounded-lg px-3 py-2 border border-violet-200/40 bg-white/10 flex items-center justify-between gap-3">
+                                <p class="text-[11px] font-black text-white truncate" id="buy-plan-b-title">종목 B</p>
+                                <p class="text-[11px] font-black text-violet-200 text-right whitespace-nowrap" id="buy-plan-b">0주 매수 (₩0)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card overflow-hidden text-left font-sans">
+                        <div class="p-4 border-b border-slate-100/50 flex justify-between items-center bg-white/30 text-left">
+                            <h3 class="font-black text-base text-slate-900 tracking-tighter uppercase text-left font-sans">자산 목록</h3>
+                            <span class="text-[9px] font-black text-slate-400 bg-slate-100/50 border border-slate-200 px-2.5 py-1 rounded-lg uppercase text-center">Live</span>
+                        </div>
+                        <div id="holdings-list" class="space-y-1.5 p-1.5 text-left font-sans"></div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-4 space-y-2.5 text-left font-sans">
+                    <div class="glass-card p-6 flex flex-col items-center justify-center min-h-[300px] text-left font-sans">
+                        <h3 class="font-black text-[10px] text-slate-400 uppercase tracking-[0.25em] mb-8 w-full text-left font-sans">자산 비중</h3>
+                        <div class="relative w-44 h-44 mb-8 text-center font-sans">
+                            <canvas id="assetChart"></canvas>
+                        </div>
+                        <div id="chart-legend" class="w-full space-y-2 text-left font-sans"></div>
+                    </div>
+
+                    <div id="monthly-review-panel" class="glass-card p-4 rounded-2xl border border-blue-100/70 bg-gradient-to-br from-blue-50/80 to-white text-left font-sans">
+                        <div class="flex items-center justify-between mb-3 gap-2">
+                            <p class="text-[10px] font-black text-blue-700 uppercase tracking-widest">월간 정리</p>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" data-action="monthly-prev" class="w-6 h-6 rounded-lg border border-blue-200 bg-white text-blue-600 text-[12px] font-black leading-none hover:bg-blue-50 transition">&lt;</button>
+                                <span id="report-month-label" class="text-[9px] font-black text-blue-700 bg-blue-100/80 px-2 py-1 rounded-lg min-w-[56px] text-center">0000-00</span>
+                                <button type="button" data-action="monthly-next" class="w-6 h-6 rounded-lg border border-blue-200 bg-white text-blue-600 text-[12px] font-black leading-none hover:bg-blue-50 transition">&gt;</button>
+                                <span id="monthly-review-badge" class="text-[9px] font-black text-blue-600 bg-blue-100/80 px-2 py-1 rounded-lg">ON</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 mb-2.5">
+                            <div class="rounded-xl border border-slate-100 bg-white/80 p-2.5">
+                                <p class="text-[9px] font-black text-slate-400 uppercase">실현손익</p>
+                                <p id="report-realized-pnl" class="mt-1 text-[12px] font-black text-slate-900">₩0</p>
+                            </div>
+                            <div class="rounded-xl border border-slate-100 bg-white/80 p-2.5">
+                                <p class="text-[9px] font-black text-slate-400 uppercase">총합 수익</p>
+                                <p id="report-dividend-in" class="mt-1 text-[12px] font-black text-emerald-700">₩0</p>
+                            </div>
+                        </div>
+                        <div class="space-y-2 text-[11px]">
+                            <button type="button" data-action="monthly-toggle-buy" class="w-full rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
+                                <p class="font-black text-slate-500">매수 실행(월)</p>
+                                <p id="monthly-check-buy-action" class="font-black text-slate-900">0주 · ₩0 ▾</p>
+                            </button>
+                            <div id="monthly-breakdown-buy" class="hidden rounded-xl border border-slate-100 bg-white/80 px-2.5 py-2 space-y-1"></div>
+                            <button type="button" data-action="monthly-toggle-sell" class="w-full rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
+                                <p class="font-black text-slate-500">매도 실행(월)</p>
+                                <p id="monthly-check-sell-action" class="font-black text-slate-900">0주 · ₩0 ▾</p>
+                            </button>
+                            <div id="monthly-breakdown-sell" class="hidden rounded-xl border border-slate-100 bg-white/80 px-2.5 py-2 space-y-1"></div>
+                            <button type="button" data-action="monthly-toggle-dividend" class="w-full rounded-xl border border-slate-100 bg-white/80 px-3 py-2 flex justify-between items-center">
+                                <div class="flex items-center gap-1.5">
+                                    <p class="font-black text-slate-500">배당 유입 합계</p>
+                                    <span id="monthly-unassigned-badge" class="hidden text-[9px] font-black text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-md">미지정 0건</span>
+                                </div>
+                                <p id="monthly-check-dividend-total" class="font-black text-slate-900">₩0 ▾</p>
+                            </button>
+                            <div id="monthly-breakdown-dividend" class="hidden rounded-xl border border-slate-100 bg-white/80 px-2.5 py-2 space-y-1"></div>
+                        </div>
+                        <div id="monthly-stock-summary" class="mt-2 space-y-1.5 text-[10px]"></div>
+                        <p id="monthly-review-note" class="mt-3 text-[10px] font-black text-slate-400">이 달의 운용 요약 로딩 중...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 전체 기록 보관소 -->
+        <section id="section-history" class="hidden animate-fade-up text-left font-sans">
+            <header class="mb-8 pl-1 text-left font-sans">
+                <p class="text-blue-600 font-black text-xs uppercase tracking-[0.2em] mb-1 text-left">기록 피드</p>
+                <h2 class="text-3xl font-black text-slate-900 tracking-tighter text-left">전체 기록 보관소</h2>
+                <div id="history-filter-group" class="mt-4 flex flex-wrap gap-2">
+                    <button type="button" data-history-filter="30" class="history-filter-btn px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-500 text-[10px] font-black">최근 30일</button>
+                    <button type="button" data-history-filter="90" class="history-filter-btn px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-500 text-[10px] font-black">최근 90일</button>
+                    <button type="button" data-history-filter="365" class="history-filter-btn px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-500 text-[10px] font-black">최근 1년</button>
+                    <button type="button" data-history-filter="all" class="history-filter-btn px-3 py-1.5 rounded-xl border border-slate-900 bg-slate-900 text-white text-[10px] font-black">전체</button>
+                </div>
+            </header>
+            <div id="history-list" class="space-y-4 px-1 text-left font-sans"></div>
+            <div class="mt-4 flex justify-center">
+                <button id="history-load-more" type="button" class="hidden btn-token btn-primary-soft px-4 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-wider">더보기</button>
+            </div>
+        </section>
+
+        <!-- 거래소 터미널 -->
+        <section id="section-transaction" class="hidden animate-fade-up max-w-lg mx-auto font-sans">
+            <header class="mb-8 pl-1 text-center font-sans">
+                <p class="text-blue-600 font-black text-xs uppercase tracking-[0.2em] mb-1 text-center">거래 센터</p>
+                <h2 class="text-3xl font-black text-slate-900 tracking-tighter text-center uppercase">거래 및 자산 입력</h2>
+            </header>
+            
+            <div class="flex bg-slate-200/40 backdrop-blur-md p-1.5 rounded-[1.5rem] mb-8 gap-1 border border-white/50 text-left font-sans">
+                <button onclick="switchTab('purchase')" id="tab-btn-purchase" class="sub-tab-btn active-purchase">주식 매수</button>
+                <button onclick="switchTab('deposit')" id="tab-btn-deposit" class="sub-tab-btn">현금 충전</button>
+            </div>
+            
+            <!-- 매수 탭 -->
+            <div id="tab-content-purchase" class="space-y-5 text-left font-sans">
+                <div class="glass-card p-8 md:p-10 space-y-7 text-left font-sans">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-4 tracking-widest text-left font-sans">종목 퀵 선택</label>
+                        <div id="quick-select-buttons" class="flex flex-wrap gap-2.5 text-left font-sans"></div>
+                    </div>
+
+<div class="grid grid-cols-1 gap-4">
+
+    <div class="overflow-hidden">
+        <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left">
+            거래 날짜
+        </label>
+        <input type="date"
+               id="input-date"
+               class="premium-input px-4 font-black text-sm"
+ style="overflow:hidden;">
+    </div>
+
+    <div>
+        <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left">
+            수량
+        </label>
+        <input type="number"
+               id="input-shares"
+               placeholder="0"
+               class="premium-input px-4 font-black text-sm tracking-tight">
+    </div>
+
+</div>
+
+
+                    
+                    <div class="text-left font-sans">
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left">체결 단가</label>
+                        <div class="won-input-wrapper">
+                            <span class="won-symbol">₩</span>
+                            <input type="number" id="input-price" class="premium-input pr-4 font-black text-sm text-left tracking-tight">
+                        </div>
+                    </div>
+
+
+                    <input type="hidden" id="input-ticker"><input type="hidden" id="input-name">
+                    <input type="hidden" id="edit-id" value="">
+                    
+                    <div id="form-action-buttons" class="flex gap-2 text-left font-sans">
+                        <button onclick="saveStockPurchase()" id="save-btn" class="btn-token btn-primary-strong flex-1 py-5 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-2xl active:scale-95 transition-all hover:bg-slate-800 text-center uppercase">매수하기</button>
+                        <button onclick="exitEditMode()" id="cancel-edit-btn" class="hidden btn-token btn-neutral px-6 py-5 rounded-2xl font-black text-sm active:scale-95 text-center font-sans">취소</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 충전 탭 -->
+            <div id="tab-content-deposit" class="hidden space-y-5 font-sans">
+                <div class="glass-card p-8 md:p-10 space-y-7 text-left font-sans">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left font-sans">입금 날짜</label>
+                        <input type="date" id="div-date" class="premium-input px-4 font-black text-sm text-left">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-4 tracking-widest text-left font-sans">자금 성격 분류</label>
+                        <div class="grid grid-cols-3 gap-3 text-left font-sans">
+                            <button onclick="setDepositCat(3)" id="dep-cat-3" class="flex flex-col items-center gap-2 py-4 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-500 text-[11px] font-black transition text-center font-sans">
+                                <svg class="icon-svg mx-auto mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18.06"/><path d="M7 6h1v4"/></svg>
+                                <span>배당금</span>
+                            </button>
+                            <button onclick="setDepositCat(2)" id="dep-cat-2" class="flex flex-col items-center gap-2 py-4 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-500 text-[11px] font-black transition text-center hover:border-slate-300 font-sans">
+                                <svg class="icon-svg mx-auto mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                <span>특별금</span>
+                            </button>
+                            <button onclick="setDepositCat(1)" id="dep-cat-1" class="flex flex-col items-center gap-2 py-4 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-500 text-[11px] font-black transition text-center hover:border-slate-300 font-sans">
+                                <svg class="icon-svg mx-auto mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/><path d="M16 12h5"/></svg>
+                                <span>원금</span>
+                            </button>
+                        </div>
+                        <input type="hidden" id="wallet-category" value="3">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left font-sans">충전 금액</label>
+                        <div class="won-input-wrapper">
+                             <span class="won-symbol">₩</span>
+                             <input type="number" id="div-amount" placeholder="0" class="premium-input pr-4 font-black text-sm text-left tracking-tight">
+                        </div>
+                    </div>
+                    <div id="dividend-stock-field">
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 tracking-widest text-left font-sans">배당 종목</label>
+                        <select id="div-ticker" class="premium-input px-4 font-black text-sm text-left">
+                            <option value="DEPOSIT">종목 미지정</option>
+                        </select>
+                        <p class="mt-1 text-[10px] font-black text-slate-400">배당금 선택 시 종목을 지정하면 월간 정리에서 종목별 배당으로 집계됩니다.</p>
+                    </div>
+                    <div class="flex gap-2 text-left font-sans">
+                        <button onclick="saveWalletDeposit()" id="save-div-btn" class="btn-token btn-primary-soft flex-1 py-5 bg-blue-600 text-white rounded-xl font-black text-sm shadow-xl active:scale-95 transition-all hover:bg-blue-700 text-center uppercase">충전하기</button>
+                        <button onclick="exitEditMode()" id="cancel-edit-btn-deposit" class="hidden btn-token btn-neutral px-6 py-5 rounded-2xl font-black text-sm active:scale-95 text-center font-sans">취소</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- [Modal] 종목 상세 -->
+    <div id="detail-modal" class="fixed inset-0 z-[100] hidden flex items-end lg:items-center justify-center lg:p-4 text-left font-sans">
+        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-xl" onclick="closeDetailModal()"></div>
+        <div class="relative bg-white w-full lg:max-w-md p-8 rounded-t-[3rem] lg:rounded-[3rem] shadow-2xl modal-animate text-left font-sans">
+            <div class="flex justify-between items-start mb-4 text-left">
+                <div class="text-left font-sans">
+                    <h3 id="modal-name" class="text-2xl font-black text-slate-900 leading-tight tracking-tighter">종목명</h3>
+                    <p id="modal-ticker" class="text-[10px] text-blue-500 font-black uppercase tracking-[0.3em] mt-1 text-left font-sans">000000</p>
+                </div>
+                <button onclick="closeDetailModal()" class="p-2.5 bg-slate-100 rounded-full text-slate-400 hover:bg-slate-200 transition text-center font-sans"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+            
+            <div class="bg-slate-50 p-4 rounded-2xl mb-4 border border-slate-100 text-left font-sans">
+                <p class="text-[9px] font-black text-slate-400 mb-2 uppercase tracking-widest text-left font-sans">자금 비율 분석</p>
+                <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden flex shadow-inner text-left font-sans">
+                    <div id="bar-invest-1" class="h-full bg-emerald-500 transition-all duration-1000" style="width:0%"></div>
+                    <div id="bar-invest-2" class="h-full bg-violet-500 transition-all duration-1000" style="width:0%"></div>
+                    <div id="bar-reinvest" class="h-full bg-blue-500 transition-all duration-1000" style="width:0%"></div>
+                </div>
+                <div class="flex justify-between text-[9px] mt-2.5 font-black font-sans text-left">
+                    <div class="flex gap-4 font-sans text-left font-sans">
+                        <span class="flex items-center gap-1.5 text-left text-emerald-700"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>원금 <span id="val-invest-1" class="text-emerald-600 font-black font-sans">0%</span></span>
+                        <span class="flex items-center gap-1.5 text-left text-violet-700"><span class="w-1.5 h-1.5 rounded-full bg-violet-500"></span>특별 <span id="val-invest-2" class="text-violet-600 font-black font-sans">0%</span></span>
+                    </div>
+                    <span class="flex items-center gap-1.5 text-left"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>재투자 <span id="val-reinvest" class="text-blue-600 font-black font-sans">0%</span></span>
+                </div>
+            </div>
+            <div class="mb-3 p-1 rounded-2xl bg-slate-100 border border-slate-200/80 flex gap-1">
+                <button type="button" id="detail-tab-history-btn" onclick="switchDetailTab('history')" class="flex-1 rounded-xl py-2.5 text-[11px] font-black bg-slate-900 text-white">기록</button>
+                <button type="button" id="detail-tab-trade-btn" onclick="switchDetailTab('trade')" class="flex-1 rounded-xl py-2.5 text-[11px] font-black text-slate-500">매수/매도</button>
+            </div>
+
+            <div id="detail-tab-history" class="space-y-2">
+                <p class="text-[9px] font-black text-slate-400 mb-2 uppercase tracking-widest text-left font-sans">개별 기록</p>
+                <div id="modal-history-list" class="flex-1 overflow-y-auto max-h-[30vh] space-y-3 pb-2 text-left font-sans"></div>
+            </div>
+
+            <div id="detail-tab-trade" class="hidden space-y-3">
+                <div class="space-y-2">
+                    <label for="detail-trade-date" class="text-[10px] text-slate-400 font-black uppercase tracking-widest">날짜</label>
+                    <input type="date" id="detail-trade-date" class="premium-input px-4 font-black text-sm text-left">
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div class="space-y-2">
+                        <label for="detail-trade-price" class="text-[10px] text-slate-400 font-black uppercase tracking-widest">금액(주가)</label>
+                        <input type="number" id="detail-trade-price" placeholder="0" class="premium-input px-4 font-black text-sm text-left">
+                    </div>
+                    <div class="space-y-2">
+                        <label for="detail-trade-shares" class="text-[10px] text-slate-400 font-black uppercase tracking-widest">수량</label>
+                        <input type="number" id="detail-trade-shares" placeholder="0" step="0.01" class="premium-input px-4 font-black text-sm text-left">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5 pt-1">
+                    <button type="button" id="detail-buy-btn" onclick="saveDetailTrade('buy')" class="py-3 rounded-xl bg-rose-100 text-rose-700 font-black text-sm border border-rose-200 hover:bg-rose-200/80 transition">매수</button>
+                    <button type="button" id="detail-sell-btn" onclick="saveDetailTrade('sell')" class="py-3 rounded-xl bg-blue-100 text-blue-700 font-black text-sm border border-blue-200 hover:bg-blue-200/80 transition">매도</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- [Modal] 현금 잔고 -->
+    <div id="cash-modal" class="fixed inset-0 z-[100] hidden flex items-end lg:items-center justify-center lg:p-4 text-left font-sans">
+        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-md font-sans" onclick="closeCashModal()"></div>
+        <div class="relative bg-white w-full lg:max-w-md p-8 rounded-t-[3rem] lg:rounded-[3rem] shadow-2xl modal-animate font-sans">
+            <div class="flex justify-between items-start mb-8 font-sans text-left font-sans">
+                <div class="text-left font-sans">
+                    <h3 class="text-2xl font-black text-slate-900 tracking-tighter text-left">투자 원금</h3>
+                    <p class="text-[10px] text-blue-500 font-black uppercase tracking-widest mt-1 text-left font-sans">자금 흐름 분석</p>
+                </div>
+                <button onclick="closeCashModal()" class="p-2.5 bg-slate-100 rounded-full text-slate-400 hover:bg-slate-200 transition text-center font-sans"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+            <div class="space-y-5 text-left font-sans kb-card-stack">
+                <div class="wallet-card bg-blue-50/60 p-5 md:p-6 rounded-[1.6rem] border border-blue-100 flex justify-between items-center transition active:scale-[0.98] text-left">
+                    <div class="text-left font-sans">
+                        <span class="text-[8px] font-black text-blue-500 uppercase tracking-widest text-left">Level 1: Reinvestment</span>
+                        <p class="text-lg font-black text-slate-900 text-left uppercase">배당금</p>
+                    </div>
+                    <p class="wallet-card-amount text-xl font-black text-blue-600 text-right tracking-tight font-sans" id="modal-cash-div">₩0</p>
+                </div>
+                <div class="wallet-card wallet-card-special wallet-card-special-theme p-5 md:p-6 rounded-[1.6rem] border flex justify-between items-center transition active:scale-[0.98] text-left">
+                    <div class="text-left font-sans">
+                        <span class="text-[8px] font-black wallet-level-special uppercase tracking-widest text-left">Level 2: Special</span>
+                        <p class="text-lg font-black text-slate-900 text-left uppercase">특별금</p>
+                    </div>
+                    <p class="wallet-card-amount text-xl font-black text-purple-600 text-right tracking-tight font-sans" id="modal-cash-spec">₩0</p>
+                </div>
+                <div class="wallet-card wallet-card-base wallet-card-base-theme p-5 md:p-6 rounded-[1.6rem] border flex justify-between items-center transition active:scale-[0.98] text-left">
+                    <div class="text-left font-sans">
+                        <span class="text-[8px] font-black wallet-level-base uppercase tracking-widest text-left">Level 3: Base</span>
+                        <p class="text-lg font-black text-slate-900 text-left uppercase font-sans">원금</p>
+                    </div>
+                    <p class="wallet-card-amount text-xl font-black text-emerald-600 text-right tracking-tight font-sans" id="modal-cash-base">₩0</p>
+                </div>
+            </div>
+            <div class="mt-8 pt-4 border-t border-slate-100 text-center font-sans">
+                <button onclick="showSection('transaction'); closeCashModal(); switchTab('deposit');" class="btn-token btn-primary-soft w-full py-4.5 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-xl active:scale-95 transition uppercase tracking-widest text-center font-sans">현금 충전하러 가기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- [Modal] 설정 -->
+    <div id="settings-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6 text-left font-sans">
+        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-xl" onclick="closeSettings()"></div>
+        <div class="relative bg-white w-full max-w-sm p-8 rounded-[2.5rem] shadow-2xl animate-fade-up text-left font-sans">
+            <h3 class="text-2xl font-black mb-6 tracking-tighter text-left font-sans">시스템 설정</h3>
+            <div class="mb-6 p-4 rounded-2xl border border-slate-200 bg-slate-50/70">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-sm font-black text-slate-900 tracking-tight">나의 엔진</p>
+                        <p id="settings-version" class="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">v1.0.17</p>
+                    </div>
+                    <button onclick="syncAllData()" class="btn-token btn-primary-soft px-3 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-wide">
+                        <svg id="sync-icon" class="icon-btn inline-block mr-1 align-[-2px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                        새로고침
+                    </button>
+                </div>
+                <p class="text-[10px] text-blue-600 mt-3 flex items-center gap-1.5 font-black uppercase tracking-widest text-left" id="sync-time">
+                    <i class="fa-solid fa-rotate-right"></i> 동기화 대기 중
+                </p>
+                <p id="auth-status" class="mt-1 text-[9px] text-slate-400 font-black uppercase tracking-widest text-left">인증 확인 중</p>
+            </div>
+
+            <div class="space-y-6 text-left font-sans">
+                <div class="text-[11px] leading-relaxed text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-3">
+                    <p class="font-bold mb-1">연결 설정은 코드에서 고정 관리 중입니다.</p>
+                    <p>필요한 경우 `index.html`의 상단 상수 구역에서만 수정해 주세요.</p>
+                    <p>앱 내부에서는 표시/동기화/점검 기능만 제공합니다.</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                    <button type="button" onclick="runSimulationSelfTest()" class="btn-token btn-neutral w-full py-3 bg-white text-slate-700 rounded-xl font-black text-xs border border-slate-200">시뮬레이션 테스트 실행</button>
+                    <p id="simulation-test-result" class="mt-2 text-[10px] font-black text-slate-400">테스트 대기</p>
+                </div>
+                <button type="button" onclick="toggleLowPowerMode()" id="low-power-toggle" class="btn-token btn-neutral w-full py-3 bg-white text-slate-700 rounded-xl font-black text-xs border border-slate-200">저전력 모드: OFF</button>
+                <button type="button" onclick="hardRefreshApp()" class="btn-token btn-neutral w-full py-3 bg-white text-slate-700 rounded-xl font-black text-xs border border-slate-200">강력 새로고침(캐시 초기화)</button>
+            </div>
+        </div>
+    </div>
+    <script>window.ISARICH_TEST_PAGE = true;</script>
+    <script src="./assets/app.js?v=20260513b"></script>
+</body>
+</html>
