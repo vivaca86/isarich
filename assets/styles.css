@@ -346,6 +346,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             display: none !important;
         }
 
+        @media (min-width: 1024px) {
+            #main-sidebar.hidden {
+                display: flex !important;
+            }
+        }
+
         /* ===== Local-only shell restyle: calm brokerage dashboard ===== */
         :root {
             --shell-bg: #f6f8fb;
@@ -728,6 +734,87 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             box-shadow: 0 24px 60px -28px rgba(15, 23, 42, 0.72) !important;
         }
 
+        #settings-modal .settings-close-btn {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px !important;
+            color: #64748b;
+            background: #f8fafc;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            box-shadow: none !important;
+            transition: background-color .18s ease, color .18s ease, transform .18s ease;
+        }
+
+        #settings-modal .settings-close-btn:hover {
+            color: #0f172a;
+            background: #eef2f7;
+            transform: translateY(-1px);
+        }
+
+        #settings-modal .settings-close-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .form-status {
+            margin-top: -14px;
+            padding: 10px 12px;
+            border-radius: 14px;
+            border: 1px solid transparent;
+            font-size: 11px;
+            font-weight: 800;
+            line-height: 1.35;
+        }
+
+        .form-status-error {
+            color: #be123c;
+            background: #fff1f2;
+            border-color: #fecdd3;
+        }
+
+        .form-status-success {
+            color: #047857;
+            background: #ecfdf5;
+            border-color: #a7f3d0;
+        }
+
+        .form-status-info {
+            color: #2563eb;
+            background: #eff6ff;
+            border-color: #bfdbfe;
+        }
+
+        .btn-token.is-busy {
+            opacity: 0.78;
+            cursor: progress;
+        }
+
+        #sync-time-mini.sync-ok,
+        #sync-time.sync-ok {
+            color: #047857 !important;
+        }
+
+        #sync-time-mini.sync-warn,
+        #sync-time.sync-warn {
+            color: #b45309 !important;
+        }
+
+        #sync-time-mini.sync-error,
+        #sync-time.sync-error {
+            color: #be123c !important;
+        }
+
+        #sync-time-mini.sync-info,
+        #sync-time.sync-info {
+            color: #2563eb !important;
+        }
+
         @media (max-width: 640px) {
             main {
                 padding: 12px !important;
@@ -976,4 +1063,312 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         .nav-item.text-blue-600 {
             background: #ffffff !important;
             color: #0b1220 !important;
+        }
+
+        /* ===== Control skin refresh 2026-04-29 ===== */
+        :root {
+            --control-blue: #2f6bff;
+            --control-blue-soft: #f6faff;
+            --control-blue-ring: rgba(47, 107, 255, 0.10);
+            --control-ink: #0f172a;
+            --control-muted: #64748b;
+            --control-border: #d8e3f0;
+            --control-panel: #ffffff;
+            --control-subtle: #eef3f8;
+            --control-danger: #e11d48;
+            --control-shadow: 0 8px 18px rgba(15, 23, 42, 0.045);
+        }
+
+        #section-transaction > div.flex.bg-slate-200\/40,
+        #history-filter-group,
+        #detail-modal .mb-3.p-1.rounded-2xl {
+            gap: 4px !important;
+            padding: 4px !important;
+            border: 1px solid var(--control-border) !important;
+            border-radius: 16px !important;
+            background: var(--control-subtle) !important;
+            box-shadow: none !important;
+        }
+
+        .sub-tab-btn,
+        .history-filter-btn {
+            min-height: 44px !important;
+            border-radius: 12px !important;
+            color: var(--control-muted) !important;
+            background: transparent !important;
+            border-color: transparent !important;
+            box-shadow: none !important;
+            font-size: 13px !important;
+            font-weight: 750 !important;
+            letter-spacing: 0 !important;
+        }
+
+        .sub-tab-btn.active-purchase,
+        .sub-tab-btn.active-deposit,
+        .history-filter-btn.bg-slate-900 {
+            color: var(--control-ink) !important;
+            background: var(--control-panel) !important;
+            border-color: transparent !important;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.10) !important;
+        }
+
+        #section-transaction .glass-card {
+            border-radius: 26px !important;
+            border: 1px solid var(--control-border) !important;
+            background: var(--control-panel) !important;
+            box-shadow: 0 24px 54px rgba(15, 23, 42, 0.10) !important;
+        }
+
+        #section-transaction label,
+        #detail-modal label {
+            color: var(--control-muted) !important;
+            font-weight: 750 !important;
+            letter-spacing: 0.08em !important;
+        }
+
+        .quick-select-btn {
+            display: inline-flex !important;
+            align-items: center !important;
+            min-height: 44px !important;
+            padding: 0 14px !important;
+            border-radius: 15px !important;
+            color: #39465a !important;
+            background: var(--control-panel) !important;
+            border: 1px solid var(--control-border) !important;
+            box-shadow: var(--control-shadow) !important;
+            font-size: 12px !important;
+            font-weight: 750 !important;
+            letter-spacing: 0 !important;
+        }
+
+        .quick-select-btn.bg-slate-900 {
+            color: var(--control-ink) !important;
+            background: var(--control-blue-soft) !important;
+            border-color: var(--control-blue) !important;
+            box-shadow: 0 0 0 4px var(--control-blue-ring) !important;
+        }
+
+        .premium-input,
+        select.premium-input {
+            height: 62px !important;
+            border-radius: 18px !important;
+            border: 1px solid var(--control-border) !important;
+            background: var(--control-panel) !important;
+            color: var(--control-ink) !important;
+            box-shadow: var(--control-shadow) !important;
+            font-size: 18px !important;
+            font-weight: 760 !important;
+            letter-spacing: 0 !important;
+        }
+
+        .premium-input::placeholder {
+            color: #a8b3c2 !important;
+        }
+
+        .premium-input:focus,
+        select.premium-input:focus {
+            border-color: var(--control-blue) !important;
+            background: #ffffff !important;
+            box-shadow: 0 0 0 4px var(--control-blue-ring), var(--control-shadow) !important;
+        }
+
+        input[type="date"].premium-input::-webkit-calendar-picker-indicator {
+            opacity: 0.62;
+        }
+
+        .won-symbol {
+            left: 13px !important;
+            display: grid !important;
+            place-items: center !important;
+            width: 26px !important;
+            height: 26px !important;
+            border-radius: 999px !important;
+            color: var(--control-blue) !important;
+            background: #eaf2ff !important;
+            font-size: 11px !important;
+            font-weight: 750 !important;
+        }
+
+        .won-input-wrapper .premium-input {
+            padding-left: 50px !important;
+        }
+
+        #dep-cat-1,
+        #dep-cat-2,
+        #dep-cat-3 {
+            min-height: 86px !important;
+            border-width: 1px !important;
+            border-color: var(--control-border) !important;
+            border-radius: 16px !important;
+            background: var(--control-panel) !important;
+            color: #475569 !important;
+            box-shadow: var(--control-shadow) !important;
+            font-weight: 750 !important;
+        }
+
+        #dep-cat-1.bg-blue-600,
+        #dep-cat-2.bg-blue-600,
+        #dep-cat-3.bg-blue-600 {
+            color: var(--control-ink) !important;
+            background: var(--control-blue-soft) !important;
+            border-color: var(--control-blue) !important;
+            box-shadow: 0 0 0 4px var(--control-blue-ring) !important;
+        }
+
+        .btn-token,
+        #settings-modal button,
+        #cash-modal button,
+        #detail-buy-btn,
+        #detail-sell-btn {
+            border-radius: 16px !important;
+            font-weight: 760 !important;
+            letter-spacing: 0 !important;
+            box-shadow: none !important;
+        }
+
+        #save-btn,
+        #save-div-btn,
+        .btn-primary-strong,
+        .btn-primary-soft {
+            color: #ffffff !important;
+            background: var(--control-blue) !important;
+            border: 1px solid var(--control-blue) !important;
+            box-shadow: 0 14px 24px rgba(47, 107, 255, 0.20) !important;
+        }
+
+        #save-btn,
+        #save-div-btn {
+            min-height: 62px !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            text-transform: none !important;
+        }
+
+        #cancel-edit-btn,
+        #cancel-edit-btn-deposit,
+        .btn-neutral {
+            color: #475569 !important;
+            background: #f1f5f9 !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: none !important;
+        }
+
+        #detail-tab-history-btn,
+        #detail-tab-trade-btn {
+            min-height: 42px !important;
+            border-radius: 12px !important;
+            font-size: 12px !important;
+            font-weight: 750 !important;
+        }
+
+        #detail-tab-history-btn.bg-slate-900,
+        #detail-tab-trade-btn.bg-slate-900 {
+            color: var(--control-ink) !important;
+            background: var(--control-panel) !important;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.10) !important;
+        }
+
+        #detail-buy-btn {
+            color: #e11d48 !important;
+            background: #fff1f2 !important;
+            border-color: #ffe4e6 !important;
+        }
+
+        #detail-sell-btn {
+            color: var(--control-blue) !important;
+            background: #eaf2ff !important;
+            border-color: #dbeafe !important;
+        }
+
+        /* Make the refreshed control skin visible on the first dashboard too. */
+        #cash-card-area {
+            border: 1px solid rgba(96, 165, 250, 0.32) !important;
+            border-radius: 18px !important;
+            background: rgba(255, 255, 255, 0.08) !important;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10) !important;
+        }
+
+        #section-dashboard div:has(> #cash-buy-plans) {
+            border: 1px solid var(--control-border) !important;
+            border-radius: 20px !important;
+            background: #ffffff !important;
+            color: var(--control-ink) !important;
+            box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08) !important;
+        }
+
+        #cash-buy-plans {
+            gap: 8px !important;
+        }
+
+        #cash-buy-plans > div {
+            min-height: 48px !important;
+            padding: 11px 14px !important;
+            border: 1px solid rgba(47, 107, 255, 0.28) !important;
+            border-radius: 15px !important;
+            background: var(--control-blue-soft) !important;
+            color: var(--control-ink) !important;
+            box-shadow: 0 0 0 4px rgba(47, 107, 255, 0.055) !important;
+        }
+
+        #cash-buy-plans p:first-child,
+        #plan-a-title,
+        #plan-b-title,
+        #buy-plan-a-title,
+        #buy-plan-b-title {
+            color: #0f172a !important;
+            font-size: 13px !important;
+            font-weight: 800 !important;
+            line-height: 1.1 !important;
+            opacity: 1 !important;
+            text-shadow: none !important;
+            filter: none !important;
+        }
+
+        #cash-buy-plans p:last-child,
+        #buy-plan-a,
+        #buy-plan-b {
+            color: #059669 !important;
+            font-size: 12px !important;
+            font-weight: 800 !important;
+            line-height: 1.1 !important;
+            opacity: 1 !important;
+            text-shadow: none !important;
+            filter: none !important;
+        }
+
+        #cash-buy-empty {
+            min-height: 44px !important;
+            display: flex;
+            align-items: center;
+            color: #92400e !important;
+            background: #fff7ed !important;
+            border-color: #fed7aa !important;
+            line-height: 1.35 !important;
+        }
+
+        #cash-buy-empty.hidden {
+            display: none !important;
+        }
+
+        #monthly-review-panel {
+            border: 1px solid var(--control-border) !important;
+            border-top: 4px solid #10b981 !important;
+            border-radius: 22px !important;
+            background: #ffffff !important;
+            box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08) !important;
+        }
+
+        #monthly-review-panel button[data-action] {
+            border: 1px solid var(--control-border) !important;
+            border-radius: 15px !important;
+            background: var(--control-panel) !important;
+            color: var(--control-ink) !important;
+            box-shadow: var(--control-shadow) !important;
+            font-weight: 750 !important;
+        }
+
+        #monthly-review-panel [id^="monthly-breakdown"] {
+            border-color: var(--control-border) !important;
+            border-radius: 15px !important;
+            background: #fbfdff !important;
         }

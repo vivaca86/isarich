@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ISA RICH">
-    <title>ISA RICH Premium ver1.0.20</title>
+    <title>ISA RICH Premium ver1.0.23</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/svg+xml" href="icons/app-icon.svg">
     <link rel="apple-touch-icon" href="icons/app-icon.svg">
@@ -18,7 +18,7 @@
     <script src="./config.js?v=20260428a"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-    <link rel="stylesheet" href="./assets/styles.css?v=20260429a">
+    <link rel="stylesheet" href="./assets/styles.css?v=20260514c">
 </head>
 <body class="pb-24 lg:pb-0 lg:pl-20 text-left font-sans">
 
@@ -118,12 +118,12 @@
                         </div>
                         <div class="space-y-1.5" id="cash-buy-plans">
                             <div id="plan-a-card" class="rounded-lg px-3 py-2 border border-cyan-200/40 bg-white/10 flex items-center justify-between gap-3">
-                                <p class="text-[11px] font-black text-white truncate" id="buy-plan-a-title">종목 A</p>
-                                <p class="text-[11px] font-black text-cyan-200 text-right whitespace-nowrap" id="buy-plan-a">0주 매수 (₩0)</p>
+                                <p class="text-[11px] font-black text-slate-900 truncate" id="buy-plan-a-title">종목 A</p>
+                                <p class="text-[11px] font-black text-emerald-600 text-right whitespace-nowrap" id="buy-plan-a">0주 매수 (₩0)</p>
                             </div>
                             <div id="plan-b-card" class="rounded-lg px-3 py-2 border border-violet-200/40 bg-white/10 flex items-center justify-between gap-3">
-                                <p class="text-[11px] font-black text-white truncate" id="buy-plan-b-title">종목 B</p>
-                                <p class="text-[11px] font-black text-violet-200 text-right whitespace-nowrap" id="buy-plan-b">0주 매수 (₩0)</p>
+                                <p class="text-[11px] font-black text-slate-900 truncate" id="buy-plan-b-title">종목 B</p>
+                                <p class="text-[11px] font-black text-emerald-600 text-right whitespace-nowrap" id="buy-plan-b">0주 매수 (₩0)</p>
                             </div>
                         </div>
                     </div>
@@ -273,6 +273,7 @@
                         <button onclick="saveStockPurchase()" id="save-btn" class="btn-token btn-primary-strong flex-1 py-5 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-2xl active:scale-95 transition-all hover:bg-slate-800 text-center uppercase">매수하기</button>
                         <button onclick="exitEditMode()" id="cancel-edit-btn" class="hidden btn-token btn-neutral px-6 py-5 rounded-2xl font-black text-sm active:scale-95 text-center font-sans">취소</button>
                     </div>
+                    <p id="purchase-form-status" class="form-status hidden" aria-live="polite"></p>
                 </div>
             </div>
 
@@ -319,6 +320,7 @@
                         <button onclick="saveWalletDeposit()" id="save-div-btn" class="btn-token btn-primary-soft flex-1 py-5 bg-blue-600 text-white rounded-xl font-black text-sm shadow-xl active:scale-95 transition-all hover:bg-blue-700 text-center uppercase">충전하기</button>
                         <button onclick="exitEditMode()" id="cancel-edit-btn-deposit" class="hidden btn-token btn-neutral px-6 py-5 rounded-2xl font-black text-sm active:scale-95 text-center font-sans">취소</button>
                     </div>
+                    <p id="deposit-form-status" class="form-status hidden" aria-live="polite"></p>
                 </div>
             </div>
         </section>
@@ -380,6 +382,7 @@
                     <button type="button" id="detail-buy-btn" onclick="saveDetailTrade('buy')" class="py-3 rounded-xl bg-rose-100 text-rose-700 font-black text-sm border border-rose-200 hover:bg-rose-200/80 transition">매수</button>
                     <button type="button" id="detail-sell-btn" onclick="saveDetailTrade('sell')" class="py-3 rounded-xl bg-blue-100 text-blue-700 font-black text-sm border border-blue-200 hover:bg-blue-200/80 transition">매도</button>
                 </div>
+                <p id="detail-trade-status" class="form-status hidden" aria-live="polite"></p>
             </div>
         </div>
     </div>
@@ -428,6 +431,12 @@
     <div id="settings-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6 text-left font-sans">
         <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-xl" onclick="closeSettings()"></div>
         <div class="relative bg-white w-full max-w-sm p-8 rounded-[2.5rem] shadow-2xl animate-fade-up text-left font-sans">
+            <button type="button" onclick="closeSettings()" aria-label="Close settings" class="settings-close-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
             <h3 class="text-2xl font-black mb-6 tracking-tighter text-left font-sans">시스템 설정</h3>
             <div class="mb-6 p-4 rounded-2xl border border-slate-200 bg-slate-50/70">
                 <div class="flex items-center justify-between gap-3">
@@ -443,6 +452,7 @@
                 <p class="text-[10px] text-blue-600 mt-3 flex items-center gap-1.5 font-black uppercase tracking-widest text-left" id="sync-time">
                     <i class="fa-solid fa-rotate-right"></i> 동기화 대기 중
                 </p>
+                <p id="sync-detail" class="mt-1 text-[10px] font-bold text-slate-500 leading-relaxed">가격 상태 대기 중</p>
             </div>
 
             <div class="space-y-6 text-left font-sans">
@@ -460,6 +470,6 @@
             </div>
         </div>
     </div>
-    <script src="./assets/app.js?v=20260429a"></script>
+    <script src="./assets/app.js?v=20260514c"></script>
 </body>
 </html>

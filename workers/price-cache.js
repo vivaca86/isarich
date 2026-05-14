@@ -1,4 +1,6 @@
 const DEFAULT_TTL_SECONDS = 300;
+const DEFAULT_SOURCE_TIMEOUT_MS = 5000;
+const STALE_TTL_SECONDS = 7 * 24 * 60 * 60;
 const CACHE_KEY = "prices:latest";
 
 function corsHeaders() {
@@ -26,12 +28,26 @@ function getTtlSeconds(env) {
   return Number.isFinite(ttl) && ttl > 0 ? ttl : DEFAULT_TTL_SECONDS;
 }
 
-async function readCachedPrices(env) {
+function getSourceTimeoutMs(env) {
+  const timeout = Number(env.PRICE_SOURCE_TIMEOUT_MS || DEFAULT_SOURCE_TIMEOUT_MS);
+  return Number.isFinite(timeout) && timeout > 0 ? timeout : DEFAULT_SOURCE_TIMEOUT_MS;
+}
+
+async function readStoredPrices(env) {
   const cached = await env.ISARICH_PRICE_CACHE.get(CACHE_KEY, "json");
   if (!cached?.data || !cached?.updatedAt) return null;
 
   const ageMs = Date.now() - Date.parse(cached.updatedAt);
   if (!Number.isFinite(ageMs) || ageMs < 0) return null;
+
+  return cached;
+}
+
+async function readCachedPrices(env) {
+  const cached = await readStoredPrices(env);
+  if (!cached) return null;
+
+  const ageMs = Date.now() - Date.parse(cached.updatedAt);
   if (ageMs > getTtlSeconds(env) * 1000) return null;
 
   return cached;
@@ -45,11 +61,20 @@ async function fetchPrices(env) {
   const sourceUrl = new URL(env.PRICE_SOURCE_URL);
   sourceUrl.searchParams.set("action", "prices");
 
-  const response = await fetch(sourceUrl.toString(), {
-    method: "GET",
-    headers: { accept: "application/json" },
-    cf: { cacheTtl: 60, cacheEverything: false }
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort("PRICE_SOURCE_TIMEOUT"), getSourceTimeoutMs(env));
+  let response;
+
+  try {
+    response = await fetch(sourceUrl.toString(), {
+      method: "GET",
+      headers: { accept: "application/json" },
+      signal: controller.signal,
+      cf: { cacheTtl: 60, cacheEverything: false }
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     throw new Error(`price source failed: ${response.status}`);
@@ -68,7 +93,7 @@ async function fetchPrices(env) {
   };
 
   await env.ISARICH_PRICE_CACHE.put(CACHE_KEY, JSON.stringify(payload), {
-    expirationTtl: Math.max(getTtlSeconds(env) * 4, 600)
+    expirationTtl: Math.max(getTtlSeconds(env) * 288, STALE_TTL_SECONDS)
   });
 
   return payload;
@@ -100,16 +125,29 @@ export default {
         });
       }
 
+      const stale = force ? null : await readStoredPrices(env);
+      if (stale) {
+        const refreshPromise = fetchPrices(env).catch((error) => {
+          console.warn("background price refresh failed", error);
+        });
+        if (ctx?.waitUntil) ctx.waitUntil(refreshPromise);
+        return jsonResponse(stale.data, 200, {
+          "X-ISARICH-Cache": "STALE-WHILE-REVALIDATE",
+          "X-ISARICH-Updated-At": stale.updatedAt
+        });
+      }
+
       const fresh = await fetchPrices(env);
       return jsonResponse(fresh.data, 200, {
         "X-ISARICH-Cache": "MISS",
         "X-ISARICH-Updated-At": fresh.updatedAt
       });
     } catch (error) {
-      const stale = await env.ISARICH_PRICE_CACHE.get(CACHE_KEY, "json");
+      const stale = await readStoredPrices(env);
       if (stale?.data) {
         return jsonResponse(stale.data, 200, {
           "X-ISARICH-Cache": "STALE",
+          "X-ISARICH-Updated-At": stale.updatedAt,
           "X-ISARICH-Error": String(error?.message || error)
         });
       }
