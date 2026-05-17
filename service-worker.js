@@ -1,12 +1,12 @@
 const CACHE_PREFIX = 'isa-rich-cache-';
-const CACHE_VERSION = 'v35-buy-reco-contrast';
+const CACHE_VERSION = 'v36-buy-reco-style-bust';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const OFFLINE_URLS = [
   './',
   './index.html',
   './test.html',
   './config.js?v=20260513b',
-  './assets/styles.css?v=20260514c',
+  './assets/styles.css?v=20260517i',
   './assets/test-styles.css?v=20260513c',
   './assets/skins/test-hero-skin.svg',
   './assets/skins/test-panel-skin.svg',
