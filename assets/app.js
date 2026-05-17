@@ -1,4 +1,4 @@
-        const APP_VERSION = "1.0.29";
+        const APP_VERSION = "1.0.30";
         // Rollback switch: set false to hide/remove monthly review mode instantly.
         const ENABLE_MONTHLY_REVIEW_MODE = true;
         const HISTORY_FETCH_PAGE_SIZE = 500;
@@ -34,6 +34,8 @@
         const PENDING_TX_STORAGE_KEY = 'isa_pending_transactions_v1';
         const LOCAL_DATA_CACHE_KEY = 'isa_local_data_cache_v1';
         const LOCAL_DATA_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+        const PRICE_DATA_CACHE_KEY = 'isa_price_data_cache_v1';
+        const PRICE_DATA_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
         const MONTHLY_REPORT_CACHE_KEY = 'isa_monthly_report_cache_v1';
         const MONTHLY_REPORT_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
         const PRICE_CACHE_URL = String(window.ISARICH_CONFIG?.priceCacheUrl || '').trim();
@@ -44,6 +46,7 @@
         let assetChart = null;
         let totalBuyAmount = 0;
         let backgroundSyncTimer = null;
+        let priceDataMeta = { status: 'idle', updatedAt: '', savedAt: 0, stale: false };
 
 // ===== Chart Center Text Plugin =====
 const centerTextPlugin = {
@@ -63,7 +66,12 @@ const centerTextPlugin = {
         let selectedTicker = "";
         let historyFilterDays = 'all';
         let historyVisibleCount = 100;
+        let historyRenderSignature = '';
+        let historyNeedsRender = true;
         let monthlyBreakdownOpen = { buy: false, sell: false, dividend: false };
+        let syncStatusText = '동기화 대기 중';
+        let syncStatusTone = 'info';
+        let syncStatusDetail = '가격 상태 대기 중';
         const MONTHLY_BREAKDOWN_STATE_KEY = 'isa_monthly_breakdown_state';
 
         function loadMonthlyBreakdownState(monthKey) {
@@ -131,6 +139,44 @@ const centerTextPlugin = {
             }
         }
 
+        function isUsablePriceData(value) {
+            if (!isPlainObject(value)) return false;
+            return Object.values(value).some((item) => {
+                const price = Number(item?.price || 0);
+                return Number.isFinite(price) && price > 0;
+            });
+        }
+
+        function rememberPriceData(data, meta = {}) {
+            if (!isUsablePriceData(data)) return null;
+            priceDataMeta = {
+                status: String(meta.status || 'fresh'),
+                updatedAt: String(meta.updatedAt || new Date().toISOString()),
+                savedAt: Number(meta.savedAt || Date.now()),
+                stale: Boolean(meta.stale)
+            };
+            writeJsonStorage(PRICE_DATA_CACHE_KEY, {
+                savedAt: priceDataMeta.savedAt,
+                updatedAt: priceDataMeta.updatedAt,
+                status: priceDataMeta.status,
+                data
+            });
+            return data;
+        }
+
+        function readRememberedPriceData(maxAgeMs = PRICE_DATA_CACHE_MAX_AGE_MS) {
+            const cached = readJsonStorage(PRICE_DATA_CACHE_KEY, null);
+            const savedAt = Number(cached?.savedAt || 0);
+            const data = cached?.data;
+            if (!savedAt || Date.now() - savedAt > maxAgeMs || !isUsablePriceData(data)) return null;
+            return {
+                data,
+                savedAt,
+                updatedAt: String(cached?.updatedAt || ''),
+                status: String(cached?.status || 'stored')
+            };
+        }
+
         function invalidateMonthlyReportCaches(options = {}) {
             monthlyReportCache.clear();
             if (options.persisted) {
@@ -179,10 +225,11 @@ const centerTextPlugin = {
         }
 
         function saveLocalDataSnapshot() {
+            const rememberedPrices = readRememberedPriceData();
             writeJsonStorage(LOCAL_DATA_CACHE_KEY, {
                 savedAt: Date.now(),
                 transactions,
-                marketData
+                marketData: isUsablePriceData(marketData) ? marketData : (rememberedPrices?.data || {})
             });
         }
 
@@ -192,19 +239,22 @@ const centerTextPlugin = {
             if (!savedAt || Date.now() - savedAt > LOCAL_DATA_CACHE_MAX_AGE_MS) return false;
 
             const cachedTransactions = Array.isArray(cached.transactions) ? cached.transactions.map((item) => toHistoryRecord(item, item.source || 'cache')) : [];
-            const cachedMarketData = isPlainObject(cached.marketData) ? cached.marketData : {};
+            const cachedMarketData = isUsablePriceData(cached.marketData) ? cached.marketData : (readRememberedPriceData()?.data || {});
 
             if (!cachedTransactions.length && !Object.keys(cachedMarketData).length) return false;
 
             transactions = mergePendingTransactions(cachedTransactions);
             marketData = cachedMarketData;
+            if (isUsablePriceData(marketData)) {
+                rememberPriceData(marketData, { status: 'local', savedAt });
+            }
             transactionsVersion += 1;
             invalidateMonthlyReportCaches();
             primeMonthlyReportFromTransactions();
             updateUI();
             updateQuickSelectUI();
             updateDividendTickerOptions();
-            setSyncStatus('저장된 데이터 표시 중...');
+            setSyncStatus('저장된 데이터 표시 중...', 'warn', '네트워크 대신 로컬 저장 데이터를 표시하고 있습니다.');
             return true;
         }
 
@@ -235,7 +285,20 @@ const centerTextPlugin = {
         async function loadPriceData() {
             const url = getPriceRequestUrl();
             if (!url) throw new Error('PRICE_URL_MISSING');
-            return normalizePricePayload(await fetchJsonWithTimeout(url, { redirect: 'follow' }));
+            const response = await fetchWithTimeout(url, { redirect: 'follow' }, 18000);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const text = await response.text();
+            const payload = JSON.parse(text || "{}");
+            const data = normalizePricePayload(payload);
+            if (!isUsablePriceData(data)) {
+                throw new Error('PRICE_DATA_EMPTY');
+            }
+            return rememberPriceData(data, {
+                status: response.headers.get('X-ISARICH-Cache') || 'fresh',
+                updatedAt: response.headers.get('X-ISARICH-Updated-At') || new Date().toISOString()
+            });
         }
 
         function scheduleBackgroundSync(reason = 'background') {
@@ -1055,9 +1118,9 @@ const centerTextPlugin = {
                 if (txMonth === monthKey) realizedPnl = roundMoney(realizedPnl + pnl);
             });
 
-            const monthlyBase = Math.max(1, roundMoney(buyAmount + sellCostBasis));
+            const monthlyBase = roundMoney(buyAmount + sellCostBasis);
             const totalReturnAmount = roundMoney(realizedPnl + dividendIn);
-            const monthlyTotalReturnRate = ((realizedPnl + dividendIn) / monthlyBase) * 100;
+            const monthlyTotalReturnRate = monthlyBase > 0 ? (totalReturnAmount / monthlyBase) * 100 : 0;
             const tickerBreakdown = Object.values(tickerMonthlyStats)
                 .filter(item => item.dividendIn > 0 || item.buyShares > 0 || item.sellShares > 0)
                 .map(item => ({
@@ -1324,6 +1387,7 @@ const centerTextPlugin = {
             clearPendingTransaction(safeId);
             transactions = transactions.filter(tx => String(tx.id) !== safeId);
             transactionsVersion += 1;
+            markHistoryDirty();
             invalidateMonthlyReportCaches({ persisted: true });
             updateUI();
             updateQuickSelectUI();
@@ -1342,6 +1406,7 @@ const centerTextPlugin = {
                 ...transactions.filter(tx => String(tx.id) !== safeId)
             ];
             transactionsVersion += 1;
+            markHistoryDirty();
             invalidateMonthlyReportCaches({ persisted: true });
             updateUI();
             updateQuickSelectUI();
@@ -1355,7 +1420,7 @@ const centerTextPlugin = {
             const record = upsertLocalTransaction(payload, id, 'pending');
             primeMonthlyReportFromTransactions();
             saveLocalDataSnapshot();
-            setSyncStatus('저장 완료 · 백그라운드 동기화 중...');
+            setSyncStatus('저장 완료 · 백그라운드 동기화 중...', 'info');
             scheduleBackgroundSync('after-save');
             return record;
         }
@@ -1490,6 +1555,36 @@ const centerTextPlugin = {
 
         function safeSetText(id, text) { const el = getEl(id); if (el) el.innerText = text; }
         function safeSetHTML(id, html) { const el = getEl(id); if (el) el.innerHTML = html; }
+        function isSectionVisible(id) {
+            const section = getEl(`section-${id}`);
+            return !!section && !section.classList.contains('hidden');
+        }
+        function markHistoryDirty() {
+            historyNeedsRender = true;
+            historyRenderSignature = '';
+        }
+        function renderHistoryIfVisible(options = {}) {
+            if (isSectionVisible('history')) renderHistoryList('history-list', transactions, options);
+            else historyNeedsRender = true;
+        }
+        function setFormStatus(id, message = '', type = 'info') {
+            const el = getEl(id);
+            if (!el) return;
+            el.classList.remove('hidden', 'form-status-error', 'form-status-success', 'form-status-info');
+            if (!message) {
+                el.classList.add('hidden');
+                el.innerText = '';
+                return;
+            }
+            el.classList.add(type === 'error' ? 'form-status-error' : (type === 'success' ? 'form-status-success' : 'form-status-info'));
+            el.innerText = message;
+        }
+        function setButtonBusy(button, busy, busyText, readyText) {
+            if (!button) return;
+            button.disabled = Boolean(busy);
+            button.classList.toggle('is-busy', Boolean(busy));
+            button.innerText = busy ? busyText : readyText;
+        }
         function shouldAnimateUi() {
             const reduceMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             return !lowPowerMode && !document.hidden && !reduceMotion;
@@ -1506,9 +1601,30 @@ const centerTextPlugin = {
             safeSetText('low-power-toggle', `저전력 모드: ${lowPowerMode ? 'ON' : 'OFF'}`);
         }
         window.toggleLowPowerMode = () => applyLowPowerMode(!lowPowerMode);
-        function setSyncStatus(text) {
-            safeSetText('sync-time', text);
-            safeSetText('sync-time-mini', text);
+        function formatSyncTimestamp(value) {
+            const date = value ? new Date(value) : null;
+            if (!date || Number.isNaN(date.getTime())) return '';
+            return date.toLocaleString();
+        }
+        function getPriceSyncDetail() {
+            const status = String(priceDataMeta?.status || '').trim();
+            const updatedAt = formatSyncTimestamp(priceDataMeta?.updatedAt);
+            if (!status && !updatedAt) return '가격 상태 대기 중';
+            const freshness = priceDataMeta?.stale ? '마지막 정상 가격 사용' : '가격 최신 상태';
+            return `${freshness}${updatedAt ? ` · 가격 갱신 ${updatedAt}` : ''}${status ? ` · ${status}` : ''}`;
+        }
+        function setSyncStatus(text, tone = 'info', detail = '') {
+            syncStatusText = text;
+            syncStatusTone = tone;
+            syncStatusDetail = detail || getPriceSyncDetail();
+            ['sync-time', 'sync-time-mini'].forEach((id) => {
+                const el = getEl(id);
+                if (!el) return;
+                el.classList.remove('sync-ok', 'sync-warn', 'sync-error', 'sync-info');
+                el.classList.add(`sync-${tone}`);
+                el.innerText = syncStatusText;
+            });
+            safeSetText('sync-detail', syncStatusDetail);
         }
         function getSyncErrorMeta(error, fallbackCode = 'UNKNOWN') {
             const message = String(error?.message || error || '알 수 없는 오류');
@@ -1529,7 +1645,7 @@ const centerTextPlugin = {
         function setSyncFailureStatus(stage, error, fallbackCode = 'UNKNOWN') {
             const meta = getSyncErrorMeta(error, fallbackCode);
             const text = `동기화 실패 - ${stage}/${meta.code}: ${meta.reason}`;
-            setSyncStatus(text);
+            setSyncStatus(text, 'error', meta.reason);
             console.error(`[SYNC][${stage}][${meta.code}]`, error);
         }
         function applyAppVersion() {
@@ -1598,13 +1714,13 @@ const centerTextPlugin = {
         }
 
         async function syncAllData() {
-            if (isSyncing) { setSyncStatus("동기화 진행 중..."); return; }
+            if (isSyncing) { setSyncStatus("동기화 진행 중...", 'info'); return; }
             isSyncing = true;
-            setSyncStatus("동기화 중...");
+            setSyncStatus("동기화 중...", 'info');
             const icon = getEl('sync-icon'); if(icon) icon.classList.add('sync-spin');
             try {
                 if(!firestoreDb && !initFirebase()) {
-                    setSyncStatus("동기화 실패 - FIREBASE_INIT: 파이어베이스 미연결");
+                    setSyncStatus("동기화 실패 - FIREBASE_INIT: 파이어베이스 미연결", 'error', '기록 저장소 연결을 확인해주세요.');
                     return;
                 }
                 await ensureFirebaseAuth();
@@ -1620,12 +1736,27 @@ const centerTextPlugin = {
                         priceSyncMeta = getSyncErrorMeta(e, 'PRICE_FETCH');
                         console.error(`[SYNC][PRICE_FETCH][${priceSyncMeta.code}]`, e);
                         priceSyncFailed = true;
+                        const rememberedPrices = readRememberedPriceData();
+                        if (rememberedPrices) {
+                            marketData = rememberedPrices.data;
+                            priceDataMeta = {
+                                status: 'stored',
+                                updatedAt: rememberedPrices.updatedAt,
+                                savedAt: rememberedPrices.savedAt,
+                                stale: true
+                            };
+                            priceSyncMeta = {
+                                code: 'PRICE_STALE_USED',
+                                reason: '마지막 정상 가격 사용'
+                            };
+                        }
                     }
                 }
 
                 try {
                     transactions = mergePendingTransactions(await loadTransactionsFromFirebase());
                     transactionsVersion += 1;
+                    markHistoryDirty();
                     invalidateMonthlyReportCaches({ persisted: true });
                 } catch(e) {
                     console.error(e);
@@ -1635,6 +1766,7 @@ const centerTextPlugin = {
                             firebaseCollection = fallbackCollection;
                             transactions = mergePendingTransactions(await loadTransactionsFromFirebase());
                             transactionsVersion += 1;
+                            markHistoryDirty();
                             invalidateMonthlyReportCaches({ persisted: true });
                             historyRecoveredWithFallback = true;
                         } catch (retryError) {
@@ -1659,10 +1791,11 @@ const centerTextPlugin = {
                 }
 
                 const loadedHint = transactions.length > 0 ? ` · ${transactions.length}건` : '';
-                if(historyRecoveredWithFallback) setSyncStatus("컬렉션 자동 복구 · 기록 동기화됨" + loadedHint);
-                else if(!hasPriceUrl) setSyncStatus("가격 URL 미설정 · 기록만 동기화됨" + loadedHint);
-                else if(priceSyncFailed) setSyncStatus(`가격 연결 실패(${priceSyncMeta?.code || 'PRICE_FETCH'}) · 기록은 동기화됨${loadedHint}`);
-                else setSyncStatus("최근 업데이트: " + new Date().toLocaleTimeString() + loadedHint);
+                if(historyRecoveredWithFallback) setSyncStatus("컬렉션 자동 복구 · 기록 동기화됨" + loadedHint, 'warn');
+                else if(!hasPriceUrl) setSyncStatus("가격 URL 미설정 · 기록만 동기화됨" + loadedHint, 'warn', '가격 주소가 없어 보유 기록만 갱신했습니다.');
+                else if(priceSyncMeta?.code === 'PRICE_STALE_USED') setSyncStatus(`가격 일시 지연 · 마지막 정상 가격 표시${loadedHint}`, 'warn');
+                else if(priceSyncFailed) setSyncStatus(`가격 연결 실패(${priceSyncMeta?.code || 'PRICE_FETCH'}) · 기록은 동기화됨${loadedHint}`, 'warn', priceSyncMeta?.reason || '가격 서버 응답을 확인해주세요.');
+                else setSyncStatus("최근 업데이트: " + new Date().toLocaleTimeString() + loadedHint, 'ok');
             } catch (e) {
                 setSyncFailureStatus('SYNC_ALL', e, 'SYNC_ALL');
             } finally {
@@ -1691,12 +1824,20 @@ async function postMutation(action, payload = {}) {
             const ticker = getEl('input-ticker').value;
             const name = getEl('input-name').value;
             const editId = getEl('edit-id').value;
+            const defaultLabel = editId ? '수정 저장' : '매수하기';
             const originalTx = editId ? transactions.find(x => String(x.id) === String(editId)) : null;
             if (!date || !ticker || shares <= 0 || price <= 0) {
-                alert('날짜, 금액(0보다 큼), 수량(0보다 큼)을 입력해 주세요.');
+                setFormStatus('purchase-form-status', '날짜, 종목, 수량, 가격을 확인해주세요.', 'error');
+                if (!date) getEl('input-date')?.focus();
+                else if (!ticker) getEl('quick-select-buttons')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                else if (shares <= 0) getEl('input-shares')?.focus();
+                else getEl('input-price')?.focus();
                 return;
             }
-            const btn = getEl('save-btn'); if(btn) { btn.innerText = "처리 중..."; btn.disabled = true; }
+            const btn = getEl('save-btn');
+            let completed = false;
+            setFormStatus('purchase-form-status', '저장 중입니다...', 'info');
+            setButtonBusy(btn, true, '처리 중...', defaultLabel);
             try {
                 const payload = {
                     id: editId || createTxnId(),
@@ -1711,12 +1852,14 @@ async function postMutation(action, payload = {}) {
                 };
                 const savedId = await postMutation('add', payload);
                 await syncAfterAdd(payload, savedId);
+                completed = true;
+                setFormStatus('purchase-form-status', '저장 완료', 'success');
                 resetPurchaseForm(); showSection('dashboard');
             } catch(e) {
                 console.error(e);
-                alert('저장 실패: ' + (e?.message || '네트워크 오류'));
+                setFormStatus('purchase-form-status', '저장 실패: ' + (e?.message || '네트워크 오류'), 'error');
             }
-            if(btn) { btn.innerText = "매수하기"; btn.disabled = false; }
+            setButtonBusy(btn, false, completed ? '매수하기' : defaultLabel, completed ? '매수하기' : defaultLabel);
         }
 
         window.exitEditMode = () => { resetPurchaseForm(); showSection('history'); };
@@ -1730,13 +1873,21 @@ async function postMutation(action, payload = {}) {
             if(getEl('cancel-edit-btn')) getEl('cancel-edit-btn').classList.add('hidden');
             if(getEl('cancel-edit-btn-deposit')) getEl('cancel-edit-btn-deposit').classList.add('hidden');
             if(getEl('div-ticker')) getEl('div-ticker').value = "DEPOSIT";
+            setFormStatus('purchase-form-status');
+            setFormStatus('deposit-form-status');
             selectedTicker = ""; updateQuickSelectUI();
         }
 
         async function saveWalletDeposit() {
             const date = getEl('div-date').value, amount = Number(getEl('div-amount').value), cat = normalizeCashCategory(getEl('wallet-category').value), editId = getEl('edit-id').value;
+            const defaultLabel = editId ? '수정 저장' : '충전하기';
             const originalTx = editId ? transactions.find(x => String(x.id) === String(editId)) : null;
-            if(!date || !amount) return;
+            if(!date || !Number.isFinite(amount) || amount <= 0) {
+                setFormStatus('deposit-form-status', '날짜와 0보다 큰 금액을 입력해주세요.', 'error');
+                if(!date) getEl('div-date')?.focus();
+                else getEl('div-amount')?.focus();
+                return;
+            }
             const selectedDividendTicker = String(getEl('div-ticker')?.value || 'DEPOSIT').trim();
             const dividendTicker = selectedDividendTicker || 'DEPOSIT';
             if (cat === '3' && dividendTicker === 'DEPOSIT') {
@@ -1749,7 +1900,10 @@ async function postMutation(action, payload = {}) {
             const depositName = cat === '3'
                 ? (depositTicker === 'DEPOSIT' ? '배당 입금' : `${dividendName} 배당 입금`)
                 : '현금 입금';
-            const btn = getEl('save-div-btn'); if(btn) { btn.innerText = "처리 중..."; btn.disabled = true; }
+            const btn = getEl('save-div-btn');
+            let completed = false;
+            setFormStatus('deposit-form-status', '저장 중입니다...', 'info');
+            setButtonBusy(btn, true, '처리 중...', defaultLabel);
             try {
                 const payload = {
                     id: editId || createTxnId(),
@@ -1763,12 +1917,14 @@ async function postMutation(action, payload = {}) {
                 };
                 const savedId = await postMutation('add', payload);
                 await syncAfterAdd(payload, savedId);
+                completed = true;
+                setFormStatus('deposit-form-status', '저장 완료', 'success');
                 resetPurchaseForm(); showSection('dashboard');
             } catch(e) {
                 console.error(e);
-                alert('충전 실패: ' + (e?.message || '네트워크 오류'));
+                setFormStatus('deposit-form-status', '충전 실패: ' + (e?.message || '네트워크 오류'), 'error');
             }
-            if(btn) { btn.innerText = "충전하기"; btn.disabled = false; }
+            setButtonBusy(btn, false, completed ? '충전하기' : defaultLabel, completed ? '충전하기' : defaultLabel);
         }
 
         window.switchDetailTab = (tab) => {
@@ -1800,26 +1956,27 @@ async function postMutation(action, payload = {}) {
             const defaultLabel = isSell ? '매도' : '매수';
 
             if(!detailModalTicker || !detailModalName) {
-                alert('종목 정보를 찾지 못했습니다. 상세 창을 다시 열어 주세요.');
+                setFormStatus('detail-trade-status', '종목 정보를 찾지 못했습니다. 상세 창을 다시 열어 주세요.', 'error');
                 return;
             }
             if(!date || !sharesInput || price <= 0) {
-                alert('날짜, 금액(0보다 큼), 수량을 모두 입력해 주세요.');
+                setFormStatus('detail-trade-status', '날짜, 수량, 가격을 확인해주세요.', 'error');
+                if(!date) getEl('detail-trade-date')?.focus();
+                else if(!sharesInput) getEl('detail-trade-shares')?.focus();
+                else getEl('detail-trade-price')?.focus();
                 return;
             }
             if(isSell) {
                 const holdingShares = getHoldingSharesByTicker(detailModalTicker);
                 const sellShares = Math.abs(sharesInput);
                 if(sellShares > holdingShares) {
-                    alert(`보유 수량(${holdingShares.toFixed(2)}주)을 초과해 매도할 수 없습니다.`);
+                    setFormStatus('detail-trade-status', `보유 수량(${holdingShares.toFixed(2)}주)을 초과해 매도할 수 없습니다.`, 'error');
                     return;
                 }
             }
 
-            if(actionBtn) {
-                actionBtn.disabled = true;
-                actionBtn.innerText = "처리 중...";
-            }
+            setFormStatus('detail-trade-status', '저장 중입니다...', 'info');
+            setButtonBusy(actionBtn, true, '처리 중...', defaultLabel);
             try {
                 const payload = {
                     id: createTxnId(),
@@ -1833,17 +1990,15 @@ async function postMutation(action, payload = {}) {
                 };
                 const savedId = await postMutation('add', payload);
                 await syncAfterAdd(payload, savedId);
+                setFormStatus('detail-trade-status', '저장 완료', 'success');
                 if(getEl('detail-trade-shares')) getEl('detail-trade-shares').value = '';
                 openDetailModal(detailModalTicker);
                 switchDetailTab('history');
             } catch (e) {
                 console.error(e);
-                alert('저장 실패: ' + (e?.message || '네트워크 오류'));
+                setFormStatus('detail-trade-status', '저장 실패: ' + (e?.message || '네트워크 오류'), 'error');
             }
-            if(actionBtn) {
-                actionBtn.disabled = false;
-                actionBtn.innerText = defaultLabel;
-            }
+            setButtonBusy(actionBtn, false, defaultLabel, defaultLabel);
         };
 
         function updateUI() {
@@ -1869,10 +2024,10 @@ async function postMutation(action, payload = {}) {
                 const d = h[k]; if (d.shares <= 0) return;
                 const m = marketData[k] || {};
                 const avgPrice = d.shares > 0 ? d.cost / d.shares : 0;
-                const rawMarketPrice = Number(m.price || 0);
-                const marketPrice = Number.isFinite(rawMarketPrice) && rawMarketPrice > 0 ? rawMarketPrice : avgPrice;
+                const rawPrice = Number(m.price || 0);
+                const safePrice = Number.isFinite(rawPrice) && rawPrice > 0 ? rawPrice : avgPrice;
                 let yieldPct = Number(m.yield || 0); if(yieldPct < 1 && yieldPct > 0) yieldPct *= 100;
-                const val = d.shares * marketPrice, profit = val - d.cost, prate = d.cost > 0 ? (profit/d.cost)*100 : 0, div = val * (yieldPct/100/12);
+                const val = d.shares * safePrice, profit = val - d.cost, prate = d.cost > 0 ? (profit/d.cost)*100 : 0, div = val * (yieldPct/100/12);
                 const itemTrend = getTrendVisual(prate);
                 totalV += val; totalD += div;
                 labels.push(d.name); data.push(val); bg.push(COLORS[i % COLORS.length]);
@@ -1948,26 +2103,31 @@ async function postMutation(action, payload = {}) {
             if (getEl('assetChart')) {
                 
                 
+const chartLabels = totalV > 0 ? labels : [];
+const chartData = totalV > 0 ? data : [];
+const chartBg = totalV > 0 ? bg : [];
 if(assetChart){
-    assetChart.data.labels = labels;
-    assetChart.data.datasets[0].data = data;
+    assetChart.data.labels = chartLabels;
+    assetChart.data.datasets[0].data = chartData;
     assetChart.options.animation = lowPowerMode ? false : { animateRotate: true, duration: 450 };
     assetChart.update(lowPowerMode ? 'none' : undefined);
 } else {
     assetChart = new Chart(getEl('assetChart').getContext('2d'), {
         plugins:[centerTextPlugin],
- type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: bg, borderWidth: 3, borderColor: '#ffffff' }] }, options: { cutout: '82%', plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false,
+ type: 'doughnut', data: { labels: chartLabels, datasets: [{ data: chartData, backgroundColor: chartBg, borderWidth: 3, borderColor: '#ffffff' }] }, options: { cutout: '82%', plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false,
                 animation: {
                     animateRotate: true,
                     duration: 450
                 }
             } }); }
             }
-            safeSetHTML('chart-legend', labels.map((l, i) => {
-                const pct = totalV > 0 ? (data[i] / totalV) * 100 : 0;
-                return `<div class="flex justify-between text-[10px] mb-2 font-black transition hover:translate-x-1 text-left font-sans"><span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full" style="background:${bg[i]}"></span><span class="truncate w-24 text-slate-500 font-sans">${escapeHtml(l)}</span></span><span class="text-slate-800 text-right font-sans">${pct.toFixed(1)}%</span></div>`;
-            }).join(''));
-            renderHistoryList('history-list', transactions);
+            safeSetHTML('chart-legend', totalV > 0
+                ? labels.map((l, i) => {
+                    const pct = totalV > 0 ? (data[i] / totalV) * 100 : 0;
+                    return `<div class="flex justify-between text-[10px] mb-2 font-black transition hover:translate-x-1 text-left font-sans"><span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full" style="background:${bg[i]}"></span><span class="truncate w-24 text-slate-500 font-sans">${escapeHtml(l)}</span></span><span class="text-slate-800 text-right font-sans">${pct.toFixed(1)}%</span></div>`;
+                }).join('')
+                : `<div class="text-[10px] font-black text-slate-400 text-left font-sans">가격 데이터 대기 중</div>`);
+            renderHistoryIfVisible();
 
 
         }
@@ -2007,8 +2167,19 @@ if(assetChart){
             return data.filter((tx) => getTradeDateTime(tx) >= threshold);
         }
 
-        function renderHistoryList(containerId, data) {
+        function renderHistoryList(containerId, data, options = {}) {
             const container = getEl(containerId); if (!container) return;
+            const signature = [
+                containerId,
+                transactionsVersion,
+                data.length,
+                historyFilterDays,
+                historyVisibleCount
+            ].join('|');
+            if (!options.force && !historyNeedsRender && historyRenderSignature === signature) {
+                updateHistoryFilterUI();
+                return;
+            }
             const sortedData = filterHistoryByRange([...data]).sort((a, b) => {
                 const diff = getTransactionSortTime(b) - getTransactionSortTime(a);
                 if (diff !== 0) return diff;
@@ -2071,6 +2242,8 @@ if(assetChart){
                 loadMoreBtn.classList.toggle('hidden', !hasMore);
             }
             updateHistoryFilterUI();
+            historyRenderSignature = signature;
+            historyNeedsRender = false;
         }
 
         function updateQuickSelectUI() {
@@ -2115,7 +2288,7 @@ if(assetChart){
                 removeLocalTransaction(id);
                 primeMonthlyReportFromTransactions();
                 saveLocalDataSnapshot();
-                setSyncStatus('삭제 완료 · 백그라운드 동기화 중...');
+                setSyncStatus('삭제 완료 · 백그라운드 동기화 중...', 'info');
                 scheduleBackgroundSync('after-delete');
             } catch(e) {
                 console.error(e);
@@ -2155,6 +2328,7 @@ if(assetChart){
             const lastPrice = Number(tradeData[tradeData.length - 1]?.price || marketData[ticker]?.price || 0);
             if(getEl('detail-trade-price')) getEl('detail-trade-price').value = lastPrice || '';
             if(getEl('detail-trade-shares')) getEl('detail-trade-shares').value = '';
+            setFormStatus('detail-trade-status');
             switchDetailTab('history');
             getEl('detail-modal')?.classList.remove('hidden');
         };
@@ -2229,12 +2403,14 @@ if(assetChart){
             if(target.classList.contains('history-filter-btn') && target.dataset.historyFilter) {
                 historyFilterDays = target.dataset.historyFilter;
                 historyVisibleCount = 100;
+                markHistoryDirty();
                 renderHistoryList('history-list', transactions);
                 return;
             }
 
             if(target.id === 'history-load-more') {
                 historyVisibleCount += 100;
+                markHistoryDirty();
                 renderHistoryList('history-list', transactions);
                 return;
             }
@@ -2307,9 +2483,10 @@ if(assetChart){
             document.querySelectorAll('.pc-nav-item').forEach(b => b.classList.remove('text-blue-600', 'border-r-4', 'border-blue-600'));
             getEl('pc-nav-'+id)?.classList.add('text-blue-600', 'border-r-4', 'border-blue-600');
             if(id === 'transaction') updateQuickSelectUI();
+            if(id === 'history') renderHistoryList('history-list', transactions);
         };
         
-        window.openSettings = () => { const m = getEl('settings-modal'); if(!m) return; if(getEl('setting-url')) getEl('setting-url').value = sheetsUrl; if(getEl('setting-firebase-config')) getEl('setting-firebase-config').value = firebaseConfigRaw; if(getEl('setting-firebase-collection')) getEl('setting-firebase-collection').value = firebaseCollection; m.classList.remove('hidden'); };
+        window.openSettings = () => { const m = getEl('settings-modal'); if(!m) return; if(getEl('setting-url')) getEl('setting-url').value = sheetsUrl; if(getEl('setting-firebase-config')) getEl('setting-firebase-config').value = firebaseConfigRaw; if(getEl('setting-firebase-collection')) getEl('setting-firebase-collection').value = firebaseCollection; setSyncStatus(syncStatusText, syncStatusTone, syncStatusDetail); m.classList.remove('hidden'); };
         window.closeSettings = () => getEl('settings-modal')?.classList.add('hidden');
         window.hardRefreshApp = async () => {
             try {
@@ -2416,7 +2593,7 @@ function registerServiceWorker() {
             if (!worker) return;
             worker.addEventListener('statechange', () => {
                 if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-                    setSyncStatus('앱 업데이트 준비 완료');
+                    setSyncStatus('앱 업데이트 준비 완료', 'ok');
                 }
             });
         });
