@@ -1,4 +1,4 @@
-        const APP_VERSION = "1.0.31";
+        const APP_VERSION = "1.0.32";
         // Rollback switch: set false to hide/remove monthly review mode instantly.
         const ENABLE_MONTHLY_REVIEW_MODE = true;
         const HISTORY_FETCH_PAGE_SIZE = 500;

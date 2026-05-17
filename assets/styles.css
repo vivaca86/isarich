@@ -1448,3 +1448,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         .buy-reco-card-wait .buy-reco-amount {
             color: #475569 !important;
         }
+
+        #cash-buy-plans > .buy-reco-card .buy-reco-label {
+            color: #64748b !important;
+        }
+
+        #cash-buy-plans > .buy-reco-card .buy-reco-main {
+            color: #0f172a !important;
+        }
+
+        #cash-buy-plans > .buy-reco-card > .buy-reco-amount {
+            color: #166534 !important;
+        }
+
+        #cash-buy-plans > .buy-reco-card-wait > .buy-reco-amount {
+            color: #475569 !important;
+        }
