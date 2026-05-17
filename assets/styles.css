@@ -1372,3 +1372,79 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             border-radius: 15px !important;
             background: #fbfdff !important;
         }
+
+        #section-dashboard div:has(> #cash-buy-plans) {
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 18px !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06) !important;
+        }
+
+        #cash-buy-plans {
+            display: grid;
+            gap: 7px !important;
+        }
+
+        #cash-buy-plans > .buy-reco-card,
+        .buy-reco-card {
+            min-height: 50px !important;
+            padding: 12px 13px !important;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 13px !important;
+            background: #f8fafc !important;
+            color: #0f172a !important;
+            box-shadow: none !important;
+        }
+
+        #cash-buy-plans > .buy-reco-card-now,
+        .buy-reco-card-now {
+            background: #f0fdf4 !important;
+            border-color: #bbf7d0 !important;
+        }
+
+        #cash-buy-plans > .buy-reco-card-wait,
+        .buy-reco-card-wait {
+            background: #f8fafc !important;
+            border-color: #e2e8f0 !important;
+        }
+
+        .buy-reco-label,
+        #cash-buy-plans .buy-reco-label {
+            margin: 0 0 3px !important;
+            color: #64748b !important;
+            font-size: 10px !important;
+            font-weight: 900 !important;
+            line-height: 1 !important;
+            letter-spacing: 0 !important;
+        }
+
+        .buy-reco-main,
+        #cash-buy-plans .buy-reco-main {
+            margin: 0 !important;
+            color: #0f172a !important;
+            font-size: 14px !important;
+            font-weight: 900 !important;
+            line-height: 1.15 !important;
+            letter-spacing: 0 !important;
+        }
+
+        .buy-reco-amount,
+        #cash-buy-plans .buy-reco-amount {
+            margin: 0 !important;
+            color: #166534 !important;
+            font-size: 13px !important;
+            font-weight: 900 !important;
+            line-height: 1.15 !important;
+            text-align: right;
+            white-space: nowrap;
+            letter-spacing: 0 !important;
+        }
+
+        .buy-reco-card-wait .buy-reco-amount {
+            color: #475569 !important;
+        }

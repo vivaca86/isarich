@@ -1,4 +1,4 @@
-        const APP_VERSION = "1.0.30";
+        const APP_VERSION = "1.0.31";
         // Rollback switch: set false to hide/remove monthly review mode instantly.
         const ENABLE_MONTHLY_REVIEW_MODE = true;
         const HISTORY_FETCH_PAGE_SIZE = 500;
@@ -747,12 +747,12 @@ const centerTextPlugin = {
 
             const phase = !primaryDone || !secondaryDone ? '엔진 완성 전' : '엔진 완성 후';
             if (engineTargets.length) {
-                const budget = cash > 0 ? cash : MONTHLY_PLAN_BUDGET;
+                const budget = cash;
                 return {
                     phase,
                     mode: 'engine',
                     budget,
-                    budgetSource: cash > 0 ? '현재 현금 기준' : '월 50만원 기준',
+                    budgetSource: '현재 현금 기준',
                     summaryText: '엔진 완성 전에는 현금과 특별금을 주엔진/보조엔진 완성에 먼저 사용합니다.',
                     primary,
                     secondary,
@@ -762,10 +762,10 @@ const centerTextPlugin = {
 
             const actualBuckets = portfolioState?.planBuckets || createEmptyPlanBuckets();
             const actualBucketTotal = PLAN_BUCKET_ORDER.reduce((sum, key) => sum + Number(actualBuckets[key] || 0), 0);
-            const buckets = actualBucketTotal > 0 ? actualBuckets : buildVirtualMonthlyBuckets();
+            const buckets = actualBucketTotal > 0 ? actualBuckets : createEmptyPlanBuckets();
             const rows = PLAN_BUCKET_ORDER
                 .map((key) => buildPlanBucketRow(key, buckets[key]))
-                .filter((row) => actualBucketTotal <= 0 ? ['principalSp500', 'principalNasdaq', 'principalSchd'].includes(row.bucketKey) : row.balance > 0);
+                .filter((row) => actualBucketTotal <= 0 ? row.bucketKey === 'principalSp500' : row.balance > 0);
             const budget = rows.reduce((sum, row) => sum + Number(row.balance || 0), 0);
 
             return {
@@ -781,35 +781,53 @@ const centerTextPlugin = {
         }
 
         function renderIsaPlanRecommendation(plan) {
-            const summary = `
-                <div class="rounded-lg px-3 py-2 border border-white/20 bg-white/10">
-                    <div class="flex items-center justify-between gap-3">
-                        <p class="text-[11px] font-black text-white truncate">${escapeHtml(plan.phase)} 플랜</p>
-                        <p class="text-[10px] font-black text-cyan-100 text-right whitespace-nowrap">${escapeHtml(plan.budgetSource)} · ${formatWon(plan.budget)}</p>
-                    </div>
-                    <p class="mt-1 text-[10px] font-bold text-white/70 leading-snug">${escapeHtml(plan.summaryText || '486290 배당은 S&P500, 474220 배당은 순수슈드 매수 엔진으로 사용합니다.')}</p>
-                </div>
-            `;
-
-            const cards = (plan.rows || []).map((row, index) => {
-                const canPrice = row.price > 0;
-                const amountText = canPrice
-                    ? (row.qty > 0 ? `${row.qty.toLocaleString()}주 · ${formatWon(row.spend)}` : (row.isBucket ? `대기 · ${formatWon(row.balance || 0)}` : '0주 · ₩0'))
-                    : '가격 연동 필요';
-                const roleTone = index % 3 === 0 ? 'text-cyan-200' : index % 3 === 1 ? 'text-violet-200' : 'text-emerald-200';
-                return `
-                    <div class="rounded-lg px-3 py-2 border border-white/15 bg-white/10 flex items-center justify-between gap-3">
+            const rows = (plan.rows || []).filter(row => Number(row.price || 0) > 0);
+            const buyRows = rows.filter(row => Number(row.qty || 0) > 0);
+            if (buyRows.length) {
+                return buyRows.map(row => `
+                    <div class="buy-reco-card buy-reco-card-now">
                         <div class="min-w-0">
-                            <p class="text-[10px] font-black ${roleTone} uppercase">${escapeHtml(row.role || '추천')}</p>
-                            <p class="text-[11px] font-black text-white truncate">${escapeHtml(row.name || row.ticker)}</p>
-                            <p class="text-[9px] font-bold text-white/55 truncate">${escapeHtml(row.note || '')}</p>
+                            <p class="buy-reco-label">지금 매수</p>
+                            <p class="buy-reco-main">${escapeHtml(row.name || row.ticker)}</p>
                         </div>
-                        <p class="text-[11px] font-black text-right text-white whitespace-nowrap">${amountText}</p>
+                        <p class="buy-reco-amount">${Number(row.qty || 0).toLocaleString()}주</p>
+                    </div>
+                `).join('');
+            }
+
+            const nextRows = rows
+                .map(row => {
+                    const available = row.isBucket ? Number(row.balance || 0) : Number(plan.budget || 0);
+                    return {
+                        ...row,
+                        shortfall: Math.max(0, Number(row.price || 0) - available),
+                        available
+                    };
+                })
+                .filter(row => row.shortfall > 0);
+            const next = nextRows.length
+                ? [...nextRows].sort((a, b) => a.shortfall - b.shortfall)[0]
+                : rows[0];
+            if (!next) {
+                return `
+                    <div class="buy-reco-card buy-reco-card-wait">
+                        <div class="min-w-0">
+                            <p class="buy-reco-label">다음 목표</p>
+                            <p class="buy-reco-main">가격 연동 대기</p>
+                        </div>
                     </div>
                 `;
-            }).join('');
+            }
 
-            return summary + cards;
+            return `
+                <div class="buy-reco-card buy-reco-card-wait">
+                    <div class="min-w-0">
+                        <p class="buy-reco-label">다음 목표</p>
+                        <p class="buy-reco-main">${escapeHtml(next.name || next.ticker)}</p>
+                    </div>
+                    <p class="buy-reco-amount">${formatWon(next.shortfall || 0)} 부족</p>
+                </div>
+            `;
         }
 
         function getSortedTransactions(inputTransactions) {
