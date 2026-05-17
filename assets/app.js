@@ -1,4 +1,4 @@
-        const APP_VERSION = "1.0.23";
+        const APP_VERSION = "1.0.29";
         // Rollback switch: set false to hide/remove monthly review mode instantly.
         const ENABLE_MONTHLY_REVIEW_MODE = true;
         const HISTORY_FETCH_PAGE_SIZE = 500;
@@ -12,8 +12,25 @@
             "3": '<svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18.06"/><path d="M7 6h1v4"/></svg>'
         };
 
-        const BUY_PLAN_TICKERS = ['486290', '474220'];
-        const BUY_PLAN_WEIGHTS = [0.6, 0.4];
+        const MONTHLY_PLAN_BUDGET = 500000;
+        const ISA_PLAN = {
+            primaryEngine: { ticker: '486290', targetTicker: '360750', fallbackTargetValue: 2450000, role: '주엔진' },
+            secondaryEngine: { ticker: '474220', targetTicker: '458730', fallbackTargetValue: 1950000, role: '보조엔진' },
+            growthTargets: [
+                { ticker: '360750', role: '본체', weight: 0.6, fallbackName: 'S&P500' },
+                { ticker: '133690', role: '성장 가속기', weight: 0.2, fallbackName: '나스닥100' },
+                { ticker: '458730', role: '배당성장', weight: 0.2, fallbackName: '순수슈드' }
+            ]
+        };
+        const PLAN_BUCKET_META = {
+            primaryDividend: { ticker: '360750', role: '초고배당 배당', fallbackName: 'S&P500', note: '486290 배당 전용' },
+            secondaryDividend: { ticker: '458730', role: '보조배당', fallbackName: '순수슈드', note: '474220 배당 전용' },
+            unassignedDividend: { ticker: '360750', role: '미지정 배당', fallbackName: 'S&P500', note: '배당 종목을 지정하면 더 정확해요' },
+            principalSp500: { ticker: '360750', role: '원금/특별금 60%', fallbackName: 'S&P500', note: '본체 버킷' },
+            principalNasdaq: { ticker: '133690', role: '원금/특별금 20%', fallbackName: '나스닥100', note: '성장 버킷' },
+            principalSchd: { ticker: '458730', role: '원금/특별금 20%', fallbackName: '순수슈드', note: '배당성장 버킷' }
+        };
+        const PLAN_BUCKET_ORDER = ['primaryDividend', 'secondaryDividend', 'unassignedDividend', 'principalSp500', 'principalNasdaq', 'principalSchd'];
         const PENDING_TX_STORAGE_KEY = 'isa_pending_transactions_v1';
         const LOCAL_DATA_CACHE_KEY = 'isa_local_data_cache_v1';
         const LOCAL_DATA_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -391,6 +408,347 @@ const centerTextPlugin = {
             return Math.round(n * 100) / 100;
         }
 
+        function formatWon(value) {
+            return `₩${Math.round(Number(value || 0)).toLocaleString()}`;
+        }
+
+        function getMarketPrice(ticker) {
+            const price = Number(marketData?.[ticker]?.price || 0);
+            return Number.isFinite(price) && price > 0 ? price : 0;
+        }
+
+        function getMarketName(ticker, fallback = '') {
+            return String(marketData?.[ticker]?.name || fallback || ticker || '').trim();
+        }
+
+        function getMarketYieldPct(ticker) {
+            let yieldPct = Number(marketData?.[ticker]?.yield || 0);
+            if (!Number.isFinite(yieldPct) || yieldPct <= 0) return 0;
+            if (yieldPct < 1) yieldPct *= 100;
+            return yieldPct;
+        }
+
+        function getHoldingValue(holdings, ticker) {
+            const shares = Number(holdings?.[ticker]?.shares || 0);
+            const price = getMarketPrice(ticker);
+            return shares > 0 && price > 0 ? shares * price : 0;
+        }
+
+        function getEngineStatus(holdings, engineConfig) {
+            const engineTicker = engineConfig.ticker;
+            const targetTicker = engineConfig.targetTicker;
+            const currentValue = getHoldingValue(holdings, engineTicker);
+            const engineYield = getMarketYieldPct(engineTicker);
+            const targetMonthlyCash = getMarketPrice(targetTicker);
+            const targetValue = engineYield > 0 && targetMonthlyCash > 0
+                ? targetMonthlyCash / (engineYield / 100 / 12)
+                : Number(engineConfig.fallbackTargetValue || 0);
+            const monthlyCash = currentValue * (engineYield / 100 / 12);
+
+            return {
+                ...engineConfig,
+                currentValue,
+                monthlyCash,
+                targetValue,
+                targetMonthlyCash,
+                deficit: Math.max(0, targetValue - currentValue)
+            };
+        }
+
+        function createEmptyPlanBuckets() {
+            return PLAN_BUCKET_ORDER.reduce((acc, key) => {
+                acc[key] = 0;
+                return acc;
+            }, {});
+        }
+
+        function createEmptyCashAlloc() {
+            return { "1": 0, "2": 0, "3": 0 };
+        }
+
+        function distributeAmountBySource(amount, source, keys, fallbackKey) {
+            const cleanAmount = roundMoney(Math.max(0, Number(amount || 0)));
+            const result = (keys || []).reduce((acc, key) => {
+                acc[key] = 0;
+                return acc;
+            }, {});
+            if (cleanAmount <= 0) return result;
+
+            const activeKeys = (keys || []).filter(key => Number(source?.[key] || 0) > 0);
+            const total = activeKeys.reduce((sum, key) => sum + Number(source?.[key] || 0), 0);
+            if (total <= 0) {
+                const safeFallback = result[fallbackKey] !== undefined ? fallbackKey : keys?.[0];
+                if (safeFallback) result[safeFallback] = cleanAmount;
+                return result;
+            }
+
+            let assigned = 0;
+            activeKeys.forEach((key, index) => {
+                const isLast = index === activeKeys.length - 1;
+                const value = isLast ? roundMoney(cleanAmount - assigned) : roundMoney(cleanAmount * (Number(source[key] || 0) / total));
+                result[key] = value;
+                assigned = roundMoney(assigned + value);
+            });
+            return result;
+        }
+
+        function addBucketAlloc(target, source) {
+            PLAN_BUCKET_ORDER.forEach((key) => {
+                const value = Number(source?.[key] || 0);
+                if (value > 0) target[key] = roundMoney(Number(target[key] || 0) + value);
+            });
+        }
+
+        function getFallbackPlanBucketForTicker(ticker) {
+            if (ticker === '360750') return 'principalSp500';
+            if (ticker === '133690') return 'principalNasdaq';
+            if (ticker === '458730') return 'principalSchd';
+            return 'principalSp500';
+        }
+
+        function addToPlanBucket(buckets, key, amount) {
+            if (!buckets || !Object.prototype.hasOwnProperty.call(buckets, key)) return;
+            const cleanAmount = Number(amount || 0);
+            if (!Number.isFinite(cleanAmount) || cleanAmount <= 0) return;
+            buckets[key] = roundMoney(Number(buckets[key] || 0) + cleanAmount);
+        }
+
+        function splitPrincipalToPlanBuckets(buckets, amount) {
+            const cleanAmount = Math.max(0, Math.floor(Number(amount || 0)));
+            if (!cleanAmount) return;
+            const sp500 = Math.floor(cleanAmount * 0.6);
+            const nasdaq = Math.floor(cleanAmount * 0.2);
+            const schd = cleanAmount - sp500 - nasdaq;
+            addToPlanBucket(buckets, 'principalSp500', sp500);
+            addToPlanBucket(buckets, 'principalNasdaq', nasdaq);
+            addToPlanBucket(buckets, 'principalSchd', schd);
+        }
+
+        function addDepositToPlanBuckets(buckets, tx, amount) {
+            const cat = normalizeCashCategory(tx?.category);
+            const ticker = String(tx?.ticker || '').trim();
+            if (cat === '3') {
+                if (ticker === ISA_PLAN.primaryEngine.ticker) {
+                    addToPlanBucket(buckets, 'primaryDividend', amount);
+                } else if (ticker === ISA_PLAN.secondaryEngine.ticker) {
+                    addToPlanBucket(buckets, 'secondaryDividend', amount);
+                } else {
+                    addToPlanBucket(buckets, 'unassignedDividend', amount);
+                }
+                return;
+            }
+            splitPrincipalToPlanBuckets(buckets, amount);
+        }
+
+        function consumePlanBuckets(buckets, bucketKeys, amount) {
+            let remain = roundMoney(Math.max(0, Number(amount || 0)));
+            const usedByBucket = createEmptyPlanBuckets();
+            (bucketKeys || []).forEach((key) => {
+                if (remain <= 0 || !buckets || !Object.prototype.hasOwnProperty.call(buckets, key)) return;
+                const used = Math.min(Number(buckets[key] || 0), remain);
+                buckets[key] = roundMoney(Number(buckets[key] || 0) - used);
+                usedByBucket[key] = roundMoney(Number(usedByBucket[key] || 0) + used);
+                remain = roundMoney(remain - used);
+            });
+            return { remain, usedByBucket };
+        }
+
+        function getPlanBucketConsumeOrderForBuy(ticker) {
+            if (ticker === '360750') return ['primaryDividend', 'unassignedDividend', 'principalSp500'];
+            if (ticker === '458730') return ['secondaryDividend', 'principalSchd'];
+            if (ticker === '133690') return ['principalNasdaq'];
+            return PLAN_BUCKET_ORDER;
+        }
+
+        function reconcilePlanBucketsToCash(buckets, cash) {
+            const totalCash = ['1', '2', '3'].reduce((sum, key) => sum + Number(cash?.[key] || 0), 0);
+            const bucketTotal = PLAN_BUCKET_ORDER.reduce((sum, key) => sum + Number(buckets?.[key] || 0), 0);
+            const diff = roundMoney(totalCash - bucketTotal);
+            if (diff > 0) {
+                splitPrincipalToPlanBuckets(buckets, diff);
+            } else if (diff < 0) {
+                consumePlanBuckets(buckets, [...PLAN_BUCKET_ORDER].reverse(), Math.abs(diff));
+            }
+        }
+
+        function allocatePlanBudget(targets, budget) {
+            const cleanTargets = (targets || []).map((target, index) => {
+                const price = getMarketPrice(target.ticker);
+                return {
+                    ...target,
+                    index,
+                    price,
+                    name: getMarketName(target.ticker, target.fallbackName),
+                    qty: 0,
+                    spend: 0
+                };
+            });
+
+            const tradableTargets = cleanTargets.filter(target => target.price > 0 && Number(target.weight || 0) > 0);
+            const totalWeight = tradableTargets.reduce((sum, target) => sum + Number(target.weight || 0), 0);
+            let remain = Math.max(0, Math.floor(Number(budget || 0)));
+
+            tradableTargets.forEach(target => {
+                const targetBudget = totalWeight > 0 ? Math.floor(budget * (Number(target.weight || 0) / totalWeight)) : 0;
+                const qty = Math.max(0, Math.floor(targetBudget / target.price));
+                target.qty = qty;
+                target.spend = qty * target.price;
+                remain -= target.spend;
+            });
+
+            const sortedByPriority = [...tradableTargets].sort((a, b) => a.index - b.index);
+            let guard = 0;
+            while (sortedByPriority.length && guard < 1000) {
+                const next = sortedByPriority.find(target => remain >= target.price);
+                if (!next) break;
+                next.qty += 1;
+                next.spend += next.price;
+                remain -= next.price;
+                guard += 1;
+            }
+
+            return cleanTargets;
+        }
+
+        function buildPlanBucketRow(bucketKey, balance) {
+            const meta = PLAN_BUCKET_META[bucketKey] || {};
+            const cleanBalance = Math.max(0, Math.floor(Number(balance || 0)));
+            const price = getMarketPrice(meta.ticker);
+            const qty = price > 0 ? Math.floor(cleanBalance / price) : 0;
+            const spend = qty * price;
+            const remain = Math.max(0, cleanBalance - spend);
+            const shortfall = price > 0 && qty <= 0 ? Math.max(0, price - cleanBalance) : 0;
+            const waitText = qty > 0
+                ? `남음 ${formatWon(remain)}`
+                : (price > 0 ? `1주까지 ${formatWon(shortfall)} 부족` : '가격 연동 필요');
+            return {
+                bucketKey,
+                ticker: meta.ticker,
+                role: meta.role,
+                fallbackName: meta.fallbackName,
+                name: getMarketName(meta.ticker, meta.fallbackName),
+                note: `${meta.note || '전용 버킷'} · 버킷 ${formatWon(cleanBalance)} · ${waitText}`,
+                price,
+                balance: cleanBalance,
+                qty,
+                spend,
+                remain,
+                isBucket: true
+            };
+        }
+
+        function buildVirtualMonthlyBuckets() {
+            const buckets = createEmptyPlanBuckets();
+            splitPrincipalToPlanBuckets(buckets, MONTHLY_PLAN_BUDGET);
+            return buckets;
+        }
+
+        function buildIsaPlanRecommendation(portfolioState, fallbackCash = 0) {
+            const holdings = portfolioState?.holdings || portfolioState || {};
+            const cashState = portfolioState?.cash || {};
+            const stateCash = ['1', '2', '3'].reduce((sum, key) => sum + Number(cashState[key] || 0), 0);
+            const cash = Math.max(0, Math.floor(stateCash || Number(fallbackCash || 0)));
+            const primary = getEngineStatus(holdings, ISA_PLAN.primaryEngine);
+            const secondary = getEngineStatus(holdings, ISA_PLAN.secondaryEngine);
+            const primaryDone = primary.deficit <= Math.max(getMarketPrice(primary.ticker), 1);
+            const secondaryDone = secondary.deficit <= Math.max(getMarketPrice(secondary.ticker), 1);
+
+            const engineTargets = [];
+            if (!primaryDone) {
+                engineTargets.push({
+                    ticker: primary.ticker,
+                    role: primary.role,
+                    weight: 0.5,
+                    fallbackName: '초고배당',
+                    note: `목표까지 ${formatWon(primary.deficit)}`
+                });
+            }
+            if (!secondaryDone) {
+                engineTargets.push({
+                    ticker: secondary.ticker,
+                    role: secondary.role,
+                    weight: 0.4,
+                    fallbackName: '고배당',
+                    note: `목표까지 ${formatWon(secondary.deficit)}`
+                });
+            }
+            if (!primaryDone || !secondaryDone) {
+                engineTargets.push({
+                    ticker: '360750',
+                    role: '본체 씨앗',
+                    weight: 0.1,
+                    fallbackName: 'S&P500',
+                    note: '엔진 완성 전에도 조금씩 적립'
+                });
+            }
+
+            const phase = !primaryDone || !secondaryDone ? '엔진 완성 전' : '엔진 완성 후';
+            if (engineTargets.length) {
+                const budget = cash > 0 ? cash : MONTHLY_PLAN_BUDGET;
+                return {
+                    phase,
+                    mode: 'engine',
+                    budget,
+                    budgetSource: cash > 0 ? '현재 현금 기준' : '월 50만원 기준',
+                    summaryText: '엔진 완성 전에는 현금과 특별금을 주엔진/보조엔진 완성에 먼저 사용합니다.',
+                    primary,
+                    secondary,
+                    rows: allocatePlanBudget(engineTargets, budget)
+                };
+            }
+
+            const actualBuckets = portfolioState?.planBuckets || createEmptyPlanBuckets();
+            const actualBucketTotal = PLAN_BUCKET_ORDER.reduce((sum, key) => sum + Number(actualBuckets[key] || 0), 0);
+            const buckets = actualBucketTotal > 0 ? actualBuckets : buildVirtualMonthlyBuckets();
+            const rows = PLAN_BUCKET_ORDER
+                .map((key) => buildPlanBucketRow(key, buckets[key]))
+                .filter((row) => actualBucketTotal <= 0 ? ['principalSp500', 'principalNasdaq', 'principalSchd'].includes(row.bucketKey) : row.balance > 0);
+            const budget = rows.reduce((sum, row) => sum + Number(row.balance || 0), 0);
+
+            return {
+                phase,
+                mode: 'bucket',
+                budget,
+                budgetSource: actualBucketTotal > 0 ? '출처별 버킷 기준' : '월 50만원 기준',
+                summaryText: '완성 후에는 배당 출처와 원금/특별금을 분리해서, 못 산 금액은 해당 버킷에 대기시킵니다.',
+                primary,
+                secondary,
+                rows
+            };
+        }
+
+        function renderIsaPlanRecommendation(plan) {
+            const summary = `
+                <div class="rounded-lg px-3 py-2 border border-white/20 bg-white/10">
+                    <div class="flex items-center justify-between gap-3">
+                        <p class="text-[11px] font-black text-white truncate">${escapeHtml(plan.phase)} 플랜</p>
+                        <p class="text-[10px] font-black text-cyan-100 text-right whitespace-nowrap">${escapeHtml(plan.budgetSource)} · ${formatWon(plan.budget)}</p>
+                    </div>
+                    <p class="mt-1 text-[10px] font-bold text-white/70 leading-snug">${escapeHtml(plan.summaryText || '486290 배당은 S&P500, 474220 배당은 순수슈드 매수 엔진으로 사용합니다.')}</p>
+                </div>
+            `;
+
+            const cards = (plan.rows || []).map((row, index) => {
+                const canPrice = row.price > 0;
+                const amountText = canPrice
+                    ? (row.qty > 0 ? `${row.qty.toLocaleString()}주 · ${formatWon(row.spend)}` : (row.isBucket ? `대기 · ${formatWon(row.balance || 0)}` : '0주 · ₩0'))
+                    : '가격 연동 필요';
+                const roleTone = index % 3 === 0 ? 'text-cyan-200' : index % 3 === 1 ? 'text-violet-200' : 'text-emerald-200';
+                return `
+                    <div class="rounded-lg px-3 py-2 border border-white/15 bg-white/10 flex items-center justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-[10px] font-black ${roleTone} uppercase">${escapeHtml(row.role || '추천')}</p>
+                            <p class="text-[11px] font-black text-white truncate">${escapeHtml(row.name || row.ticker)}</p>
+                            <p class="text-[9px] font-bold text-white/55 truncate">${escapeHtml(row.note || '')}</p>
+                        </div>
+                        <p class="text-[11px] font-black text-right text-white whitespace-nowrap">${amountText}</p>
+                    </div>
+                `;
+            }).join('');
+
+            return summary + cards;
+        }
+
         function getSortedTransactions(inputTransactions) {
             return [...(inputTransactions || [])].sort((a, b) => {
                 const dateDiff = new Date(a.date) - new Date(b.date);
@@ -412,6 +770,7 @@ const centerTextPlugin = {
             const cash = { "1": 0, "2": 0, "3": 0 };
             const chargedByCat = { "1": 0, "2": 0, "3": 0 };
             const buyUsedByCat = { "1": 0, "2": 0, "3": 0 };
+            const planBuckets = createEmptyPlanBuckets();
             const holdings = {};
             let totalBuyAmount = 0;
 
@@ -425,13 +784,14 @@ const centerTextPlugin = {
                     const cat = normalizeCashCategory(tx?.category);
                     cash[cat] = roundMoney(cash[cat] + amt);
                     chargedByCat[cat] = roundMoney(chargedByCat[cat] + amt);
+                    addDepositToPlanBuckets(planBuckets, tx, amt);
                     return;
                 }
 
                 const ticker = String(tx?.ticker || '').trim();
                 if (!ticker || shares === 0) return;
                 if (!holdings[ticker]) {
-                    holdings[ticker] = { shares: 0, cost: 0, name: getTradeDisplayName(tx), alloc: { "1": 0, "2": 0, "3": 0 } };
+                    holdings[ticker] = { shares: 0, cost: 0, name: getTradeDisplayName(tx), alloc: createEmptyCashAlloc(), bucketAlloc: createEmptyPlanBuckets() };
                 }
                 const h = holdings[ticker];
 
@@ -439,6 +799,11 @@ const centerTextPlugin = {
                     totalBuyAmount = roundMoney(totalBuyAmount + amt);
                     h.shares = roundShares(h.shares + shares);
                     h.cost = roundMoney(h.cost + amt);
+                    const bucketUse = consumePlanBuckets(planBuckets, getPlanBucketConsumeOrderForBuy(ticker), amt);
+                    addBucketAlloc(h.bucketAlloc, bucketUse.usedByBucket);
+                    if (bucketUse.remain > 0) {
+                        addToPlanBucket(h.bucketAlloc, getFallbackPlanBucketForTicker(ticker), bucketUse.remain);
+                    }
 
                     let remain = amt;
                     ['3', '2', '1'].forEach(cat => {
@@ -464,43 +829,32 @@ const centerTextPlugin = {
                 const proceeds = roundMoney(actualSellQty * price);
                 const avgCost = h.shares > 0 ? h.cost / h.shares : 0;
                 const costBasisSold = roundMoney(actualSellQty * avgCost);
-                const realizedPnl = roundMoney(proceeds - costBasisSold);
+                const catCostSplit = distributeAmountBySource(costBasisSold, h.alloc, ['1', '2', '3'], '1');
+                const catProceedsSplit = distributeAmountBySource(proceeds, h.alloc, ['1', '2', '3'], '1');
+                const bucketCostSplit = distributeAmountBySource(costBasisSold, h.bucketAlloc, PLAN_BUCKET_ORDER, getFallbackPlanBucketForTicker(ticker));
+                const bucketProceedsSplit = distributeAmountBySource(proceeds, h.bucketAlloc, PLAN_BUCKET_ORDER, getFallbackPlanBucketForTicker(ticker));
+
+                ['1', '2', '3'].forEach(cat => {
+                    h.alloc[cat] = roundMoney(Number(h.alloc[cat] || 0) - Number(catCostSplit[cat] || 0));
+                    cash[cat] = roundMoney(cash[cat] + Number(catProceedsSplit[cat] || 0));
+                });
+                PLAN_BUCKET_ORDER.forEach(key => {
+                    h.bucketAlloc[key] = roundMoney(Number(h.bucketAlloc[key] || 0) - Number(bucketCostSplit[key] || 0));
+                    addToPlanBucket(planBuckets, key, Number(bucketProceedsSplit[key] || 0));
+                });
 
                 h.shares = roundShares(h.shares - actualSellQty);
                 h.cost = roundMoney(Math.max(0, h.cost - costBasisSold));
-
-                let remainCost = costBasisSold;
-                const recovered = { "1": 0, "2": 0, "3": 0 };
-                ['3', '2', '1'].forEach(cat => {
-                    if (remainCost <= 0) return;
-                    const fromCat = Math.min(h.alloc[cat], remainCost);
-                    h.alloc[cat] = roundMoney(h.alloc[cat] - fromCat);
-                    recovered[cat] = roundMoney(recovered[cat] + fromCat);
-                    remainCost = roundMoney(remainCost - fromCat);
-                });
-                if (remainCost > 0) recovered['1'] = roundMoney(recovered['1'] + remainCost);
-
-                ['1', '2', '3'].forEach(cat => {
-                    cash[cat] = roundMoney(cash[cat] + recovered[cat]);
-                });
-
-                if (realizedPnl >= 0) {
-                    cash['3'] = roundMoney(cash['3'] + realizedPnl);
-                } else {
-                    const loss = Math.abs(realizedPnl);
-                    const recoveredTotal = recovered['1'] + recovered['2'] + recovered['3'];
-                    if (recoveredTotal > 0) {
-                        ['1', '2', '3'].forEach(cat => {
-                            const ratio = recovered[cat] / recoveredTotal;
-                            cash[cat] = roundMoney(cash[cat] - (loss * ratio));
-                        });
-                    } else {
-                        cash['1'] = roundMoney(cash['1'] - loss);
-                    }
+                if (h.shares <= 0.0001 || h.cost <= 0.0001) {
+                    h.shares = Math.max(0, h.shares);
+                    h.cost = Math.max(0, h.cost);
+                    h.alloc = createEmptyCashAlloc();
+                    h.bucketAlloc = createEmptyPlanBuckets();
                 }
             });
 
-            return { cash, chargedByCat, buyUsedByCat, holdings, totalBuyAmount };
+            reconcilePlanBucketsToCash(planBuckets, cash);
+            return { cash, chargedByCat, buyUsedByCat, planBuckets, holdings, totalBuyAmount };
         }
 
         function getPortfolioState() {
@@ -1239,7 +1593,7 @@ const centerTextPlugin = {
             if (!select) return;
             const prev = String(select.value || 'DEPOSIT');
             const tickers = Object.keys(marketData || {});
-            select.innerHTML = `<option value="DEPOSIT">종목 미지정</option>${tickers.map(ticker => `<option value="${escapeHtml(ticker)}">${escapeHtml(String(marketData[ticker]?.name || ticker))}</option>`).join('')}`;
+            select.innerHTML = `<option value="DEPOSIT">배당 종목 선택</option>${tickers.map(ticker => `<option value="${escapeHtml(ticker)}">${escapeHtml(String(marketData[ticker]?.name || ticker))}</option>`).join('')}`;
             select.value = (prev === 'DEPOSIT' || tickers.includes(prev)) ? prev : 'DEPOSIT';
         }
 
@@ -1385,6 +1739,11 @@ async function postMutation(action, payload = {}) {
             if(!date || !amount) return;
             const selectedDividendTicker = String(getEl('div-ticker')?.value || 'DEPOSIT').trim();
             const dividendTicker = selectedDividendTicker || 'DEPOSIT';
+            if (cat === '3' && dividendTicker === 'DEPOSIT') {
+                alert('배당금은 배당 종목을 반드시 선택해야 해요. 그래야 S&P500/순수슈드 버킷이 정확히 나뉩니다.');
+                getEl('div-ticker')?.focus();
+                return;
+            }
             const dividendName = String(marketData?.[dividendTicker]?.name || dividendTicker).trim();
             const depositTicker = cat === '3' ? dividendTicker : 'DEPOSIT';
             const depositName = cat === '3'
@@ -1564,82 +1923,14 @@ async function postMutation(action, payload = {}) {
                 );
             }
             const usableCash = Math.max(0, Math.floor(curCash));
-            const tickerA = BUY_PLAN_TICKERS[0], tickerB = BUY_PLAN_TICKERS[1];
-            const priceA = Number(marketData[tickerA]?.price || 0);
-            const priceB = Number(marketData[tickerB]?.price || 0);
-            const nameA = marketData[tickerA]?.name || `티커 ${tickerA}`;
-            const nameB = marketData[tickerB]?.name || `티커 ${tickerB}`;
-
-            let qtyA = 0, qtyB = 0;
-            let remainCash = usableCash;
-
-            const currentValueA = (h[tickerA]?.shares || 0) * priceA;
-            const currentValueB = (h[tickerB]?.shares || 0) * priceB;
-
-            if(priceA > 0 && priceB > 0) {
-                const minPrice = Math.min(priceA, priceB);
-                while(remainCash >= minPrice) {
-                    const totalNow = currentValueA + currentValueB + (qtyA * priceA) + (qtyB * priceB);
-                    const aNow = currentValueA + (qtyA * priceA);
-                    const bNow = currentValueB + (qtyB * priceB);
-                    const ratioA = totalNow > 0 ? (aNow / totalNow) : BUY_PLAN_WEIGHTS[0];
-                    const ratioB = totalNow > 0 ? (bNow / totalNow) : BUY_PLAN_WEIGHTS[1];
-
-                    const needA = ratioA < BUY_PLAN_WEIGHTS[0];
-                    const needB = ratioB < BUY_PLAN_WEIGHTS[1];
-
-                    if(needA && remainCash >= priceA) {
-                        qtyA += 1;
-                        remainCash -= priceA;
-                        continue;
-                    }
-                    if(needB && remainCash >= priceB) {
-                        qtyB += 1;
-                        remainCash -= priceB;
-                        continue;
-                    }
-
-                    // 비율이 이미 맞춰졌거나 둘 다 넘친 상태면 6:4 상위 비중(A) 우선
-                    if(remainCash >= priceA) {
-                        qtyA += 1;
-                        remainCash -= priceA;
-                    } else if(remainCash >= priceB) {
-                        qtyB += 1;
-                        remainCash -= priceB;
-                    } else {
-                        break;
-                    }
-                }
-            }
-
-            const spendA = qtyA * priceA;
-            const spendB = qtyB * priceB;
-            safeSetText('buy-plan-a-title', nameA);
-            safeSetText('buy-plan-b-title', nameB);
-            safeSetText('buy-plan-a', `${qtyA.toLocaleString()}주 매수 (₩${Math.round(spendA).toLocaleString()})`);
-            safeSetText('buy-plan-b', `${qtyB.toLocaleString()}주 매수 (₩${Math.round(spendB).toLocaleString()})`);
-
-            const planAEl = getEl('plan-a-card');
-            const planBEl = getEl('plan-b-card');
             const plansWrap = getEl('cash-buy-plans');
             const emptyBox = getEl('cash-buy-empty');
-            const canBuyA = qtyA > 0;
-            const canBuyB = qtyB > 0;
-            if(planAEl) planAEl.classList.toggle('hidden', !canBuyA);
-            if(planBEl) planBEl.classList.toggle('hidden', !canBuyB);
-            if(planAEl) {
-                planAEl.classList.remove('ring-2', 'ring-cyan-200/60', 'bg-white/10', 'bg-cyan-400/20');
-                if (canBuyA) planAEl.classList.add('ring-2', 'ring-cyan-200/60', 'bg-cyan-400/20');
-                else planAEl.classList.add('bg-white/10');
+            const isaPlan = buildIsaPlanRecommendation(state, usableCash);
+            if(plansWrap) {
+                plansWrap.classList.remove('hidden');
+                plansWrap.innerHTML = renderIsaPlanRecommendation(isaPlan);
             }
-            if(planBEl) {
-                planBEl.classList.remove('ring-2', 'ring-violet-200/60', 'bg-white/10', 'bg-violet-400/20');
-                if (canBuyB) planBEl.classList.add('ring-2', 'ring-violet-200/60', 'bg-violet-400/20');
-                else planBEl.classList.add('bg-white/10');
-            }
-            const noPlan = !canBuyA && !canBuyB;
-            if(plansWrap) plansWrap.classList.toggle('hidden', noPlan);
-            if(emptyBox) emptyBox.classList.toggle('hidden', !noPlan);
+            if(emptyBox) emptyBox.classList.add('hidden');
             safeSetText('stat-reinvest-rate', `${reinvestRate.toFixed(1)}%`);
             safeSetText('stat-monthly-dividend', `₩${Math.round(totalD).toLocaleString()}`);
             const level = getDividendLevel(totalD);
@@ -1880,6 +2171,15 @@ if(assetChart){
                 { id: 'b2', date: `${testMonth}-02`, ticker: 'CLOSED', name: '청산테스트', shares: 10, price: 1000, category: 0, side: 'buy' },
                 { id: 's2', date: `${testMonth}-03`, ticker: 'CLOSED', name: '청산테스트', shares: -10, price: 1500, category: 0, side: 'sell' }
             ];
+            const saleRatioTx = [
+                { id: 'r-d1', date: `${testMonth}-01`, ticker: 'DEPOSIT', name: 'principal deposit', shares: 1, price: 100000, category: '1' },
+                { id: 'r-b1', date: `${testMonth}-02`, ticker: 'RATIO', name: 'ratio test', shares: 10, price: 10000, category: 0, side: 'buy' },
+                { id: 'r-d2', date: `${testMonth}-03`, ticker: 'DEPOSIT', name: 'special deposit', shares: 1, price: 100000, category: '2' },
+                { id: 'r-b2', date: `${testMonth}-04`, ticker: 'RATIO', name: 'ratio test', shares: 10, price: 10000, category: 0, side: 'buy' },
+                { id: 'r-d3', date: `${testMonth}-05`, ticker: 'DEPOSIT', name: 'dividend deposit', shares: 1, price: 100000, category: '3' },
+                { id: 'r-b3', date: `${testMonth}-06`, ticker: 'RATIO', name: 'ratio test', shares: 10, price: 10000, category: 0, side: 'buy' },
+                { id: 'r-s1', date: `${testMonth}-07`, ticker: 'RATIO', name: 'ratio test', shares: -15, price: 12000, side: 'sell' }
+            ];
             const oldTradeEnteredNow = {
                 id: 'hist-old',
                 date: '2024-01-01',
@@ -1894,6 +2194,7 @@ if(assetChart){
 
             const state = simulatePortfolioState(sampleTx);
             const closedState = simulatePortfolioState(closedTx);
+            const saleRatioState = simulatePortfolioState(saleRatioTx);
             const report = getCurrentMonthReport(sampleTx, testMonth);
             const currentHistoryFilter = historyFilterDays;
             historyFilterDays = '30';
@@ -1906,7 +2207,8 @@ if(assetChart){
                 { name: '거래일 필터 계산', pass: filteredOldTrade.length === 0 },
                 { name: '월간 매수 집계', pass: report.buyActionCount === 1 && report.buyShares >= 10 },
                 { name: '월간 매도 집계', pass: report.sellActionCount === 1 && report.sellShares >= 2 },
-                { name: '배당 집행률 계산', pass: report.dividendIn >= report.dividendUsed }
+                { name: '배당 집행률 계산', pass: report.dividendIn >= report.dividendUsed },
+                { name: '매도 손익 비율 배분', pass: Math.abs((saleRatioState.cash['1'] || 0) - 60000) <= 1 && Math.abs((saleRatioState.cash['2'] || 0) - 60000) <= 1 && Math.abs((saleRatioState.cash['3'] || 0) - 60000) <= 1 }
             ];
             const failed = checks.filter(c => !c.pass);
             const resultText = failed.length === 0
@@ -2102,6 +2404,7 @@ function animateValue(id, start, end, duration) {
 
 
 function registerServiceWorker() {
+    if (window.ISARICH_TEST_PAGE) return;
     if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
 
     navigator.serviceWorker.register('./service-worker.js').then((registration) => {

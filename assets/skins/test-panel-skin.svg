@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 360" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="panel-base" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8fbff"/>
+      <stop offset=".52" stop-color="#eef6ff"/>
+      <stop offset="1" stop-color="#e8fff5"/>
+    </linearGradient>
+    <radialGradient id="panel-glow" cx="95%" cy="8%" r="70%">
+      <stop offset="0" stop-color="#38bdf8" stop-opacity=".34"/>
+      <stop offset=".45" stop-color="#60a5fa" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#60a5fa" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="panel-dots" width="18" height="18" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="#0f172a" fill-opacity=".08"/>
+    </pattern>
+  </defs>
+  <rect width="520" height="360" rx="28" fill="url(#panel-base)"/>
+  <rect width="520" height="360" rx="28" fill="url(#panel-glow)"/>
+  <rect width="520" height="360" rx="28" fill="url(#panel-dots)"/>
+  <path d="M350 0h170v360H276c46-58 60-112 40-162s-6-116 34-198Z" fill="#0f172a" fill-opacity=".035"/>
+  <path d="M34 54h160M34 96h110M34 306h250" stroke="#2563eb" stroke-opacity=".12" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="432" cy="82" r="46" fill="#10b981" fill-opacity=".14"/>
+  <circle cx="432" cy="82" r="28" fill="#38bdf8" fill-opacity=".16"/>
+</svg>

@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'isa-rich-cache-';
-const CACHE_VERSION = 'v23-test-page';
+const CACHE_VERSION = 'v32-isa-dividend-required';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const OFFLINE_URLS = [
   './',
@@ -7,8 +7,11 @@ const OFFLINE_URLS = [
   './test.html',
   './config.js?v=20260513b',
   './assets/styles.css?v=20260513b',
-  './assets/test-styles.css?v=20260513a',
-  './assets/app.js?v=20260513b',
+  './assets/test-styles.css?v=20260513c',
+  './assets/skins/test-hero-skin.svg',
+  './assets/skins/test-panel-skin.svg',
+  './assets/skins/test-holding-skin.svg',
+  './assets/app.js?v=20260517f',
   './manifest.webmanifest',
   './icons/app-icon.svg',
   './icons/ui/card-base.svg',

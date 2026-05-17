@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="hero-base" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#08111f"/>
+      <stop offset="0.52" stop-color="#0d1b2f"/>
+      <stop offset="1" stop-color="#123b48"/>
+    </linearGradient>
+    <radialGradient id="hero-glow-a" cx="78%" cy="22%" r="58%">
+      <stop offset="0" stop-color="#38bdf8" stop-opacity=".48"/>
+      <stop offset=".42" stop-color="#2563eb" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#2563eb" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="hero-glow-b" cx="12%" cy="88%" r="42%">
+      <stop offset="0" stop-color="#10b981" stop-opacity=".32"/>
+      <stop offset="1" stop-color="#10b981" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="hero-grid" width="42" height="42" patternUnits="userSpaceOnUse">
+      <path d="M42 0H0V42" fill="none" stroke="#e0f2fe" stroke-opacity=".07" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="900" height="320" rx="34" fill="url(#hero-base)"/>
+  <rect width="900" height="320" rx="34" fill="url(#hero-glow-a)"/>
+  <rect width="900" height="320" rx="34" fill="url(#hero-glow-b)"/>
+  <rect width="900" height="320" rx="34" fill="url(#hero-grid)"/>
+  <path d="M548 102c38-44 78-48 120-12s86 31 134-14" fill="none" stroke="#7dd3fc" stroke-opacity=".58" stroke-width="3"/>
+  <path d="M548 174c46-28 88-18 124 30s84 56 144 18" fill="none" stroke="#34d399" stroke-opacity=".42" stroke-width="3"/>
+  <path d="M724 44l112 0c18 0 32 14 32 32v176c0 18-14 32-32 32H724c-18 0-32-14-32-32V76c0-18 14-32 32-32Z" fill="#ffffff" fill-opacity=".07" stroke="#ffffff" stroke-opacity=".12"/>
+  <path d="M760 84v142M806 124v102M852 104v122" stroke="#ffffff" stroke-opacity=".18" stroke-width="10" stroke-linecap="round"/>
+  <path d="M44 44h230" stroke="#ffffff" stroke-opacity=".16" stroke-width="1"/>
+  <path d="M44 276h410" stroke="#ffffff" stroke-opacity=".1" stroke-width="1"/>
+</svg>
