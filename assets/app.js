@@ -783,16 +783,28 @@ const centerTextPlugin = {
         function renderIsaPlanRecommendation(plan) {
             const rows = (plan.rows || []).filter(row => Number(row.price || 0) > 0);
             const buyRows = rows.filter(row => Number(row.qty || 0) > 0);
+            const confidence = buyRows.length ? 86 : 78;
+            const confidenceWidth = Math.max(8, Math.min(100, confidence));
             if (buyRows.length) {
-                return buyRows.map(row => `
-                    <div class="buy-reco-card buy-reco-card-now">
-                        <div class="min-w-0">
-                            <p class="buy-reco-label">지금 매수</p>
-                            <p class="buy-reco-main">${escapeHtml(row.name || row.ticker)}</p>
+                const row = buyRows[0];
+                return `
+                    <div class="ai-reco-panel buy-reco-card-now">
+                        <div class="ai-reco-title-row">
+                            <span class="ai-reco-icon">AI</span>
+                            <p>AI 추천</p>
                         </div>
-                        <p class="buy-reco-amount">${Number(row.qty || 0).toLocaleString()}주</p>
+                        <h3>오늘은 <strong>${escapeHtml(row.name || row.ticker)}</strong><br>비중 보강을 제안해요</h3>
+                        <div class="ai-reco-metrics">
+                            <div><span>추천 수량</span><strong>${Number(row.qty || 0).toLocaleString()}주</strong></div>
+                            <div><span>가용 예산</span><strong>${formatWon(plan.budget || 0)}</strong></div>
+                        </div>
+                        <div class="ai-confidence">
+                            <div><span>신뢰도</span><strong>${confidence}%</strong></div>
+                            <i style="width:${confidenceWidth}%"></i>
+                        </div>
+                        <button type="button" class="ai-reco-action" onclick="showSection('transaction')">거래 입력하기 <span>›</span></button>
                     </div>
-                `).join('');
+                `;
             }
 
             const nextRows = rows
@@ -810,22 +822,32 @@ const centerTextPlugin = {
                 : rows[0];
             if (!next) {
                 return `
-                    <div class="buy-reco-card buy-reco-card-wait">
-                        <div class="min-w-0">
-                            <p class="buy-reco-label">다음 목표</p>
-                            <p class="buy-reco-main">가격 연동 대기</p>
+                    <div class="ai-reco-panel buy-reco-card-wait">
+                        <div class="ai-reco-title-row">
+                            <span class="ai-reco-icon">AI</span>
+                            <p>AI 추천</p>
                         </div>
+                        <h3>가격 데이터가 들어오면<br>추천을 다시 계산할게요</h3>
                     </div>
                 `;
             }
 
             return `
-                <div class="buy-reco-card buy-reco-card-wait">
-                    <div class="min-w-0">
-                        <p class="buy-reco-label">다음 목표</p>
-                        <p class="buy-reco-main">${escapeHtml(next.name || next.ticker)}</p>
+                <div class="ai-reco-panel buy-reco-card-wait">
+                    <div class="ai-reco-title-row">
+                        <span class="ai-reco-icon">AI</span>
+                        <p>AI 추천</p>
                     </div>
-                    <p class="buy-reco-amount">${formatWon(next.shortfall || 0)} 부족</p>
+                    <h3>오늘은 <strong>${escapeHtml(next.name || next.ticker)}</strong><br>비중 보강을 제안해요</h3>
+                    <div class="ai-reco-metrics">
+                        <div><span>부족 금액</span><strong>${formatWon(next.shortfall || 0)}</strong></div>
+                        <div><span>기준</span><strong>${escapeHtml(plan.budgetSource || '현금')}</strong></div>
+                    </div>
+                    <div class="ai-confidence">
+                        <div><span>신뢰도</span><strong>${confidence}%</strong></div>
+                        <i style="width:${confidenceWidth}%"></i>
+                    </div>
+                    <button type="button" class="ai-reco-action" onclick="showSection('transaction')">추천 상세 보기 <span>›</span></button>
                 </div>
             `;
         }
@@ -1685,14 +1707,16 @@ const centerTextPlugin = {
 
         function renderHoldingCard({ ticker, name, yieldPct, shares, avgPrice, value, profit, prate, itemTrend, avatarColor }) {
             const trendToneClass = prate >= 8 ? 'holding-tone-up' : (prate <= -8 ? 'holding-tone-down' : 'holding-tone-flat');
-            const edgeClass = prate >= 8 ? 'bg-gradient-to-b from-rose-400 to-orange-300' : (prate <= -8 ? 'bg-gradient-to-b from-blue-400 to-cyan-300' : 'bg-gradient-to-b from-slate-300 to-slate-200');
             const safeName = escapeHtml(name);
             const safeTicker = escapeHtml(ticker);
             const stockVisual = getStockVisual(name, ticker, avatarColor);
             const avatarInitial = escapeHtml(stockVisual.label);
             const signedRate = `${profit >= 0 ? '+' : '-'}${Math.abs(prate).toFixed(1)}%`;
+            const signedProfit = `${profit >= 0 ? '+' : '-'}₩${Math.round(Math.abs(profit)).toLocaleString()}`;
+            const progressWidth = Math.max(8, Math.min(100, (Number(value || 0) / 1700000) * 100));
+            const profitClass = profit >= 0 ? 'holding-profit-up' : 'holding-profit-down';
 
-            return `<div class="holding-item ${trendToneClass} relative flex justify-between items-start md:items-center py-3 px-4 rounded-[1.25rem] cursor-pointer group text-left gap-3 border-b-2 border-b-slate-200/80 overflow-hidden" data-ticker="${safeTicker}"><span class="holding-edge absolute left-0 top-0 h-full w-1.5 ${edgeClass}"></span><div class="flex items-center gap-3 text-left min-w-0 flex-1 pl-1"><div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-[11px] shadow-sm" style="background:${stockVisual.bgColor}">${avatarInitial}</div><div class="text-left font-sans min-w-0"><p class="font-black text-slate-800 text-[13px] font-sans truncate">${safeName} <span class="text-blue-500 font-bold text-[9px] ml-0.5 font-sans">[${yieldPct.toFixed(2)}%]</span></p><p class="text-[10px] text-slate-400 font-black mt-0.5 font-sans">${shares.toFixed(2)}주 · ₩${Math.round(avgPrice).toLocaleString()}</p></div></div><div class="text-right font-sans shrink-0 pl-1.5"><p class="font-black ${itemTrend.lightTextClass} text-[13px] text-right font-sans">₩${Math.round(value).toLocaleString()}</p><div class="mt-1 flex items-center justify-end gap-1.5"><span class="text-[11px] font-black ${itemTrend.lightTextClass}">${signedRate}</span><span class="text-[9px] font-black ${itemTrend.lightTextClass}">${itemTrend.iconHtml}</span></div></div></div>`;
+            return `<div class="holding-item ${trendToneClass}" data-ticker="${safeTicker}" style="--holding-color:${stockVisual.bgColor};--holding-progress:${progressWidth}%"><div class="holding-row"><div class="holding-left"><div class="holding-avatar">${avatarInitial}</div><div class="holding-copy"><p class="holding-name">${safeName}</p><p class="holding-meta">${safeTicker} · 연 ${yieldPct.toFixed(2)}%</p></div></div><div class="holding-right"><p class="holding-value">₩${Math.round(value).toLocaleString()}</p><p class="holding-return ${profitClass}">${signedProfit} (${signedRate})</p></div><span class="holding-chevron">›</span></div><div class="holding-subrow"><span>${shares.toFixed(0)}주 · 평가손익</span><span>평균 ₩${Math.round(avgPrice).toLocaleString()}</span></div><div class="holding-progress"><i></i></div></div>`;
         }
 
         function switchTab(type) {
@@ -2082,6 +2106,11 @@ async function postMutation(action, payload = {}) {
             if (!currentMonthlyModeKey) currentMonthlyModeKey = getCurrentMonthKey();
             const monthReport = monthlyReportCache.get(currentMonthlyModeKey) || getCurrentMonthReport(transactions, currentMonthlyModeKey);
             monthlyBreakdownOpen = loadMonthlyBreakdownState(monthReport.monthKey || currentMonthlyModeKey || getCurrentMonthKey());
+            const dashboardMonthKey = monthReport.monthKey || currentMonthlyModeKey || getCurrentMonthKey();
+            const [dashboardYear, dashboardMonth] = String(dashboardMonthKey || '').split('-');
+            safeSetText('dashboard-month-pill', dashboardYear && dashboardMonth ? `${dashboardYear}년 ${Number(dashboardMonth)}월` : dashboardMonthKey || '-');
+            safeSetText('hero-expected-dividend', `₩${Math.round(totalD).toLocaleString()}`);
+            safeSetText('hero-monthly-return', `${monthReport.totalReturnAmount >= 0 ? '+' : '-'}₩${Math.round(Math.abs(monthReport.totalReturnAmount || 0)).toLocaleString()}`);
             safeSetText('report-month-label', monthReport.monthKey || '-');
             safeSetText('report-realized-pnl', `₩${Math.round(monthReport.realizedPnl).toLocaleString()}`);
             safeSetText('report-dividend-in', `₩${Math.round(monthReport.totalReturnAmount || 0).toLocaleString()} (${Number(monthReport.monthlyTotalReturnRate || 0).toFixed(2)}%)`);
