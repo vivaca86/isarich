@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'isa-rich-cache-';
-const CACHE_VERSION = 'v43-dashboard-main-polish';
+const CACHE_VERSION = 'v44-remove-ai-reco-header';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const OFFLINE_URLS = [
   './',
@@ -11,7 +11,7 @@ const OFFLINE_URLS = [
   './assets/skins/test-hero-skin.svg',
   './assets/skins/test-panel-skin.svg',
   './assets/skins/test-holding-skin.svg',
-  './assets/app.js?v=20260622h',
+  './assets/app.js?v=20260622i',
   './manifest.webmanifest',
   './icons/app-icon.svg',
   './icons/ui/card-base.svg',

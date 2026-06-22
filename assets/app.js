@@ -843,10 +843,6 @@ const centerTextPlugin = {
                 const row = buyRows[0];
                 return `
                     <div class="ai-reco-panel buy-reco-card-now ${getAiPanelStateClass()}">
-                        <div class="ai-reco-title-row">
-                            <span class="ai-reco-icon">AI</span>
-                            <p>AI 추천</p>
-                        </div>
                         ${renderAiRecommendationToggle(`${row.name || row.ticker} ${Number(row.qty || 0).toLocaleString()}주 후보`)}
                         <h3>오늘은 <strong>${escapeHtml(row.name || row.ticker)}</strong><br>비중 보강을 제안해요</h3>
                         <div class="ai-reco-metrics">
@@ -878,10 +874,6 @@ const centerTextPlugin = {
             if (!next) {
                 return `
                     <div class="ai-reco-panel buy-reco-card-wait ${getAiPanelStateClass()}">
-                        <div class="ai-reco-title-row">
-                            <span class="ai-reco-icon">AI</span>
-                            <p>AI 추천</p>
-                        </div>
                         ${renderAiRecommendationToggle('가격 데이터 수신 후 추천 계산')}
                         <h3>가격 데이터가 들어오면<br>추천을 다시 계산할게요</h3>
                     </div>
@@ -890,10 +882,6 @@ const centerTextPlugin = {
 
             return `
                 <div class="ai-reco-panel buy-reco-card-wait ${getAiPanelStateClass()}">
-                    <div class="ai-reco-title-row">
-                        <span class="ai-reco-icon">AI</span>
-                        <p>AI 추천</p>
-                    </div>
                     ${renderAiRecommendationToggle(`${next.name || next.ticker} 부족 ${formatWon(next.shortfall || 0)}`)}
                     <h3>오늘은 <strong>${escapeHtml(next.name || next.ticker)}</strong><br>비중 보강을 제안해요</h3>
                     <div class="ai-reco-metrics">
