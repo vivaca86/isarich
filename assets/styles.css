@@ -1464,3 +1464,695 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         #cash-buy-plans > .buy-reco-card-wait > .buy-reco-amount {
             color: #475569 !important;
         }
+
+/* ===== Kraken light UI refresh 2026-06-22 ===== */
+:root {
+    --kraken-purple: #7132f5;
+    --kraken-purple-dark: #5741d8;
+    --kraken-purple-deep: #5b1ecf;
+    --kraken-purple-soft: rgba(113, 50, 245, 0.11);
+    --kraken-purple-softer: rgba(113, 50, 245, 0.06);
+    --kraken-ink: #101114;
+    --kraken-muted: #686b82;
+    --kraken-silver: #9497a9;
+    --kraken-border: #dedee5;
+    --kraken-bg: #f7f8fc;
+    --kraken-panel: #ffffff;
+    --kraken-panel-soft: #fbfbfe;
+    --kraken-green: #149e61;
+    --kraken-green-dark: #026b3f;
+    --kraken-red: #db4662;
+    --kraken-blue: #3268d8;
+    --kraken-shadow: 0 4px 24px rgba(0, 0, 0, 0.03);
+    --kraken-shadow-strong: 0 18px 52px rgba(16, 17, 20, 0.09);
+}
+
+html,
+body {
+    background: var(--kraken-bg) !important;
+    color: var(--kraken-ink) !important;
+    font-family: Inter, Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+    letter-spacing: 0 !important;
+}
+
+body::before,
+.hero-corner-art {
+    display: none !important;
+}
+
+main {
+    max-width: 1180px !important;
+}
+
+* {
+    letter-spacing: 0 !important;
+}
+
+#main-sidebar {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border-right: 1px solid var(--kraken-border) !important;
+    box-shadow: var(--kraken-shadow) !important;
+}
+
+#main-sidebar > div:first-child {
+    background: var(--kraken-purple) !important;
+    color: #ffffff !important;
+    border-radius: 18px !important;
+    box-shadow: 0 12px 30px rgba(113, 50, 245, 0.2) !important;
+}
+
+.pc-nav-item,
+.nav-item {
+    color: var(--kraken-silver) !important;
+}
+
+.pc-nav-item.text-blue-600,
+.pc-nav-item:hover,
+.nav-item.active,
+.nav-item.text-blue-600 {
+    color: var(--kraken-purple) !important;
+}
+
+.pc-nav-item.border-blue-600 {
+    border-color: var(--kraken-purple) !important;
+}
+
+nav.lg\:hidden {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border: 1px solid rgba(222, 222, 229, 0.92) !important;
+    box-shadow: 0 18px 42px rgba(16, 17, 20, 0.11) !important;
+    border-radius: 22px !important;
+}
+
+body > nav[class~="lg:hidden"][class~="fixed"] {
+    background: rgba(255, 255, 255, 0.96) !important;
+    border: 1px solid rgba(222, 222, 229, 0.94) !important;
+    box-shadow: 0 18px 42px rgba(16, 17, 20, 0.11) !important;
+    border-radius: 22px !important;
+}
+
+body > nav[class~="lg:hidden"][class~="fixed"] .nav-item {
+    color: var(--kraken-silver) !important;
+}
+
+body > nav[class~="lg:hidden"][class~="fixed"] .nav-item.active,
+body > nav[class~="lg:hidden"][class~="fixed"] .nav-item.text-blue-600 {
+    color: var(--kraken-purple) !important;
+}
+
+body > nav[class~="lg:hidden"][class~="fixed"] .nav-item.active svg {
+    background: var(--kraken-purple-soft) !important;
+    border-radius: 12px !important;
+}
+
+.glass-card,
+#section-dashboard div:has(> #cash-buy-plans),
+#tab-content-purchase .glass-card,
+#tab-content-deposit .glass-card {
+    background: var(--kraken-panel) !important;
+    border: 1px solid var(--kraken-border) !important;
+    box-shadow: var(--kraken-shadow) !important;
+    color: var(--kraken-ink) !important;
+}
+
+.glass-card {
+    border-radius: 20px !important;
+}
+
+.glass-card:hover,
+.holding-item:hover,
+#history-list .glass-card:hover {
+    box-shadow: var(--kraken-shadow-strong) !important;
+}
+
+#dashboard-sync-mini {
+    background: transparent !important;
+    color: var(--kraken-purple) !important;
+}
+
+#dashboard-sync-mini span {
+    background: var(--kraken-green) !important;
+}
+
+#sync-time-mini,
+.text-blue-600,
+.text-blue-500,
+.text-blue-700 {
+    color: var(--kraken-purple) !important;
+}
+
+.bg-blue-600,
+.bg-blue-500 {
+    background-color: var(--kraken-purple) !important;
+}
+
+.border-blue-600,
+.border-blue-500 {
+    border-color: var(--kraken-purple) !important;
+}
+
+.shadow-blue-500\/20 {
+    box-shadow: 0 12px 30px rgba(113, 50, 245, 0.16) !important;
+}
+
+#section-dashboard .lg\:col-span-8 > div:first-child {
+    background: linear-gradient(180deg, #ffffff 0%, #fbfbff 100%) !important;
+    border: 1px solid var(--kraken-border) !important;
+    border-top: 4px solid var(--kraken-purple) !important;
+    border-radius: 24px !important;
+    color: var(--kraken-ink) !important;
+    box-shadow: var(--kraken-shadow-strong) !important;
+}
+
+#section-dashboard .lg\:col-span-8 > div:first-child > .absolute {
+    display: none !important;
+}
+
+#section-dashboard .lg\:col-span-8 > div:first-child span:first-child,
+#section-dashboard .lg\:col-span-8 > div:first-child p {
+    color: var(--kraken-muted) !important;
+}
+
+#stat-total-value {
+    color: var(--kraken-ink) !important;
+    font-size: 3.05rem !important;
+    line-height: 1.02 !important;
+}
+
+#stat-profit-icon,
+#stat-profit-amount,
+#stat-profit-pct {
+    color: var(--kraken-muted) !important;
+}
+
+#cash-card-area {
+    background: var(--kraken-purple-soft) !important;
+    border: 1px solid rgba(113, 50, 245, 0.16) !important;
+    border-radius: 16px !important;
+}
+
+#cash-card-area:hover {
+    background: rgba(113, 50, 245, 0.15) !important;
+}
+
+#stat-cash-balance {
+    color: var(--kraken-purple-deep) !important;
+}
+
+#stat-reinvest-rate,
+#stat-monthly-dividend,
+.text-emerald-600,
+.text-emerald-700 {
+    color: var(--kraken-green) !important;
+}
+
+#section-dashboard .glass-card:has(#div-level-icon) {
+    position: relative !important;
+    padding-top: 3rem !important;
+    border-top: 0 !important;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%) !important;
+}
+
+#section-dashboard .glass-card:has(#div-level-icon)::before {
+    content: "배당 엔진";
+    position: absolute;
+    top: 1rem;
+    left: 1.25rem;
+    color: var(--kraken-purple);
+    font-size: 0.72rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+#div-level-icon {
+    width: 48px !important;
+    height: 48px !important;
+    background: var(--kraken-purple-soft) !important;
+    color: var(--kraken-purple-deep) !important;
+    border: 1px solid rgba(113, 50, 245, 0.12) !important;
+    border-radius: 16px !important;
+    box-shadow: none !important;
+    font-size: 1.45rem !important;
+}
+
+#dividend-level-text {
+    color: var(--kraken-ink) !important;
+    line-height: 1.18 !important;
+}
+
+#dividend-next-goal {
+    color: var(--kraken-muted) !important;
+    font-size: 0.72rem !important;
+}
+
+#section-dashboard div:has(> #cash-buy-plans) {
+    position: relative !important;
+    padding: 3.1rem 1rem 1rem !important;
+    border-radius: 20px !important;
+    background: #ffffff !important;
+}
+
+#section-dashboard div:has(> #cash-buy-plans)::before {
+    content: "AI 추천";
+    position: absolute;
+    top: 1rem;
+    left: 1.1rem;
+    color: var(--kraken-purple);
+    font-size: 0.72rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+#section-dashboard div:has(> #cash-buy-plans)::after {
+    content: "현금 기준 매수 후보";
+    position: absolute;
+    top: 1rem;
+    right: 1.1rem;
+    color: var(--kraken-silver);
+    font-size: 0.68rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+#cash-buy-empty {
+    background: var(--kraken-panel-soft) !important;
+    border: 1px dashed var(--kraken-border) !important;
+    color: var(--kraken-muted) !important;
+    border-radius: 14px !important;
+}
+
+#cash-buy-plans {
+    gap: 0.55rem !important;
+}
+
+#cash-buy-plans > .buy-reco-card,
+.buy-reco-card {
+    min-height: 58px !important;
+    padding: 0.85rem 0.95rem !important;
+    border: 1px solid rgba(222, 222, 229, 0.92) !important;
+    border-radius: 16px !important;
+    background: var(--kraken-panel-soft) !important;
+    box-shadow: none !important;
+}
+
+#cash-buy-plans > .buy-reco-card-now,
+.buy-reco-card-now {
+    background: linear-gradient(180deg, rgba(20, 158, 97, 0.1), rgba(20, 158, 97, 0.05)) !important;
+    border-color: rgba(20, 158, 97, 0.22) !important;
+}
+
+.buy-reco-label,
+#cash-buy-plans .buy-reco-label {
+    color: var(--kraken-muted) !important;
+    font-size: 0.68rem !important;
+    font-weight: 850 !important;
+}
+
+.buy-reco-main,
+#cash-buy-plans .buy-reco-main {
+    color: var(--kraken-ink) !important;
+    font-size: 0.92rem !important;
+    font-weight: 900 !important;
+}
+
+.buy-reco-amount,
+#cash-buy-plans .buy-reco-amount {
+    color: var(--kraken-green) !important;
+    font-size: 0.88rem !important;
+    font-weight: 900 !important;
+}
+
+.buy-reco-card-wait .buy-reco-amount,
+#cash-buy-plans > .buy-reco-card-wait > .buy-reco-amount {
+    color: var(--kraken-muted) !important;
+}
+
+#section-dashboard .glass-card:has(#holdings-list) {
+    overflow: hidden !important;
+}
+
+#section-dashboard .glass-card:has(#holdings-list) > div:first-child {
+    background: #ffffff !important;
+    border-bottom: 1px solid var(--kraken-border) !important;
+}
+
+#section-dashboard .glass-card:has(#holdings-list) h3,
+#section-history h2,
+#section-transaction h2 {
+    color: var(--kraken-ink) !important;
+}
+
+#holdings-list {
+    padding: 0.55rem !important;
+}
+
+.holding-item {
+    background: #ffffff !important;
+    border: 1px solid rgba(222, 222, 229, 0.9) !important;
+    border-bottom: 1px solid rgba(222, 222, 229, 0.9) !important;
+    border-radius: 16px !important;
+    box-shadow: none !important;
+}
+
+.holding-item .holding-edge {
+    width: 4px !important;
+    opacity: 0.9 !important;
+}
+
+.holding-item p {
+    color: inherit;
+}
+
+#assetChart {
+    filter: saturate(0.95);
+}
+
+#chart-legend {
+    color: var(--kraken-muted) !important;
+}
+
+#monthly-review-panel {
+    border: 1px solid var(--kraken-border) !important;
+    border-top: 4px solid var(--kraken-green) !important;
+    border-radius: 20px !important;
+    background: #ffffff !important;
+    box-shadow: var(--kraken-shadow) !important;
+}
+
+#monthly-review-panel p:first-child,
+#monthly-review-panel #monthly-review-badge,
+#monthly-review-panel #report-month-label {
+    color: var(--kraken-purple) !important;
+}
+
+#monthly-review-panel button[data-action],
+#monthly-review-panel .rounded-xl {
+    border-color: var(--kraken-border) !important;
+    background: var(--kraken-panel-soft) !important;
+    border-radius: 14px !important;
+}
+
+#history-filter-group {
+    gap: 0.5rem !important;
+}
+
+.history-filter-btn {
+    border-color: var(--kraken-border) !important;
+    background: #ffffff !important;
+    color: var(--kraken-muted) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+}
+
+.history-filter-btn.border-slate-900,
+.history-filter-btn.bg-slate-900 {
+    border-color: var(--kraken-purple) !important;
+    background: var(--kraken-purple) !important;
+    color: #ffffff !important;
+}
+
+#history-list .glass-card {
+    border-radius: 16px !important;
+    background: #ffffff !important;
+    border-left-width: 4px !important;
+}
+
+#history-list .bg-rose-50\/60 {
+    background: rgba(219, 70, 98, 0.06) !important;
+}
+
+#history-list .bg-blue-50\/60 {
+    background: rgba(50, 104, 216, 0.06) !important;
+}
+
+#history-load-more {
+    background: var(--kraken-purple) !important;
+    border-radius: 12px !important;
+}
+
+#section-transaction {
+    max-width: 560px !important;
+}
+
+#section-transaction header {
+    margin-bottom: 1.25rem !important;
+}
+
+#section-transaction > .flex {
+    background: #ffffff !important;
+    border: 1px solid var(--kraken-border) !important;
+    border-radius: 16px !important;
+    box-shadow: var(--kraken-shadow) !important;
+    padding: 0.35rem !important;
+}
+
+.sub-tab-btn {
+    min-height: 44px !important;
+    border-radius: 12px !important;
+    color: var(--kraken-muted) !important;
+    font-size: 0.82rem !important;
+    font-weight: 900 !important;
+    background: transparent !important;
+    transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease !important;
+}
+
+.sub-tab-btn.active-purchase,
+.sub-tab-btn.active-deposit {
+    background: var(--kraken-purple) !important;
+    color: #ffffff !important;
+    box-shadow: 0 10px 22px rgba(113, 50, 245, 0.2) !important;
+}
+
+#tab-content-purchase .glass-card,
+#tab-content-deposit .glass-card {
+    border-radius: 22px !important;
+    padding: 1.25rem !important;
+}
+
+#section-transaction label,
+#detail-modal label,
+#settings-modal label {
+    color: var(--kraken-muted) !important;
+    font-size: 0.7rem !important;
+    font-weight: 850 !important;
+    text-transform: none !important;
+}
+
+.premium-input,
+select.premium-input {
+    width: 100% !important;
+    min-height: 48px !important;
+    border: 1px solid var(--kraken-border) !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    color: var(--kraken-ink) !important;
+    box-shadow: none !important;
+    outline: none !important;
+    font-size: 0.95rem !important;
+    font-weight: 800 !important;
+}
+
+.premium-input:focus,
+select.premium-input:focus {
+    border-color: var(--kraken-purple) !important;
+    box-shadow: 0 0 0 4px var(--kraken-purple-soft) !important;
+}
+
+.won-input-wrapper {
+    position: relative !important;
+}
+
+.won-symbol {
+    color: var(--kraken-silver) !important;
+    font-weight: 900 !important;
+}
+
+.quick-select-btn {
+    min-height: 38px !important;
+    border-radius: 999px !important;
+    border: 1px solid var(--kraken-border) !important;
+    background: #ffffff !important;
+    color: var(--kraken-muted) !important;
+    box-shadow: none !important;
+    text-transform: none !important;
+}
+
+.quick-select-btn.bg-slate-900,
+.quick-select-btn.text-white {
+    background: var(--kraken-purple) !important;
+    border-color: var(--kraken-purple) !important;
+    color: #ffffff !important;
+    box-shadow: 0 8px 20px rgba(113, 50, 245, 0.18) !important;
+}
+
+#dep-cat-1,
+#dep-cat-2,
+#dep-cat-3 {
+    border-radius: 14px !important;
+    border-color: var(--kraken-border) !important;
+    background: var(--kraken-panel-soft) !important;
+    color: var(--kraken-muted) !important;
+    box-shadow: none !important;
+}
+
+#dep-cat-1.bg-blue-600,
+#dep-cat-2.bg-blue-600,
+#dep-cat-3.bg-blue-600 {
+    background: var(--kraken-purple) !important;
+    border-color: var(--kraken-purple) !important;
+    color: #ffffff !important;
+}
+
+.btn-token,
+#save-btn,
+#save-div-btn,
+#detail-buy-btn,
+#detail-sell-btn,
+#settings-modal button,
+#cash-modal button {
+    border-radius: 12px !important;
+    font-weight: 900 !important;
+}
+
+.btn-primary-strong,
+.btn-primary-soft,
+#save-btn,
+#save-div-btn,
+#settings-modal button[onclick="syncAllData()"],
+#cash-modal button[onclick*="transaction"] {
+    background: var(--kraken-purple) !important;
+    color: #ffffff !important;
+    border: 1px solid var(--kraken-purple) !important;
+    box-shadow: 0 12px 26px rgba(113, 50, 245, 0.18) !important;
+}
+
+.btn-primary-strong:hover,
+.btn-primary-soft:hover,
+#save-btn:hover,
+#save-div-btn:hover {
+    background: var(--kraken-purple-dark) !important;
+}
+
+.btn-neutral,
+#cancel-edit-btn,
+#cancel-edit-btn-deposit,
+#settings-modal .btn-neutral {
+    background: #ffffff !important;
+    color: var(--kraken-muted) !important;
+    border: 1px solid var(--kraken-border) !important;
+    box-shadow: none !important;
+}
+
+.form-status {
+    border-radius: 12px !important;
+    border: 1px solid var(--kraken-border) !important;
+    background: var(--kraken-panel-soft) !important;
+    color: var(--kraken-muted) !important;
+}
+
+#detail-modal > .absolute,
+#cash-modal > .absolute,
+#settings-modal > .absolute {
+    background: rgba(16, 17, 20, 0.22) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+#detail-modal .relative.bg-white,
+#cash-modal .relative.bg-white,
+#settings-modal .relative.bg-white {
+    border: 1px solid var(--kraken-border) !important;
+    border-radius: 24px !important;
+    background: #ffffff !important;
+    box-shadow: 0 28px 72px rgba(16, 17, 20, 0.18) !important;
+    color: var(--kraken-ink) !important;
+}
+
+#detail-modal h3,
+#cash-modal h3,
+#settings-modal h3 {
+    color: var(--kraken-ink) !important;
+}
+
+#detail-modal .bg-slate-50,
+#cash-modal .bg-slate-50,
+#settings-modal .bg-slate-50,
+#settings-modal .bg-slate-50\/70 {
+    background: var(--kraken-panel-soft) !important;
+    border-color: var(--kraken-border) !important;
+}
+
+#detail-tab-history-btn,
+#detail-tab-trade-btn {
+    border-radius: 11px !important;
+}
+
+#detail-tab-history-btn.bg-slate-900,
+#detail-tab-trade-btn.bg-slate-900 {
+    background: var(--kraken-purple) !important;
+    color: #ffffff !important;
+}
+
+#detail-buy-btn {
+    background: rgba(219, 70, 98, 0.1) !important;
+    color: var(--kraken-red) !important;
+    border-color: rgba(219, 70, 98, 0.18) !important;
+}
+
+#detail-sell-btn {
+    background: rgba(50, 104, 216, 0.1) !important;
+    color: var(--kraken-blue) !important;
+    border-color: rgba(50, 104, 216, 0.18) !important;
+}
+
+.wallet-card {
+    border-radius: 16px !important;
+    background: var(--kraken-panel-soft) !important;
+    border-color: var(--kraken-border) !important;
+    box-shadow: none !important;
+}
+
+.wallet-card-amount {
+    color: var(--kraken-purple) !important;
+}
+
+.settings-close-btn,
+#detail-modal button[onclick="closeDetailModal()"],
+#cash-modal button[onclick="closeCashModal()"] {
+    background: var(--kraken-panel-soft) !important;
+    color: var(--kraken-muted) !important;
+    border: 1px solid var(--kraken-border) !important;
+}
+
+@media (max-width: 640px) {
+    main {
+        padding: 1rem !important;
+    }
+
+    #section-dashboard .grid {
+        gap: 0.85rem !important;
+    }
+
+    #section-dashboard .lg\:col-span-8 > div:first-child {
+        border-radius: 22px !important;
+        padding: 1.35rem !important;
+    }
+
+    #stat-total-value {
+        font-size: 2.35rem !important;
+    }
+
+    #section-dashboard .glass-card:has(#div-level-icon) {
+        align-items: flex-start !important;
+        gap: 1rem !important;
+    }
+
+    #section-dashboard div:has(> #cash-buy-plans)::after {
+        display: none !important;
+    }
+
+    #detail-modal .relative.bg-white,
+    #cash-modal .relative.bg-white {
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+    }
+}
