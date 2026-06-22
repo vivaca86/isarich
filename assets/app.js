@@ -1821,7 +1821,7 @@ const centerTextPlugin = {
             const cat = normalizeCashCategory(getEl('wallet-category')?.value || '1');
             const state = getPortfolioState();
             const currentCash = Object.values(state?.cash || {}).reduce((sum, value) => sum + Number(value || 0), 0);
-            const isDividend = currentTransactionMode === 'dividend' || cat === '3';
+            const isDividend = cat === '3';
             const monthKey = currentMonthlyModeKey || getCurrentMonthKey();
             const report = monthlyReportCache.get(monthKey) || getCurrentMonthReport(transactions, monthKey);
             const after = currentCash + Math.max(0, amount);
@@ -1843,7 +1843,7 @@ const centerTextPlugin = {
         }
 
         function updateCashModeCopy() {
-            const isDividend = currentTransactionMode === 'dividend' || normalizeCashCategory(getEl('wallet-category')?.value || '1') === '3';
+            const isDividend = normalizeCashCategory(getEl('wallet-category')?.value || '1') === '3';
             safeSetText('cash-mode-icon', isDividend ? '₩' : '↓');
             safeSetText('cash-mode-title', isDividend ? '배당 입금' : '현금 입금');
             safeSetText('cash-mode-desc', isDividend ? 'ETF 배당금 입금 내역을 기록합니다.' : 'ISA 계좌 현금으로 입금하는 내역을 기록합니다.');
@@ -1918,7 +1918,7 @@ const centerTextPlugin = {
         }
 
         window.switchTransactionMode = (mode) => {
-            const nextMode = ['buy', 'sell', 'deposit', 'dividend'].includes(mode) ? mode : 'buy';
+            const nextMode = ['buy', 'sell', 'deposit'].includes(mode) ? mode : 'buy';
             currentTransactionMode = nextMode;
             const modeInput = getEl('transaction-mode');
             if (modeInput) modeInput.value = nextMode;
@@ -1930,21 +1930,19 @@ const centerTextPlugin = {
             const tabMap = {
                 buy: getEl('tab-btn-purchase'),
                 sell: getEl('tab-btn-sell'),
-                deposit: getEl('tab-btn-deposit'),
-                dividend: getEl('tab-btn-dividend')
+                deposit: getEl('tab-btn-deposit')
             };
             Object.entries(tabMap).forEach(([key, btn]) => {
                 if (!btn) return;
-                btn.classList.remove('active-purchase', 'active-sell', 'active-deposit', 'active-dividend');
+                btn.classList.remove('active-purchase', 'active-sell', 'active-deposit');
                 if (key === nextMode) btn.classList.add(
                     key === 'buy' ? 'active-purchase' :
                     key === 'sell' ? 'active-sell' :
-                    key === 'deposit' ? 'active-deposit' : 'active-dividend'
+                    'active-deposit'
                 );
             });
 
             if (nextMode === 'deposit') setDepositCat(1);
-            if (nextMode === 'dividend') setDepositCat(3);
             if (isTrade) {
                 ensureTradeSelection();
                 safeSetText('save-btn', nextMode === 'sell' ? '매도 기록 추가' : '기록 추가');
@@ -2155,7 +2153,7 @@ async function postMutation(action, payload = {}) {
             if(getEl('input-price')) getEl('input-price').value = "";
             if(getEl('edit-id')) getEl('edit-id').value = ""; 
             if(getEl('save-btn')) getEl('save-btn').innerText = currentTransactionMode === 'sell' ? "매도 기록 추가" : "기록 추가";
-            if(getEl('save-div-btn')) getEl('save-div-btn').innerText = currentTransactionMode === 'dividend' ? "배당 기록 추가" : "입금 기록 추가";
+            if(getEl('save-div-btn')) getEl('save-div-btn').innerText = normalizeCashCategory(getEl('wallet-category')?.value || '1') === '3' ? "배당 기록 추가" : "입금 기록 추가";
             if(getEl('cancel-edit-btn')) getEl('cancel-edit-btn').classList.add('hidden');
             if(getEl('cancel-edit-btn-deposit')) getEl('cancel-edit-btn-deposit').classList.add('hidden');
             if(getEl('div-ticker')) getEl('div-ticker').value = "DEPOSIT";
@@ -2580,7 +2578,7 @@ if(assetChart){
 
         window.fillForm = (k) => {
             const d = marketData[k]; if(!d) return;
-            selectedTicker = k; getEl('input-ticker').value = k; getEl('input-name').value = d.name; getEl('input-price').value = d.price; getEl('input-shares').focus(); updateQuickSelectUI(); updateSelectedStockPreview();
+            selectedTicker = k; getEl('input-ticker').value = k; getEl('input-name').value = d.name; getEl('input-price').value = d.price; updateQuickSelectUI(); updateSelectedStockPreview();
         };
 
         window.editTransaction = (id) => {
