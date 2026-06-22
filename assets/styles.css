@@ -3713,3 +3713,252 @@ body[data-active-section="transaction"] > nav[class~="lg:hidden"][class~="fixed"
         font-size: 0.72rem;
     }
 }
+
+/* ===== Dashboard main polish 2026-06-22 ===== */
+.dashboard-ai-card {
+    min-height: 0 !important;
+    padding: 1rem !important;
+}
+
+.ai-reco-summary-toggle {
+    width: 100%;
+    border: 1px solid rgba(113, 50, 245, 0.14);
+    background: rgba(113, 50, 245, 0.06);
+    color: #23273d;
+    border-radius: 13px;
+    min-height: 42px;
+    padding: 0.65rem 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.7rem;
+    text-align: left;
+    font-size: 0.86rem;
+    font-weight: 850;
+}
+
+.ai-reco-summary-toggle span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ai-reco-summary-toggle strong {
+    color: var(--kraken-purple);
+    font-size: 0.78rem;
+    font-weight: 950;
+    white-space: nowrap;
+}
+
+.ai-reco-panel.is-collapsed {
+    min-height: 0 !important;
+    gap: 0.7rem !important;
+}
+
+.ai-reco-panel.is-collapsed > h3,
+.ai-reco-panel.is-collapsed > .ai-reco-metrics,
+.ai-reco-panel.is-collapsed > .ai-confidence,
+.ai-reco-panel.is-collapsed > .ai-reco-action {
+    display: none !important;
+}
+
+.ai-reco-panel.is-expanded .ai-reco-summary-toggle {
+    background: #ffffff;
+}
+
+.asset-allocation-card {
+    cursor: pointer;
+    user-select: none;
+}
+
+.asset-allocation-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+#asset-allocation-state {
+    margin-left: auto;
+    color: var(--kraken-purple);
+    font-size: 0.74rem;
+    font-weight: 900;
+    letter-spacing: 0;
+}
+
+#section-dashboard .asset-allocation-card.is-expanded {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    min-height: 0 !important;
+    gap: 0.9rem !important;
+}
+
+#section-dashboard .lg\:col-span-4 > #asset-allocation-card.asset-allocation-card.is-expanded {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    min-height: 0 !important;
+    gap: 0.9rem !important;
+}
+
+#section-dashboard .asset-allocation-card.is-expanded::before,
+#section-dashboard .asset-allocation-card.is-expanded::after {
+    display: none !important;
+}
+
+#section-dashboard .asset-allocation-card.is-expanded h3 {
+    width: 100% !important;
+    margin: 0 !important;
+}
+
+#section-dashboard .lg\:col-span-4 > #asset-allocation-card.asset-allocation-card.is-expanded h3 {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    margin: 0 !important;
+    color: #151827 !important;
+    font-size: 0.92rem !important;
+    line-height: 1.2 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    white-space: nowrap !important;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+}
+
+#section-dashboard .asset-allocation-card.is-expanded .asset-chart-wrap {
+    display: block !important;
+    width: 11rem !important;
+    height: 11rem !important;
+    margin: 0.4rem auto 0.2rem !important;
+}
+
+#asset-allocation-card.is-expanded .asset-chart-wrap,
+#asset-allocation-card.is-expanded .asset-chart-wrap.relative {
+    display: block !important;
+    width: 11rem !important;
+    height: 11rem !important;
+    min-width: 11rem !important;
+    min-height: 11rem !important;
+    margin: 0.4rem auto 0.2rem !important;
+}
+
+#section-dashboard .lg\:col-span-4 > #asset-allocation-card.asset-allocation-card.is-expanded .asset-chart-wrap.relative {
+    display: block !important;
+    width: 11rem !important;
+    height: 11rem !important;
+    min-width: 11rem !important;
+    min-height: 11rem !important;
+    margin: 0.4rem auto 0.2rem !important;
+}
+
+#section-dashboard .asset-allocation-card.is-expanded #assetChart,
+#section-dashboard .asset-allocation-card.is-expanded #chart-legend {
+    display: block !important;
+}
+
+#section-dashboard .lg\:col-span-4 > #asset-allocation-card.asset-allocation-card.is-expanded #assetChart {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+#section-dashboard .asset-allocation-card.is-expanded #chart-legend {
+    width: 100% !important;
+}
+
+@media (max-width: 760px) {
+    #section-dashboard .dashboard-total-card {
+        padding: 1rem !important;
+        border-radius: 17px !important;
+    }
+
+    #section-dashboard .dashboard-total-card .relative.z-10 > span:first-child {
+        font-size: 0.78rem !important;
+        margin-bottom: 0.35rem !important;
+    }
+
+    #section-dashboard .dashboard-total-card #stat-total-value {
+        font-size: 2rem !important;
+        line-height: 1 !important;
+    }
+
+    #section-dashboard .dashboard-total-card .flex.items-center.gap-2 {
+        margin-top: 0.35rem !important;
+        margin-bottom: 0.8rem !important;
+    }
+
+    #section-dashboard .dashboard-total-card .hero-stat-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        margin-top: 0.7rem !important;
+        padding-top: 0.65rem !important;
+        gap: 0 !important;
+    }
+
+    #section-dashboard .dashboard-total-card .hero-stat-grid > div,
+    #section-dashboard .dashboard-total-card .hero-stat-grid > div:nth-child(3) {
+        grid-column: auto !important;
+        min-height: 46px !important;
+        padding: 0.35rem 0.35rem !important;
+        border-top: 0 !important;
+    }
+
+    #section-dashboard .dashboard-total-card .hero-stat-grid > div + div {
+        border-left: 1px solid var(--kraken-border) !important;
+    }
+
+    #section-dashboard .dashboard-total-card .hero-stat-grid p:first-child {
+        font-size: 0.58rem !important;
+        line-height: 1.15 !important;
+        margin-bottom: 0.24rem !important;
+        white-space: nowrap;
+    }
+
+    #section-dashboard .dashboard-total-card .hero-stat-grid p:last-child {
+        font-size: 0.82rem !important;
+        line-height: 1.15 !important;
+        white-space: nowrap;
+    }
+
+    .dashboard-ai-card {
+        padding: 0.9rem !important;
+        border-radius: 16px !important;
+    }
+
+    .ai-reco-panel {
+        gap: 0.75rem !important;
+    }
+
+    .ai-reco-title-row {
+        font-size: 1rem !important;
+    }
+
+    .ai-reco-icon {
+        width: 30px !important;
+        height: 30px !important;
+        border-radius: 10px !important;
+    }
+
+    .ai-reco-summary-toggle {
+        min-height: 40px;
+        font-size: 0.82rem;
+        border-radius: 12px;
+    }
+
+    #section-dashboard .asset-allocation-card.is-expanded .asset-chart-wrap {
+        width: 9.75rem !important;
+        height: 9.75rem !important;
+    }
+
+    #section-dashboard .lg\:col-span-4 > #asset-allocation-card.asset-allocation-card.is-expanded .asset-chart-wrap.relative {
+        width: 9.75rem !important;
+        height: 9.75rem !important;
+        min-width: 9.75rem !important;
+        min-height: 9.75rem !important;
+    }
+}

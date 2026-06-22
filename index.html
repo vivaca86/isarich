@@ -19,7 +19,7 @@
     <script src="./config.js?v=20260513b"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-    <link rel="stylesheet" href="./assets/styles.css?v=20260622g">
+    <link rel="stylesheet" href="./assets/styles.css?v=20260622h">
 </head>
 <body class="pb-24 lg:pb-0 lg:pl-20 text-left font-sans">
 
@@ -81,7 +81,7 @@
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start font-sans text-left">
                 <div class="lg:col-span-8 space-y-3 text-left">
-                    <div class="bg-slate-900 rounded-[2.1rem] p-7 md:p-9 text-white shadow-2xl relative overflow-hidden group text-left">
+                    <div class="dashboard-total-card bg-slate-900 rounded-[2.1rem] p-7 md:p-9 text-white shadow-2xl relative overflow-hidden group text-left">
                         <div class="absolute -right-20 -top-20 w-80 h-80 bg-blue-500/10 rounded-full blur-[100px] group-hover:bg-blue-500/20 transition-all duration-1000"></div>
                         <div class="hero-corner-art" aria-hidden="true"></div>
                         <div class="relative z-10 text-left">
@@ -130,7 +130,7 @@
                         </div>
                     </div>
 
-                    <div class="p-3 text-left font-sans bg-white text-slate-900 border border-slate-200 shadow-sm rounded-[1.25rem]">
+                    <div class="dashboard-ai-card p-3 text-left font-sans bg-white text-slate-900 border border-slate-200 shadow-sm rounded-[1.25rem]">
                         <div id="cash-buy-empty" class="hidden rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-[11px] font-bold text-white/80">
                             지금 현금으로는 매수 가능한 수량이 없어요.
                         </div>
@@ -151,9 +151,9 @@
                 </div>
 
                 <div class="lg:col-span-4 space-y-2.5 text-left font-sans">
-                    <div class="glass-card p-6 flex flex-col items-center justify-center min-h-[300px] text-left font-sans">
-                        <h3 class="font-black text-[10px] text-slate-400 uppercase tracking-[0.25em] mb-8 w-full text-left font-sans">자산 배분 한눈에 보기</h3>
-                        <div class="relative w-44 h-44 mb-8 text-center font-sans">
+                    <div id="asset-allocation-card" class="asset-allocation-card glass-card p-6 flex flex-col items-center justify-center min-h-[300px] text-left font-sans" role="button" tabindex="0" onclick="toggleAssetAllocation()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleAssetAllocation()}">
+                        <h3 class="font-black text-[10px] text-slate-400 uppercase tracking-[0.25em] mb-8 w-full text-left font-sans">자산 배분 한눈에 보기 <span id="asset-allocation-state">펼치기</span></h3>
+                        <div class="asset-chart-wrap relative w-44 h-44 mb-8 text-center font-sans">
                             <canvas id="assetChart"></canvas>
                         </div>
                         <div id="chart-legend" class="w-full space-y-2 text-left font-sans"></div>
@@ -582,6 +582,6 @@
             </div>
         </div>
     </div>
-    <script src="./assets/app.js?v=20260622g"></script>
+    <script src="./assets/app.js?v=20260622h"></script>
 </body>
 </html>

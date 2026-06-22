@@ -69,6 +69,8 @@ const centerTextPlugin = {
         let historyRenderSignature = '';
         let historyNeedsRender = true;
         let currentTransactionMode = 'buy';
+        let aiRecommendationExpanded = false;
+        let assetAllocationExpanded = false;
         let monthlyBreakdownOpen = { buy: false, sell: false, dividend: false };
         let syncStatusText = '동기화 대기 중';
         let syncStatusTone = 'info';
@@ -781,6 +783,57 @@ const centerTextPlugin = {
             };
         }
 
+        function getAiPanelStateClass() {
+            return aiRecommendationExpanded ? 'is-expanded' : 'is-collapsed';
+        }
+
+        function renderAiRecommendationToggle(summary) {
+            return `
+                <button type="button" class="ai-reco-summary-toggle" onclick="toggleAiRecommendation(event)">
+                    <span>${escapeHtml(summary || '추천 내용을 확인해보세요')}</span>
+                    <strong class="ai-reco-toggle-label">${aiRecommendationExpanded ? '접기' : '펼치기'}</strong>
+                </button>
+            `;
+        }
+
+        function applyAiRecommendationCollapsedState() {
+            document.querySelectorAll('.ai-reco-panel').forEach((panel) => {
+                panel.classList.toggle('is-expanded', aiRecommendationExpanded);
+                panel.classList.toggle('is-collapsed', !aiRecommendationExpanded);
+            });
+            document.querySelectorAll('.ai-reco-toggle-label').forEach((label) => {
+                label.innerText = aiRecommendationExpanded ? '접기' : '펼치기';
+            });
+        }
+
+        window.toggleAiRecommendation = (event) => {
+            event?.stopPropagation?.();
+            aiRecommendationExpanded = !aiRecommendationExpanded;
+            applyAiRecommendationCollapsedState();
+        };
+
+        function updateAssetAllocationUI() {
+            const card = getEl('asset-allocation-card');
+            if (!card) return;
+            card.classList.toggle('is-expanded', assetAllocationExpanded);
+            safeSetText('asset-allocation-state', assetAllocationExpanded ? '접기' : '펼치기');
+            if (assetAllocationExpanded && assetChart) {
+                requestAnimationFrame(() => {
+                    try {
+                        assetChart.resize();
+                        assetChart.update('none');
+                    } catch (error) {
+                        console.warn('Asset chart resize skipped.', error);
+                    }
+                });
+            }
+        }
+
+        window.toggleAssetAllocation = () => {
+            assetAllocationExpanded = !assetAllocationExpanded;
+            updateAssetAllocationUI();
+        };
+
         function renderIsaPlanRecommendation(plan) {
             const rows = (plan.rows || []).filter(row => Number(row.price || 0) > 0);
             const buyRows = rows.filter(row => Number(row.qty || 0) > 0);
@@ -789,11 +842,12 @@ const centerTextPlugin = {
             if (buyRows.length) {
                 const row = buyRows[0];
                 return `
-                    <div class="ai-reco-panel buy-reco-card-now">
+                    <div class="ai-reco-panel buy-reco-card-now ${getAiPanelStateClass()}">
                         <div class="ai-reco-title-row">
                             <span class="ai-reco-icon">AI</span>
                             <p>AI 추천</p>
                         </div>
+                        ${renderAiRecommendationToggle(`${row.name || row.ticker} ${Number(row.qty || 0).toLocaleString()}주 후보`)}
                         <h3>오늘은 <strong>${escapeHtml(row.name || row.ticker)}</strong><br>비중 보강을 제안해요</h3>
                         <div class="ai-reco-metrics">
                             <div><span>추천 수량</span><strong>${Number(row.qty || 0).toLocaleString()}주</strong></div>
@@ -823,22 +877,24 @@ const centerTextPlugin = {
                 : rows[0];
             if (!next) {
                 return `
-                    <div class="ai-reco-panel buy-reco-card-wait">
+                    <div class="ai-reco-panel buy-reco-card-wait ${getAiPanelStateClass()}">
                         <div class="ai-reco-title-row">
                             <span class="ai-reco-icon">AI</span>
                             <p>AI 추천</p>
                         </div>
+                        ${renderAiRecommendationToggle('가격 데이터 수신 후 추천 계산')}
                         <h3>가격 데이터가 들어오면<br>추천을 다시 계산할게요</h3>
                     </div>
                 `;
             }
 
             return `
-                <div class="ai-reco-panel buy-reco-card-wait">
+                <div class="ai-reco-panel buy-reco-card-wait ${getAiPanelStateClass()}">
                     <div class="ai-reco-title-row">
                         <span class="ai-reco-icon">AI</span>
                         <p>AI 추천</p>
                     </div>
+                    ${renderAiRecommendationToggle(`${next.name || next.ticker} 부족 ${formatWon(next.shortfall || 0)}`)}
                     <h3>오늘은 <strong>${escapeHtml(next.name || next.ticker)}</strong><br>비중 보강을 제안해요</h3>
                     <div class="ai-reco-metrics">
                         <div><span>부족 금액</span><strong>${formatWon(next.shortfall || 0)}</strong></div>
@@ -2346,6 +2402,7 @@ async function postMutation(action, payload = {}) {
             if(plansWrap) {
                 plansWrap.classList.remove('hidden');
                 plansWrap.innerHTML = renderIsaPlanRecommendation(isaPlan);
+                applyAiRecommendationCollapsedState();
             }
             if(emptyBox) emptyBox.classList.add('hidden');
             safeSetText('stat-reinvest-rate', `${reinvestRate.toFixed(1)}%`);
@@ -2389,6 +2446,7 @@ if(assetChart){
                     return `<div class="flex justify-between text-[10px] mb-2 font-black transition hover:translate-x-1 text-left font-sans"><span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full" style="background:${bg[i]}"></span><span class="truncate w-24 text-slate-500 font-sans">${escapeHtml(l)}</span></span><span class="text-slate-800 text-right font-sans">${pct.toFixed(1)}%</span></div>`;
                 }).join('')
                 : `<div class="text-[10px] font-black text-slate-400 text-left font-sans">가격 데이터 대기 중</div>`);
+            updateAssetAllocationUI();
             renderHistoryIfVisible();
             updateSelectedStockPreview();
             updateDepositSummary();
