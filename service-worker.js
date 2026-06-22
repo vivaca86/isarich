@@ -1,17 +1,17 @@
 const CACHE_PREFIX = 'isa-rich-cache-';
-const CACHE_VERSION = 'v46-dashboard-ai-and-entry-polish';
+const CACHE_VERSION = 'v47-transaction-bottom-nav';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const OFFLINE_URLS = [
   './',
   './index.html',
   './test.html',
   './config.js?v=20260513b',
-  './assets/styles.css?v=20260622k',
+  './assets/styles.css?v=20260622l',
   './assets/test-styles.css?v=20260513c',
   './assets/skins/test-hero-skin.svg',
   './assets/skins/test-panel-skin.svg',
   './assets/skins/test-holding-skin.svg',
-  './assets/app.js?v=20260622k',
+  './assets/app.js?v=20260622l',
   './manifest.webmanifest',
   './icons/app-icon.svg',
   './icons/ui/card-base.svg',

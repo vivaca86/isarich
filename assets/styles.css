@@ -2938,10 +2938,6 @@ body > nav[class~="lg:hidden"][class~="fixed"] .nav-item.text-blue-600 {
 }
 
 /* ===== Full approved mockup pages 2026-06-22 ===== */
-body[data-active-section="transaction"] > nav[class~="lg:hidden"][class~="fixed"] {
-    display: none !important;
-}
-
 #section-transaction {
     max-width: 520px !important;
     margin: 0 auto !important;
