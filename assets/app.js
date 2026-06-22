@@ -68,6 +68,7 @@ const centerTextPlugin = {
         let historyVisibleCount = 100;
         let historyRenderSignature = '';
         let historyNeedsRender = true;
+        let currentTransactionMode = 'buy';
         let monthlyBreakdownOpen = { buy: false, sell: false, dividend: false };
         let syncStatusText = '동기화 대기 중';
         let syncStatusTone = 'info';
@@ -1719,18 +1720,199 @@ const centerTextPlugin = {
             return `<div class="holding-item ${trendToneClass}" data-ticker="${safeTicker}" style="--holding-color:${stockVisual.bgColor};--holding-progress:${progressWidth}%"><div class="holding-row"><div class="holding-left"><div class="holding-avatar">${avatarInitial}</div><div class="holding-copy"><p class="holding-name">${safeName}</p><p class="holding-meta">${safeTicker} · 연 ${yieldPct.toFixed(2)}%</p></div></div><div class="holding-right"><p class="holding-value">₩${Math.round(value).toLocaleString()}</p><p class="holding-return ${profitClass}">${signedProfit} (${signedRate})</p></div><span class="holding-chevron">›</span></div><div class="holding-subrow"><span>${shares.toFixed(0)}주 · 평가손익</span><span>평균 ₩${Math.round(avgPrice).toLocaleString()}</span></div><div class="holding-progress"><i></i></div></div>`;
         }
 
-        function switchTab(type) {
-            const pb = getEl('tab-btn-purchase'), db = getEl('tab-btn-deposit');
-            if(pb && db) {
-                pb.classList.remove('active-purchase', 'active-deposit');
-                db.classList.remove('active-purchase', 'active-deposit');
-                if(type === 'purchase') {
-                    pb.classList.add('active-purchase'); getEl('tab-content-purchase').classList.remove('hidden'); getEl('tab-content-deposit').classList.add('hidden');
-                } else {
-                    db.classList.add('active-deposit'); getEl('tab-content-purchase').classList.add('hidden'); getEl('tab-content-deposit').classList.remove('hidden');
-                }
+        function getCurrentSharesForTicker(ticker) {
+            const key = String(ticker || '').trim();
+            if (!key) return 0;
+            return Number(getPortfolioState()?.holdings?.[key]?.shares || 0);
+        }
+
+        function updateTradeSummary() {
+            const shares = Number(getEl('input-shares')?.value || 0);
+            const price = Number(getEl('input-price')?.value || 0);
+            const ticker = String(getEl('input-ticker')?.value || selectedTicker || '').trim();
+            const amount = Math.max(0, shares * price);
+            const fee = amount > 0 ? Math.ceil(amount * 0.00015) : 0;
+            const isSell = currentTransactionMode === 'sell';
+            const currentShares = getCurrentSharesForTicker(ticker);
+            const postShares = isSell ? Math.max(0, currentShares - shares) : currentShares + shares;
+            const cash = Object.values(getPortfolioState()?.cash || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+            const afterCash = isSell ? cash + amount - fee : cash - amount - fee;
+
+            safeSetText('trade-estimated-amount', `₩${Math.round(amount).toLocaleString()}`);
+            safeSetText('trade-post-shares', `${Number(postShares || 0).toLocaleString()}주`);
+            safeSetText('trade-fee', `₩${fee.toLocaleString()}`);
+            safeSetText('trade-cash-impact', `₩${Math.round(afterCash).toLocaleString()}`);
+            safeSetText('trade-summary-main-label', isSell ? '예상 입금' : '예상 금액');
+            safeSetText('trade-summary-side-label', isSell ? '매도 후 보유' : '매수 후 보유');
+            safeSetText('trade-cash-label', isSell ? '매도 후 현금' : '매수 후 현금');
+        }
+
+        function updateSelectedStockPreview() {
+            const ticker = String(getEl('input-ticker')?.value || selectedTicker || '').trim();
+            const data = ticker ? marketData[ticker] : null;
+            const name = String(data?.name || getEl('input-name')?.value || '종목을 선택하세요');
+            const price = Number(data?.price || getEl('input-price')?.value || 0);
+            let yieldPct = Number(data?.yield || 0);
+            if (yieldPct > 0 && yieldPct < 1) yieldPct *= 100;
+            const visual = getStockVisual(name, ticker, '#7132f5');
+            const currentShares = getCurrentSharesForTicker(ticker);
+            const isSell = currentTransactionMode === 'sell';
+
+            safeSetText('trade-preview-icon', visual.label || '?');
+            const icon = getEl('trade-preview-icon');
+            if (icon) icon.style.background = `linear-gradient(145deg, ${visual.bgColor}, #7132f5)`;
+            safeSetText('trade-preview-name', data ? name : '종목을 선택하세요');
+            safeSetText('trade-preview-ticker', data ? ticker : '퀵슬롯에서 종목 선택');
+            safeSetText('trade-preview-price', price > 0 ? `₩${Math.round(price).toLocaleString()}` : '₩0');
+            safeSetText('trade-preview-yield', `연 ${Number(yieldPct || 0).toFixed(2)}%`);
+            safeSetText('trade-metric-left-label', isSell ? '보유 수량' : '배당수익률(연)');
+            safeSetText('trade-metric-left-value', isSell ? `${currentShares.toLocaleString()}주` : `${Number(yieldPct || 0).toFixed(2)}%`);
+            safeSetText('trade-metric-right-label', isSell ? '평가손익' : '현재 단가');
+            safeSetText('trade-metric-right-value', isSell ? '계산 중' : (price > 0 ? `₩${Math.round(price).toLocaleString()}` : '₩0'));
+            updateTradeSummary();
+        }
+
+        function updateDepositSummary() {
+            const amount = Number(getEl('div-amount')?.value || 0);
+            const cat = normalizeCashCategory(getEl('wallet-category')?.value || '1');
+            const state = getPortfolioState();
+            const currentCash = Object.values(state?.cash || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+            const isDividend = currentTransactionMode === 'dividend' || cat === '3';
+            const monthKey = currentMonthlyModeKey || getCurrentMonthKey();
+            const report = monthlyReportCache.get(monthKey) || getCurrentMonthReport(transactions, monthKey);
+            const after = currentCash + Math.max(0, amount);
+            const monthTotal = Number(report?.totalDepositAmount || report?.totalReturnAmount || 0) + Math.max(0, amount);
+            const dividendBase = Number(report?.totalReturnAmount || 0) + (isDividend ? Math.max(0, amount) : 0);
+            const target = 50000;
+            const remaining = Math.max(0, target - dividendBase);
+            const pct = Math.max(0, Math.min(100, (dividendBase / target) * 100));
+
+            safeSetText('cash-after-amount', `₩${Math.round(after).toLocaleString()}`);
+            safeSetText('cash-monthly-total', `₩${Math.round(isDividend ? dividendBase : monthTotal).toLocaleString()}`);
+            safeSetText('cash-summary-left-label', isDividend ? '이번 달 배당 합계' : '입금 후 현금');
+            safeSetText('cash-summary-right-label', isDividend ? '다음 목표까지' : '이번 달 입금 합계');
+            safeSetText('cash-summary-caption', isDividend ? '목표 50,000원' : '목표 1,000,000원');
+            safeSetText('dividend-next-goal-summary', `₩${Math.round(remaining).toLocaleString()}`);
+            safeSetText('dividend-progress-pct', `${Math.round(pct)}%`);
+            const bar = getEl('dividend-progress-bar');
+            if (bar) bar.style.width = `${pct}%`;
+        }
+
+        function updateCashModeCopy() {
+            const isDividend = currentTransactionMode === 'dividend' || normalizeCashCategory(getEl('wallet-category')?.value || '1') === '3';
+            safeSetText('cash-mode-icon', isDividend ? '₩' : '↓');
+            safeSetText('cash-mode-title', isDividend ? '배당 입금' : '현금 입금');
+            safeSetText('cash-mode-desc', isDividend ? 'ETF 배당금 입금 내역을 기록합니다.' : 'ISA 계좌 현금으로 입금하는 내역을 기록합니다.');
+            safeSetText('amount-input-label', isDividend ? '배당금' : '충전 금액');
+            safeSetText('save-div-btn', isDividend ? '배당 기록 추가' : '입금 기록 추가');
+            const quickPresets = isDividend
+                ? [{ id: 'quick-amount-1', label: '+1천', value: 1000 }, { id: 'quick-amount-2', label: '+5천', value: 5000 }, { id: 'quick-amount-3', label: '+1만', value: 10000 }]
+                : [{ id: 'quick-amount-1', label: '+10만', value: 100000 }, { id: 'quick-amount-2', label: '+50만', value: 500000 }, { id: 'quick-amount-3', label: '+100만', value: 1000000 }];
+            quickPresets.forEach((preset) => {
+                const button = getEl(preset.id);
+                if (!button) return;
+                button.innerText = preset.label;
+                button.onclick = () => adjustDepositAmount(preset.value);
+            });
+            const summary = getEl('dividend-progress-summary');
+            if (summary) summary.classList.toggle('hidden', !isDividend);
+            updateDepositSummary();
+        }
+
+        window.adjustDepositAmount = (amount) => {
+            const input = getEl('div-amount');
+            if (!input) return;
+            input.value = String(Number(input.value || 0) + Number(amount || 0));
+            updateDepositSummary();
+        };
+
+        function ensureTradeSelection() {
+            if (selectedTicker && marketData[selectedTicker]) return;
+            const firstTicker = Object.keys(marketData || {})[0];
+            if (!firstTicker || !marketData[firstTicker]) return;
+            const data = marketData[firstTicker];
+            selectedTicker = firstTicker;
+            if (getEl('input-ticker')) getEl('input-ticker').value = firstTicker;
+            if (getEl('input-name')) getEl('input-name').value = data.name || firstTicker;
+            if (getEl('input-price')) getEl('input-price').value = data.price || '';
+        }
+
+        function requestRecordConfirmation({ kind, title, subtitle, icon, tone = 'purple', rows = [], confirmLabel = '기록 추가' }) {
+            const modal = getEl('record-confirm-modal');
+            if (!modal) return Promise.resolve(true);
+            safeSetText('record-confirm-title', title || '기록 확인');
+            safeSetText('record-confirm-subtitle', subtitle || '내용을 확인해주세요');
+            safeSetText('record-confirm-icon', icon || '✓');
+            safeSetText('record-confirm-ok', confirmLabel);
+            const iconEl = getEl('record-confirm-icon');
+            if (iconEl) iconEl.dataset.tone = tone;
+            const body = getEl('record-confirm-body');
+            if (body) {
+                body.innerHTML = rows.map((row) => `
+                    <div class="confirm-row">
+                        <span>${escapeHtml(row.label || '')}</span>
+                        <strong>${escapeHtml(row.value || '')}</strong>
+                    </div>
+                `).join('');
             }
-            if(type === 'purchase') updateQuickSelectUI();
+            modal.classList.remove('hidden');
+            return new Promise((resolve) => {
+                const cleanup = (answer) => {
+                    modal.classList.add('hidden');
+                    modal.querySelectorAll('[data-confirm-action]').forEach((el) => {
+                        el.removeEventListener('click', onClick);
+                    });
+                    resolve(answer);
+                };
+                const onClick = (event) => {
+                    cleanup(event.currentTarget?.dataset?.confirmAction === 'ok');
+                };
+                modal.querySelectorAll('[data-confirm-action]').forEach((el) => {
+                    el.addEventListener('click', onClick, { once: true });
+                });
+            });
+        }
+
+        window.switchTransactionMode = (mode) => {
+            const nextMode = ['buy', 'sell', 'deposit', 'dividend'].includes(mode) ? mode : 'buy';
+            currentTransactionMode = nextMode;
+            const modeInput = getEl('transaction-mode');
+            if (modeInput) modeInput.value = nextMode;
+
+            const isTrade = nextMode === 'buy' || nextMode === 'sell';
+            getEl('tab-content-purchase')?.classList.toggle('hidden', !isTrade);
+            getEl('tab-content-deposit')?.classList.toggle('hidden', isTrade);
+
+            const tabMap = {
+                buy: getEl('tab-btn-purchase'),
+                sell: getEl('tab-btn-sell'),
+                deposit: getEl('tab-btn-deposit'),
+                dividend: getEl('tab-btn-dividend')
+            };
+            Object.entries(tabMap).forEach(([key, btn]) => {
+                if (!btn) return;
+                btn.classList.remove('active-purchase', 'active-sell', 'active-deposit', 'active-dividend');
+                if (key === nextMode) btn.classList.add(
+                    key === 'buy' ? 'active-purchase' :
+                    key === 'sell' ? 'active-sell' :
+                    key === 'deposit' ? 'active-deposit' : 'active-dividend'
+                );
+            });
+
+            if (nextMode === 'deposit') setDepositCat(1);
+            if (nextMode === 'dividend') setDepositCat(3);
+            if (isTrade) {
+                ensureTradeSelection();
+                safeSetText('save-btn', nextMode === 'sell' ? '매도 기록 추가' : '기록 추가');
+                updateQuickSelectUI();
+                updateSelectedStockPreview();
+            } else {
+                updateCashModeCopy();
+            }
+        };
+
+        function switchTab(type) {
+            switchTransactionMode(type === 'purchase' ? 'buy' : 'deposit');
         }
 
         function setDepositCat(n) {
@@ -1744,6 +1926,7 @@ const centerTextPlugin = {
                     else btn.className = "flex flex-col items-center gap-2 py-4 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-500 text-[11px] font-black transition text-center hover:border-slate-300";
                 }
             });
+            updateCashModeCopy();
         }
 
         function updateDividendTickerOptions() {
@@ -1866,7 +2049,9 @@ async function postMutation(action, payload = {}) {
             const ticker = getEl('input-ticker').value;
             const name = getEl('input-name').value;
             const editId = getEl('edit-id').value;
-            const defaultLabel = editId ? '수정 저장' : '매수하기';
+            const mode = String(getEl('transaction-mode')?.value || currentTransactionMode || 'buy');
+            const isSell = mode === 'sell';
+            const defaultLabel = editId ? '수정 저장' : (isSell ? '매도 기록 추가' : '기록 추가');
             const originalTx = editId ? transactions.find(x => String(x.id) === String(editId)) : null;
             if (!date || !ticker || shares <= 0 || price <= 0) {
                 setFormStatus('purchase-form-status', '날짜, 종목, 수량, 가격을 확인해주세요.', 'error');
@@ -1876,6 +2061,21 @@ async function postMutation(action, payload = {}) {
                 else getEl('input-price')?.focus();
                 return;
             }
+            const confirmOk = await requestRecordConfirmation({
+                kind: isSell ? 'sell' : 'buy',
+                title: isSell ? '매도 기록 확인' : '매수 기록 확인',
+                subtitle: `${name || ticker} · ${ticker}`,
+                icon: isSell ? '↘' : '🛒',
+                tone: isSell ? 'red' : 'purple',
+                confirmLabel: isSell ? '매도 기록 추가' : '기록 추가',
+                rows: [
+                    { label: '수량', value: `${Number(shares).toLocaleString()}주` },
+                    { label: '단가', value: `₩${Math.round(price).toLocaleString()}` },
+                    { label: isSell ? '예상 입금' : '예상 금액', value: `₩${Math.round(shares * price).toLocaleString()}` },
+                    { label: isSell ? '매도 후 보유' : '매수 후 보유', value: getEl('trade-post-shares')?.textContent || '-' }
+                ]
+            });
+            if (!confirmOk) return;
             const btn = getEl('save-btn');
             let completed = false;
             setFormStatus('purchase-form-status', '저장 중입니다...', 'info');
@@ -1886,10 +2086,10 @@ async function postMutation(action, payload = {}) {
                     date,
                     ticker,
                     name,
-                    shares,
+                    shares: isSell ? -Math.abs(shares) : Math.abs(shares),
                     price,
                     category: 0,
-                    side: 'buy',
+                    side: isSell ? 'sell' : 'buy',
                     keepCreatedAtMs: Number(originalTx?.createdAtMs || 0)
                 };
                 const savedId = await postMutation('add', payload);
@@ -1901,7 +2101,7 @@ async function postMutation(action, payload = {}) {
                 console.error(e);
                 setFormStatus('purchase-form-status', '저장 실패: ' + (e?.message || '네트워크 오류'), 'error');
             }
-            setButtonBusy(btn, false, completed ? '매수하기' : defaultLabel, completed ? '매수하기' : defaultLabel);
+            setButtonBusy(btn, false, completed ? (isSell ? '매도 기록 추가' : '기록 추가') : defaultLabel, completed ? (isSell ? '매도 기록 추가' : '기록 추가') : defaultLabel);
         }
 
         window.exitEditMode = () => { resetPurchaseForm(); showSection('history'); };
@@ -1910,19 +2110,19 @@ async function postMutation(action, payload = {}) {
             if(getEl('input-shares')) getEl('input-shares').value = ""; 
             if(getEl('input-price')) getEl('input-price').value = "";
             if(getEl('edit-id')) getEl('edit-id').value = ""; 
-            if(getEl('save-btn')) getEl('save-btn').innerText = "매수하기";
-            if(getEl('save-div-btn')) getEl('save-div-btn').innerText = "충전하기";
+            if(getEl('save-btn')) getEl('save-btn').innerText = currentTransactionMode === 'sell' ? "매도 기록 추가" : "기록 추가";
+            if(getEl('save-div-btn')) getEl('save-div-btn').innerText = currentTransactionMode === 'dividend' ? "배당 기록 추가" : "입금 기록 추가";
             if(getEl('cancel-edit-btn')) getEl('cancel-edit-btn').classList.add('hidden');
             if(getEl('cancel-edit-btn-deposit')) getEl('cancel-edit-btn-deposit').classList.add('hidden');
             if(getEl('div-ticker')) getEl('div-ticker').value = "DEPOSIT";
             setFormStatus('purchase-form-status');
             setFormStatus('deposit-form-status');
-            selectedTicker = ""; updateQuickSelectUI();
+            selectedTicker = ""; updateQuickSelectUI(); updateSelectedStockPreview(); updateDepositSummary();
         }
 
         async function saveWalletDeposit() {
             const date = getEl('div-date').value, amount = Number(getEl('div-amount').value), cat = normalizeCashCategory(getEl('wallet-category').value), editId = getEl('edit-id').value;
-            const defaultLabel = editId ? '수정 저장' : '충전하기';
+            const defaultLabel = editId ? '수정 저장' : (cat === '3' ? '배당 기록 추가' : '입금 기록 추가');
             const originalTx = editId ? transactions.find(x => String(x.id) === String(editId)) : null;
             if(!date || !Number.isFinite(amount) || amount <= 0) {
                 setFormStatus('deposit-form-status', '날짜와 0보다 큰 금액을 입력해주세요.', 'error');
@@ -1942,6 +2142,21 @@ async function postMutation(action, payload = {}) {
             const depositName = cat === '3'
                 ? (depositTicker === 'DEPOSIT' ? '배당 입금' : `${dividendName} 배당 입금`)
                 : '현금 입금';
+            const confirmOk = await requestRecordConfirmation({
+                kind: cat === '3' ? 'dividend' : 'deposit',
+                title: cat === '3' ? '배당 기록 확인' : '입금 기록 확인',
+                subtitle: cat === '3' ? depositName : 'ISA 현금 입금',
+                icon: cat === '3' ? '✓' : '🏦',
+                tone: cat === '3' ? 'green' : 'purple',
+                confirmLabel: cat === '3' ? '배당 추가' : '입금 추가',
+                rows: [
+                    { label: '금액', value: `₩${Math.round(amount).toLocaleString()}` },
+                    { label: '구분', value: CAT_NAMES[cat] || '입금' },
+                    { label: '날짜', value: String(date).substring(0, 10) },
+                    { label: cat === '3' ? '종목' : '입금 후 현금', value: cat === '3' ? dividendName : (getEl('cash-after-amount')?.textContent || '-') }
+                ]
+            });
+            if (!confirmOk) return;
             const btn = getEl('save-div-btn');
             let completed = false;
             setFormStatus('deposit-form-status', '저장 중입니다...', 'info');
@@ -2175,6 +2390,8 @@ if(assetChart){
                 }).join('')
                 : `<div class="text-[10px] font-black text-slate-400 text-left font-sans">가격 데이터 대기 중</div>`);
             renderHistoryIfVisible();
+            updateSelectedStockPreview();
+            updateDepositSummary();
 
 
         }
@@ -2297,13 +2514,27 @@ if(assetChart){
             const box = getEl('quick-select-buttons'); if(!box) return;
             const tickers = Object.keys(marketData);
             if(tickers.length > 0) {
-                box.innerHTML = tickers.map(k => `<button type="button" data-ticker="${escapeHtml(k)}" class="quick-select-btn px-3.5 py-2.5 ${selectedTicker === k ? 'bg-slate-900 text-white border-slate-900 shadow-lg font-sans' : 'bg-white text-slate-500 border-slate-100 shadow-sm font-sans'} border rounded-xl text-[10px] font-black hover:border-indigo-500 transition active:scale-95 shadow-sm text-center font-sans uppercase">${escapeHtml(marketData[k].name)}</button>`).join('');
+                if (!selectedTicker || !marketData[selectedTicker]) {
+                    const firstTicker = tickers[0];
+                    const firstData = marketData[firstTicker] || {};
+                    selectedTicker = firstTicker;
+                    if (getEl('input-ticker')) getEl('input-ticker').value = firstTicker;
+                    if (getEl('input-name')) getEl('input-name').value = firstData.name || firstTicker;
+                    if (getEl('input-price')) getEl('input-price').value = firstData.price || '';
+                }
+                box.innerHTML = tickers.map(k => {
+                    const data = marketData[k] || {};
+                    const visual = getStockVisual(data.name, k, '#7132f5');
+                    const activeClass = selectedTicker === k ? 'bg-slate-900 text-white border-slate-900 shadow-lg font-sans' : 'bg-white text-slate-500 border-slate-100 shadow-sm font-sans';
+                    return `<button type="button" data-ticker="${escapeHtml(k)}" class="quick-select-btn ${activeClass}" style="--quick-color:${visual.bgColor}"><span class="quick-slot-avatar">${escapeHtml(visual.label)}</span><strong>${escapeHtml(data.name || k)}</strong><small>${escapeHtml(k)}</small>${selectedTicker === k ? '<i class="fa-solid fa-check"></i>' : ''}</button>`;
+                }).join('');
+                updateSelectedStockPreview();
             } else box.innerHTML = `<div class="text-[10px] text-slate-300 p-4 border border-dashed border-slate-200 rounded-xl w-full text-center font-black uppercase font-sans">데이터 수신 대기...</div>`; 
         }
 
         window.fillForm = (k) => {
             const d = marketData[k]; if(!d) return;
-            selectedTicker = k; getEl('input-ticker').value = k; getEl('input-name').value = d.name; getEl('input-price').value = d.price; getEl('input-shares').focus(); updateQuickSelectUI();
+            selectedTicker = k; getEl('input-ticker').value = k; getEl('input-name').value = d.name; getEl('input-price').value = d.price; getEl('input-shares').focus(); updateQuickSelectUI(); updateSelectedStockPreview();
         };
 
         window.editTransaction = (id) => {
@@ -2319,10 +2550,11 @@ if(assetChart){
                 }
                 getEl('edit-id').value = id; getEl('save-div-btn').innerText = "수정 저장"; getEl('cancel-edit-btn-deposit').classList.remove('hidden');
             } else {
-                showSection('transaction'); switchTab('purchase');
-                getEl('input-date').value = String(t.date).substring(0,10); getEl('input-ticker').value = t.ticker; getEl('input-name').value = t.name; getEl('input-shares').value = t.shares; getEl('input-price').value = t.price;
+                const isSell = String(t?.side || '').toLowerCase() === 'sell' || Number(t?.shares || 0) < 0;
+                showSection('transaction'); switchTransactionMode(isSell ? 'sell' : 'buy');
+                getEl('input-date').value = String(t.date).substring(0,10); getEl('input-ticker').value = t.ticker; getEl('input-name').value = t.name; getEl('input-shares').value = Math.abs(Number(t.shares || 0)); getEl('input-price').value = t.price;
                 getEl('edit-id').value = id; getEl('save-btn').innerText = "수정 저장"; getEl('cancel-edit-btn').classList.remove('hidden');
-                selectedTicker = t.ticker; updateQuickSelectUI();
+                selectedTicker = t.ticker; updateQuickSelectUI(); updateSelectedStockPreview();
             }
         };
 
@@ -2525,6 +2757,8 @@ if(assetChart){
         window.showSection = (id) => {
             ['dashboard','history','transaction'].forEach(s => { getEl('section-'+s)?.classList.add('hidden'); });
             getEl('section-'+id)?.classList.remove('hidden');
+            document.body.dataset.activeSection = id;
+            window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
             document.querySelectorAll('.nav-item').forEach(b => { b.classList.remove('text-blue-600'); b.classList.add('text-slate-300'); });
             getEl('mob-nav-'+id)?.classList.add('text-blue-600'); getEl('mob-nav-'+id)?.classList.remove('text-slate-300');
             document.querySelectorAll('.pc-nav-item').forEach(b => b.classList.remove('text-blue-600', 'border-r-4', 'border-blue-600'));
@@ -2658,7 +2892,10 @@ window.onload = () => {
             applyAppVersion();
             initFirebase();
             restorePendingTransactions();
-            setDepositCat(3);
+            switchTransactionMode('buy');
+            ['input-shares', 'input-price'].forEach((id) => getEl(id)?.addEventListener('input', updateTradeSummary));
+            ['div-amount', 'div-ticker'].forEach((id) => getEl(id)?.addEventListener('input', updateDepositSummary));
+            getEl('div-ticker')?.addEventListener('change', updateDepositSummary);
             restoreLocalDataSnapshot();
             syncAllData();
             registerServiceWorker();
