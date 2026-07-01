@@ -3728,6 +3728,38 @@ function registerServiceWorker() {
     });
 }
 
+function initMobileBottomNavLock() {
+    const formControlSelector = 'input, textarea, select, [contenteditable="true"]';
+    const mobileQuery = window.matchMedia('(max-width: 1023px)');
+
+    const hasFocusedFormControl = () => (
+        document.activeElement instanceof Element
+        && document.activeElement.matches(formControlSelector)
+    );
+
+    const updateState = () => {
+        const visualViewport = window.visualViewport;
+        const keyboardGap = visualViewport
+            ? window.innerHeight - visualViewport.height - visualViewport.offsetTop
+            : 0;
+        const isControlFocused = hasFocusedFormControl();
+        document.body.classList.toggle('mobile-control-focus', mobileQuery.matches && isControlFocused);
+        document.body.classList.toggle('mobile-keyboard-open', mobileQuery.matches && isControlFocused && keyboardGap > 120);
+    };
+
+    document.addEventListener('focusin', (event) => {
+        if (event.target instanceof Element && event.target.matches(formControlSelector)) {
+            updateState();
+        }
+    });
+    document.addEventListener('focusout', () => window.setTimeout(updateState, 80));
+    window.visualViewport?.addEventListener('resize', updateState);
+    window.visualViewport?.addEventListener('scroll', updateState);
+    mobileQuery.addEventListener?.('change', updateState);
+    window.addEventListener('resize', updateState);
+    updateState();
+}
+
 
 window.onload = () => {
             const today = getLocalDateInputValue();
@@ -3735,6 +3767,7 @@ window.onload = () => {
             if(getEl('div-date')) getEl('div-date').value = today;
             applyLowPowerMode(lowPowerMode);
             applyAppVersion();
+            initMobileBottomNavLock();
             initFirebase();
             restorePendingTransactions();
             switchTransactionMode('buy');

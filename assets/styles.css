@@ -4213,3 +4213,52 @@ body > nav[class~="lg:hidden"][class~="fixed"] .nav-item.text-blue-600 {
         display: none !important;
     }
 }
+
+/* Mobile bottom navigation lives in its own fixed layer. During text entry,
+   hide it instead of letting mobile browsers lift it above the keyboard. */
+:root {
+    --mobile-bottom-nav-height: 58px;
+    --mobile-bottom-nav-gap: max(0.85rem, env(safe-area-inset-bottom));
+}
+
+@media (max-width: 1023px) {
+    body {
+        padding-bottom: calc(var(--mobile-bottom-nav-height) + var(--mobile-bottom-nav-gap) + 28px) !important;
+    }
+
+    main {
+        padding-bottom: calc(var(--mobile-bottom-nav-height) + var(--mobile-bottom-nav-gap) + 24px) !important;
+    }
+
+    body > nav.mobile-bottom-nav[class~="lg:hidden"][class~="fixed"] {
+        position: fixed !important;
+        display: flex !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: var(--mobile-bottom-nav-gap) !important;
+        width: min(calc(100% - 1.6rem), 828px) !important;
+        max-width: calc(100% - 1.6rem) !important;
+        height: var(--mobile-bottom-nav-height) !important;
+        margin: 0 auto !important;
+        padding: 0 0.55rem !important;
+        border-radius: 18px !important;
+        z-index: 90 !important;
+        transform: translate3d(0, 0, 0) !important;
+        transition: transform 180ms ease, opacity 160ms ease !important;
+        will-change: transform, opacity;
+        contain: layout paint;
+    }
+
+    body.mobile-control-focus > nav.mobile-bottom-nav[class~="lg:hidden"][class~="fixed"],
+    body.mobile-keyboard-open > nav.mobile-bottom-nav[class~="lg:hidden"][class~="fixed"] {
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transform: translate3d(0, calc(100% + var(--mobile-bottom-nav-gap) + 16px), 0) !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    body > nav.mobile-bottom-nav[class~="lg:hidden"][class~="fixed"] {
+        display: none !important;
+    }
+}
