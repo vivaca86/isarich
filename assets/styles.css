@@ -4152,6 +4152,15 @@ body > nav[class~="lg:hidden"][class~="fixed"] .nav-item.text-blue-600 {
     border-color: rgba(252, 211, 77, 0.55);
 }
 
+.import-row-duplicate td {
+    background: rgba(255, 241, 242, 0.95);
+    border-color: rgba(251, 113, 133, 0.55);
+}
+
+.import-row-duplicate input[type="checkbox"] {
+    cursor: not-allowed;
+}
+
 .import-confidence-pill {
     display: inline-flex;
     align-items: center;
@@ -4162,6 +4171,20 @@ body > nav[class~="lg:hidden"][class~="fixed"] .nav-item.text-blue-600 {
     background: #e0f2fe;
     color: #0369a1;
     font-size: 0.68rem;
+    font-weight: 900;
+}
+
+.import-duplicate-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.6rem;
+    height: 1.55rem;
+    margin-left: 0.25rem;
+    border-radius: 999px;
+    background: #ffe4e6;
+    color: #be123c;
+    font-size: 0.62rem;
     font-weight: 900;
 }
 

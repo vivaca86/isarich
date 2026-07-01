@@ -1943,6 +1943,14 @@ const centerTextPlugin = {
 
             body.innerHTML = importRows.map((row, index) => {
                 const warning = getImportRowWarning(row);
+                const duplicate = isLikelyExistingTransaction(row);
+                const rowClass = [
+                    warning ? 'import-row-warning' : '',
+                    duplicate ? 'import-row-duplicate' : ''
+                ].filter(Boolean).join(' ');
+                const rowNote = duplicate
+                    ? '이미 저장된 거래입니다. 저장에서 제외됩니다.'
+                    : (warning || row.memo || '');
                 const confidencePct = Math.round(Number(row.confidence || 0) * 100);
                 const sideOptions = [
                     ['buy', '매수'],
@@ -1959,8 +1967,8 @@ const centerTextPlugin = {
                 ].map(([value, label]) => `<option value="${value}" ${String(row.category) === value ? 'selected' : ''}>${label}</option>`).join('');
 
                 return `
-                    <tr class="${warning ? 'import-row-warning' : ''}" title="${escapeHtml(row.source || '')}">
-                        <td class="import-col-check"><input type="checkbox" data-import-index="${index}" data-import-field="selected" ${row.selected ? 'checked' : ''}></td>
+                    <tr class="${rowClass}" title="${escapeHtml(row.source || '')}">
+                        <td class="import-col-check"><input type="checkbox" data-import-index="${index}" data-import-field="selected" ${row.selected ? 'checked' : ''} ${duplicate ? 'disabled' : ''}></td>
                         <td class="import-col-date"><input type="date" value="${escapeHtml(row.date)}" data-import-index="${index}" data-import-field="date"></td>
                         <td class="import-col-side"><select data-import-index="${index}" data-import-field="side">${sideOptions}</select></td>
                         <td class="import-col-ticker"><input type="text" value="${escapeHtml(row.ticker)}" data-import-index="${index}" data-import-field="ticker"></td>
@@ -1968,7 +1976,11 @@ const centerTextPlugin = {
                         <td class="import-col-number"><input type="number" step="0.0001" value="${escapeHtml(row.shares)}" data-import-index="${index}" data-import-field="shares"></td>
                         <td class="import-col-number"><input type="number" step="0.01" value="${escapeHtml(row.price)}" data-import-index="${index}" data-import-field="price"></td>
                         <td class="import-col-category"><select data-import-index="${index}" data-import-field="category">${categoryOptions}</select></td>
-                        <td class="import-col-confidence"><span class="import-confidence-pill">${confidencePct || 0}%</span>${warning ? `<p class="mt-1 text-[9px] font-black text-amber-600">${escapeHtml(warning)}</p>` : ''}</td>
+                        <td class="import-col-confidence">
+                            <span class="import-confidence-pill">${confidencePct || 0}%</span>
+                            ${duplicate ? '<span class="import-duplicate-pill">중복</span>' : ''}
+                            ${rowNote ? `<p class="mt-1 text-[9px] font-black ${duplicate ? 'text-rose-600' : 'text-amber-600'}">${escapeHtml(rowNote)}</p>` : ''}
+                        </td>
                     </tr>
                 `;
             }).join('');
@@ -1980,7 +1992,14 @@ const centerTextPlugin = {
             const row = importRows[index];
             if (!row || !field) return;
 
-            if (field === 'selected') row.selected = Boolean(target.checked);
+            if (field === 'selected') {
+                row.selected = Boolean(target.checked) && !isLikelyExistingTransaction(row);
+                if (target.checked && !row.selected) {
+                    row.memo = '이미 저장된 거래입니다. 저장에서 제외됩니다.';
+                    renderImportRows();
+                    setImportStatus('이미 저장된 거래는 다시 선택할 수 없습니다.', 'info');
+                }
+            }
             else if (field === 'shares' || field === 'price') row[field] = parseImportNumber(target.value);
             else row[field] = target.value;
 
@@ -2011,7 +2030,13 @@ const centerTextPlugin = {
         window.openImportDataPicker = () => getEl('import-data-input')?.click();
         renderImportAiCostMeter();
         window.toggleAllImportRows = (selected) => {
-            importRows = importRows.map((row) => ({ ...row, selected: Boolean(selected) }));
+            importRows = importRows.map((row) => ({
+                ...row,
+                selected: Boolean(selected) && !isLikelyExistingTransaction(row),
+                memo: isLikelyExistingTransaction(row)
+                    ? (row.memo || '이미 저장된 거래입니다. 저장에서 제외됩니다.')
+                    : row.memo
+            }));
             renderImportRows();
         };
         window.clearImportRows = () => {
@@ -2261,9 +2286,19 @@ const centerTextPlugin = {
         };
 
         window.saveSelectedImportRows = async () => {
-            const selected = importRows.filter((row) => row.selected);
+            const selectedRows = importRows.filter((row) => row.selected);
+            const duplicateRows = selectedRows.filter((row) => isLikelyExistingTransaction(row));
+            duplicateRows.forEach((row) => {
+                row.selected = false;
+                row.memo = row.memo || '이미 저장된 거래입니다. 저장에서 제외됩니다.';
+            });
+            const selected = selectedRows.filter((row) => !isLikelyExistingTransaction(row));
             if (!selected.length) {
-                setImportStatus('저장할 행을 선택해주세요.', 'error');
+                setImportStatus(
+                    duplicateRows.length ? '선택한 항목이 모두 중복이라 저장하지 않았습니다.' : '저장할 행을 선택해주세요.',
+                    'error'
+                );
+                renderImportRows();
                 return;
             }
             const invalid = selected.filter((row) => !importRowToPayload(row));
@@ -2274,6 +2309,14 @@ const centerTextPlugin = {
             }
 
             const totalAmount = selected.reduce((sum, row) => sum + Math.abs(Number(row.shares || 1) * Number(row.price || 0)), 0);
+            const confirmRows = [
+                { label: '저장 건수', value: `${selected.length}건` },
+                { label: '합산 금액', value: `₩${Math.round(totalAmount).toLocaleString()}` },
+                { label: 'API 비용', value: importLastCostEstimate?.krw ? `약 ₩${Math.ceil(importLastCostEstimate.krw).toLocaleString()}` : '-' }
+            ];
+            if (duplicateRows.length) {
+                confirmRows.push({ label: '중복 제외', value: `${duplicateRows.length}건` });
+            }
             const confirmOk = await requestRecordConfirmation({
                 kind: 'import',
                 title: '가져오기 저장 확인',
@@ -2281,11 +2324,7 @@ const centerTextPlugin = {
                 icon: '✓',
                 tone: 'purple',
                 confirmLabel: '선택 저장',
-                rows: [
-                    { label: '저장 건수', value: `${selected.length}건` },
-                    { label: '합산 금액', value: `₩${Math.round(totalAmount).toLocaleString()}` },
-                    { label: 'API 비용', value: importLastCostEstimate?.krw ? `약 ₩${Math.ceil(importLastCostEstimate.krw).toLocaleString()}` : '-' }
-                ]
+                rows: confirmRows
             });
             if (!confirmOk) return;
 
@@ -2311,8 +2350,11 @@ const centerTextPlugin = {
             importRows = importRows.filter((row) => !row.saved);
             renderImportRows();
             setButtonBusy(btn, false, '선택 저장', '선택 저장');
+            const successMessage = duplicateRows.length
+                ? `${saved}개 저장 완료 · 중복 ${duplicateRows.length}개 제외`
+                : `${saved}개 저장 완료`;
             setImportStatus(
-                failed.length ? `${saved}개 저장, ${failed.length}개 실패` : `${saved}개 저장 완료`,
+                failed.length ? `${saved}개 저장, ${failed.length}개 실패` : successMessage,
                 failed.length ? 'error' : 'success'
             );
             if (saved > 0) showSection('history');
@@ -3381,6 +3423,9 @@ if(assetChart){
             const target = e.target;
             if (!target?.dataset?.importField) return;
             updateImportRowFromField(target);
+            if (e.type === 'change' && target.dataset.importField !== 'selected') {
+                renderImportRows();
+            }
         }
 
         document.addEventListener('input', handleImportInputEvent);
