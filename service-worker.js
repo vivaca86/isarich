@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'isa-rich-cache-';
-const CACHE_VERSION = 'v55-import-side-guard';
+const CACHE_VERSION = 'v56-import-ticker-alias';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const OFFLINE_URLS = [
   './',
@@ -11,7 +11,7 @@ const OFFLINE_URLS = [
   './assets/skins/test-hero-skin.svg',
   './assets/skins/test-panel-skin.svg',
   './assets/skins/test-holding-skin.svg',
-  './assets/app.js?v=20260701f',
+  './assets/app.js?v=20260701g',
   './manifest.webmanifest',
   './icons/app-icon.svg',
   './icons/ui/card-base.svg',

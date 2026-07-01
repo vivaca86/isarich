@@ -38,6 +38,14 @@
         const PRICE_DATA_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
         const MONTHLY_REPORT_CACHE_KEY = 'isa_monthly_report_cache_v1';
         const MONTHLY_REPORT_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+        const IMPORT_TICKER_ALIASES = {
+            '0183J0': ['TIGER 미국우주테크', '미국우주테크', '우주테크', '우주'],
+            '486290': ['TIGER 미국나스닥100 타겟데일리커버드콜', '미국나스닥100 타겟데일리커버드콜', '나스닥100 타겟데일리커버드콜', '타겟데일리커버드콜', '초고배당', '제피'],
+            '379810': ['KODEX 미국나스닥100', 'KODEX 미국나스닥100TR'],
+            '458730': ['TIGER 미국배당다우존스', '미국배당다우존스', '배당다우존스', '순수슈드', 'SCHD'],
+            '474220': ['TIGER 미국테크TOP10타겟커버드콜', '미국테크TOP10타겟커버드콜', '테크TOP10타겟커버드콜', '고배당'],
+            '360750': ['TIGER 미국S&P500', '미국S&P500', 'S&P500']
+        };
         const PRICE_CACHE_URL = String(window.ISARICH_CONFIG?.priceCacheUrl || '').trim();
         function deriveTradeExtractUrl() {
             const configured = String(window.ISARICH_CONFIG?.tradeExtractUrl || '').trim();
@@ -1825,10 +1833,58 @@ const centerTextPlugin = {
             return `${year}-${String(match[2]).padStart(2, '0')}-${String(match[3]).padStart(2, '0')}`;
         }
 
+        function normalizeImportLookupText(value) {
+            return String(value || '')
+                .toUpperCase()
+                .replace(/[^0-9A-Z가-힣]/g, '');
+        }
+
+        function getImportTickerAliases(ticker, name = '') {
+            const aliases = [
+                ticker,
+                name,
+                getMarketName(ticker, ''),
+                ...(IMPORT_TICKER_ALIASES[ticker] || [])
+            ];
+            return Array.from(new Set(
+                aliases
+                    .map((alias) => String(alias || '').trim())
+                    .filter(Boolean)
+            ));
+        }
+
+        function resolveImportTicker(rawTicker = '', rawName = '') {
+            const ticker = String(rawTicker || '').trim();
+            const name = String(rawName || '').trim();
+            const normalizedName = normalizeImportLookupText(name);
+            if (!normalizedName) return ticker;
+
+            const aliasCandidates = Object.entries(IMPORT_TICKER_ALIASES)
+                .flatMap(([aliasTicker, aliases]) => {
+                    const marketName = getMarketName(aliasTicker, '');
+                    return getImportTickerAliases(aliasTicker, marketName || aliasTicker)
+                        .concat(aliases || [])
+                        .map((alias) => ({
+                            ticker: aliasTicker,
+                            alias,
+                            normalized: normalizeImportLookupText(alias)
+                        }));
+                })
+                .filter((item) => item.normalized.length >= 2)
+                .sort((a, b) => b.normalized.length - a.normalized.length);
+
+            const matched = aliasCandidates.find((item) => normalizedName.includes(item.normalized));
+            if (matched) return matched.ticker;
+
+            if (ticker && marketData?.[ticker]) return ticker;
+            return ticker;
+        }
+
         function getKnownTickerList() {
             return Object.entries(marketData || {}).map(([ticker, data]) => ({
                 ticker,
-                name: String(data?.name || ticker)
+                name: String(data?.name || ticker),
+                aliases: getImportTickerAliases(ticker, String(data?.name || ticker))
             }));
         }
 
@@ -1860,14 +1916,16 @@ const centerTextPlugin = {
                 ? (side === 'dividend' ? '3' : normalizeCashCategory(raw.category || '1'))
                 : '0';
             const confidence = Number(raw.confidence ?? raw.score ?? 0);
+            const rawName = String(raw.name || raw.product || '').trim();
+            const ticker = resolveImportTicker(String(raw.ticker || raw.code || '').trim(), rawName);
             return {
                 id: createTxnId(),
                 selected: true,
                 source: String(raw.sourceFile || source || '').trim(),
                 date: parseImportDate(raw.date),
                 side: ['buy', 'sell', 'deposit', 'dividend'].includes(side) ? side : 'unknown',
-                ticker: String(raw.ticker || raw.code || '').trim(),
-                name: String(raw.name || raw.product || '').trim(),
+                ticker,
+                name: rawName || getMarketName(ticker, ticker),
                 shares: roundShares(shares),
                 price: Math.round(Number(price || 0) * 100) / 100,
                 category,
@@ -3404,6 +3462,22 @@ if(assetChart){
                 price: 18000,
                 side: ''
             }, 'self-test.csv');
+            const importAliasRow = createImportRow({
+                date: `${testMonth}-12`,
+                ticker: '',
+                name: 'TIGER 미국배당다우존스',
+                shares: 1,
+                price: 15800,
+                side: 'buy'
+            }, 'self-test.csv');
+            const importAliasOverrideRow = createImportRow({
+                date: `${testMonth}-13`,
+                ticker: '360750',
+                name: 'TIGER 미국우주테크',
+                shares: 1,
+                price: 10950,
+                side: 'buy'
+            }, 'self-test.csv');
 
             const checks = [
                 { name: '보유수량 계산', pass: Math.abs((state.holdings.TEST?.shares || 0) - 8) < 0.0001 },
@@ -3417,7 +3491,9 @@ if(assetChart){
                 { name: '가져오기 매수 변환', pass: importBuyPayload?.side === 'buy' && importBuyPayload?.ticker === '360750' && Math.abs(importBuyPayload?.shares - 3) < 0.0001 && Number(importBuyPayload?.price) === 18250 },
                 { name: '가져오기 배당 변환', pass: importDividendPayload?.category === '3' && importDividendPayload?.ticker === '360750' && Number(importDividendPayload?.price) === 1200 },
                 { name: '가져오기 매도 변환', pass: importSellPayload?.side === 'sell' && Math.abs(Number(importSellPayload?.shares || 0) + 2) < 0.0001 },
-                { name: '가져오기 구분 없음 기본값', pass: unknownSideRow.side === 'unknown' && !importRowToPayload(unknownSideRow) }
+                { name: '가져오기 구분 없음 기본값', pass: unknownSideRow.side === 'unknown' && !importRowToPayload(unknownSideRow) },
+                { name: '가져오기 종목 alias 매칭', pass: importAliasRow.ticker === '458730' },
+                { name: '가져오기 잘못된 ticker 보정', pass: importAliasOverrideRow.ticker === '0183J0' }
             ];
             const failed = checks.filter(c => !c.pass);
             const resultText = failed.length === 0

@@ -57,8 +57,11 @@ function sanitizeKnownTickers(rawTickers) {
     .map((item) => {
       const ticker = String(item?.ticker || item?.code || "").trim();
       const name = String(item?.name || "").trim();
+      const aliases = Array.isArray(item?.aliases)
+        ? item.aliases.map((alias) => String(alias || "").trim()).filter(Boolean).slice(0, 12)
+        : [];
       if (!ticker && !name) return null;
-      return { ticker: ticker.slice(0, 24), name: name.slice(0, 80) };
+      return { ticker: ticker.slice(0, 24), name: name.slice(0, 80), aliases: aliases.map((alias) => alias.slice(0, 80)) };
     })
     .filter(Boolean);
 }
@@ -67,7 +70,10 @@ function buildKnownTickerHint(rawTickers) {
   const tickers = sanitizeKnownTickers(rawTickers);
   if (!tickers.length) return "No app ticker list was provided.";
   return tickers
-    .map((item) => `${item.ticker || "-"}: ${item.name || "-"}`)
+    .map((item) => {
+      const aliasText = item.aliases?.length ? ` aliases: ${item.aliases.join(", ")}` : "";
+      return `${item.ticker || "-"}: ${item.name || "-"}${aliasText}`;
+    })
     .join("\n");
 }
 
