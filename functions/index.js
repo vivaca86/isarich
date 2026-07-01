@@ -4,7 +4,7 @@ import { defineSecret } from "firebase-functions/params";
 const OPENAI_API_KEY = defineSecret("OPENAI_API_KEY");
 
 const OPENAI_API_URL = "https://api.openai.com/v1/responses";
-const DEFAULT_OPENAI_MODEL = "gpt-5.4-nano";
+const DEFAULT_OPENAI_MODEL = "gpt-5.4-mini";
 const DEFAULT_USD_KRW_RATE = 1557;
 const MAX_EXTRACT_IMAGES = 8;
 const MAX_IMAGE_DATA_URL_CHARS = 8_000_000;
@@ -125,6 +125,9 @@ function buildExtractPrompt(knownTickers) {
     "You extract Korean ISA brokerage transaction history from screenshots.",
     "Return only actual executed transaction rows. Ignore holdings, portfolio balances, quotes, recommendations, and totals unless they are transaction rows.",
     "For stock trades: side must be buy or sell, category must be \"0\", shares is positive quantity, and price is per-share execution price.",
+    "Korean side cues are strict and override all other hints. If the same row contains 매도, 매도체결, 매도주문, 매도금액, 매도입금, 팔기, sell, sold, or sale, side MUST be \"sell\" and MUST NOT be \"buy\" or \"unknown\".",
+    "If the same row contains 매수, 매수체결, 매수주문, 사기, buy, bought, or purchase, side MUST be \"buy\" and MUST NOT be \"sell\" or \"unknown\".",
+    "Never default an unclear stock trade to buy. Use \"unknown\" only when no buy/sell/deposit/dividend side cue is visible in the transaction row; lower confidence and add a warning.",
     "For cash deposits: side must be deposit, ticker must be DEPOSIT, shares must be 1, price is the cash amount, category is \"1\" unless the row explicitly says special/bonus, then category \"2\".",
     "For dividends: side must be dividend, shares must be 1, price is the dividend amount, category must be \"3\". Use the underlying ticker/name if visible; otherwise ticker DEPOSIT and add a warning.",
     "Use YYYY-MM-DD dates. If a core field is missing, leave an empty string or 0 and lower confidence. Never invent unseen exact numbers.",

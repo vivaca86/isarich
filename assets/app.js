@@ -1848,7 +1848,7 @@ const centerTextPlugin = {
 
         function createImportRow(raw = {}, source = '') {
             const rawShares = parseImportNumber(raw.shares);
-            const side = normalizeImportSide(raw.side, rawShares, raw.name) || String(raw.side || 'buy');
+            const side = normalizeImportSide(raw.side, rawShares, raw.name) || String(raw.side || 'unknown');
             const isCash = side === 'deposit' || side === 'dividend';
             const shares = isCash ? 1 : Math.abs(rawShares || parseImportNumber(raw.quantity));
             const amount = parseImportNumber(raw.amount);
@@ -3390,10 +3390,20 @@ if(assetChart){
             const importMappedRows = mapTableRowsToImportRows([
                 ['거래일', '거래구분', '종목코드', '종목명', '수량', '체결단가', '체결금액'],
                 [`${testMonth}-08`, '매수', '360750', 'TIGER 미국S&P500', '3', '18250', '54750'],
-                [`${testMonth}-09`, '배당', '360750', 'TIGER 미국S&P500', '', '', '1200']
+                [`${testMonth}-09`, '배당', '360750', 'TIGER 미국S&P500', '', '', '1200'],
+                [`${testMonth}-10`, '매도', '360750', 'TIGER 미국S&P500', '2', '19000', '38000']
             ], 'self-test.csv');
             const importBuyPayload = importRowToPayload(createImportRow(importMappedRows[0], 'self-test.csv'));
             const importDividendPayload = importRowToPayload(createImportRow(importMappedRows[1], 'self-test.csv'));
+            const importSellPayload = importRowToPayload(createImportRow(importMappedRows[2], 'self-test.csv'));
+            const unknownSideRow = createImportRow({
+                date: `${testMonth}-11`,
+                ticker: '360750',
+                name: 'TIGER 미국S&P500',
+                shares: 1,
+                price: 18000,
+                side: ''
+            }, 'self-test.csv');
 
             const checks = [
                 { name: '보유수량 계산', pass: Math.abs((state.holdings.TEST?.shares || 0) - 8) < 0.0001 },
@@ -3403,9 +3413,11 @@ if(assetChart){
                 { name: '월간 매도 집계', pass: report.sellActionCount === 1 && report.sellShares >= 2 },
                 { name: '배당 집행률 계산', pass: report.dividendIn >= report.dividendUsed },
                 { name: '매도 손익 비율 배분', pass: Math.abs((saleRatioState.cash['1'] || 0) - 60000) <= 1 && Math.abs((saleRatioState.cash['2'] || 0) - 60000) <= 1 && Math.abs((saleRatioState.cash['3'] || 0) - 60000) <= 1 },
-                { name: '가져오기 CSV 매핑', pass: importMappedRows.length === 2 },
+                { name: '가져오기 CSV 매핑', pass: importMappedRows.length === 3 },
                 { name: '가져오기 매수 변환', pass: importBuyPayload?.side === 'buy' && importBuyPayload?.ticker === '360750' && Math.abs(importBuyPayload?.shares - 3) < 0.0001 && Number(importBuyPayload?.price) === 18250 },
-                { name: '가져오기 배당 변환', pass: importDividendPayload?.category === '3' && importDividendPayload?.ticker === '360750' && Number(importDividendPayload?.price) === 1200 }
+                { name: '가져오기 배당 변환', pass: importDividendPayload?.category === '3' && importDividendPayload?.ticker === '360750' && Number(importDividendPayload?.price) === 1200 },
+                { name: '가져오기 매도 변환', pass: importSellPayload?.side === 'sell' && Math.abs(Number(importSellPayload?.shares || 0) + 2) < 0.0001 },
+                { name: '가져오기 구분 없음 기본값', pass: unknownSideRow.side === 'unknown' && !importRowToPayload(unknownSideRow) }
             ];
             const failed = checks.filter(c => !c.pass);
             const resultText = failed.length === 0
