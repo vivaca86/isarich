@@ -1,2 +1,9 @@
 .wrangler/
+.firebase/
+node_modules/
+functions/node_modules/
 *.log
+aaa.txt
+.env
+.env.*
+!.env.example

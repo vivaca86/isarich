@@ -1,4 +1,4 @@
-        const APP_VERSION = "1.0.32";
+        const APP_VERSION = "1.0.33";
         // Rollback switch: set false to hide/remove monthly review mode instantly.
         const ENABLE_MONTHLY_REVIEW_MODE = true;
         const HISTORY_FETCH_PAGE_SIZE = 500;
@@ -39,6 +39,21 @@
         const MONTHLY_REPORT_CACHE_KEY = 'isa_monthly_report_cache_v1';
         const MONTHLY_REPORT_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
         const PRICE_CACHE_URL = String(window.ISARICH_CONFIG?.priceCacheUrl || '').trim();
+        function deriveTradeExtractUrl() {
+            const configured = String(window.ISARICH_CONFIG?.tradeExtractUrl || '').trim();
+            if (configured) return configured;
+            if (!PRICE_CACHE_URL) return '';
+            try {
+                const url = new URL(PRICE_CACHE_URL, window.location.href);
+                url.pathname = '/extract-trades';
+                url.search = '';
+                url.hash = '';
+                return url.toString();
+            } catch (e) {
+                return '';
+            }
+        }
+        const TRADE_EXTRACT_URL = deriveTradeExtractUrl();
 
         let transactions = [];
         let pendingTransactions = new Map();
@@ -71,6 +86,9 @@ const centerTextPlugin = {
         let currentTransactionMode = 'buy';
         let aiRecommendationExpanded = false;
         let assetAllocationExpanded = false;
+        let importRows = [];
+        let importLastCostEstimate = null;
+        const IMPORT_AI_COST_METER_KEY = 'isa_import_ai_cost_meter_v1';
         let monthlyBreakdownOpen = { buy: false, sell: false, dividend: false };
         let syncStatusText = '동기화 대기 중';
         let syncStatusTone = 'info';
@@ -1670,6 +1688,636 @@ const centerTextPlugin = {
             button.classList.toggle('is-busy', Boolean(busy));
             button.innerText = busy ? busyText : readyText;
         }
+
+        function setImportStatus(message = '', type = 'info') {
+            setFormStatus('import-status', message, type);
+        }
+
+        function updateImportFileSummary(files = []) {
+            const list = Array.from(files || []);
+            safeSetText('import-file-count', `${list.length}개`);
+            safeSetText('import-file-summary', list.length ? list.map((file) => file.name).slice(0, 4).join(', ') : '대기 중');
+        }
+
+        function getImportAiCostMonthKey() {
+            return new Date().toISOString().slice(0, 7);
+        }
+
+        function readImportAiCostMeter() {
+            const month = getImportAiCostMonthKey();
+            const fallback = { month, requests: 0, krw: 0, usd: 0 };
+            try {
+                const saved = JSON.parse(localStorage.getItem(IMPORT_AI_COST_METER_KEY) || 'null');
+                if (!saved || saved.month !== month) return fallback;
+                return {
+                    month,
+                    requests: Math.max(0, Number(saved.requests || 0)),
+                    krw: Math.max(0, Number(saved.krw || 0)),
+                    usd: Math.max(0, Number(saved.usd || 0))
+                };
+            } catch (e) {
+                return fallback;
+            }
+        }
+
+        function writeImportAiCostMeter(meter) {
+            try {
+                localStorage.setItem(IMPORT_AI_COST_METER_KEY, JSON.stringify(meter));
+            } catch (e) {
+                console.warn('Failed to save import AI cost meter.', e);
+            }
+        }
+
+        function renderImportAiCostMeter() {
+            const meter = readImportAiCostMeter();
+            const krw = Number(meter.krw || 0);
+            const requests = Number(meter.requests || 0);
+            const krwLabel = Math.ceil(krw).toLocaleString();
+            safeSetText('import-ai-month-summary', `이번 달 ₩${krwLabel} · ${requests}회`);
+
+            const bar = getEl('import-ai-cost-bar');
+            if (bar) {
+                const softWarningKrw = 1000;
+                const width = Math.min(100, Math.round((krw / softWarningKrw) * 100));
+                bar.style.width = `${width}%`;
+            }
+
+            let message = '사진 분석은 OpenAI API와 Firebase Function을 사용합니다. 화면 비용은 이 기기 기준 추정치이며 실제 청구액은 콘솔에서 확인하세요.';
+            if (requests >= 20 || krw >= 1000) {
+                message = '이번 달 사진 분석 추정 사용량이 늘고 있습니다. 대량 업로드 전 Firebase 예산 알림과 OpenAI 사용량 대시보드를 확인하세요.';
+            } else if (requests > 0) {
+                message = '누적값은 이 브라우저에서 성공한 사진 분석만 더한 추정치입니다. 실제 청구액은 OpenAI/Firebase 콘솔 기준입니다.';
+            }
+            safeSetText('import-ai-guard-text', message);
+        }
+
+        function rememberImportAiCost(cost = null) {
+            if (!cost || !Number.isFinite(Number(cost.krw))) {
+                renderImportAiCostMeter();
+                return;
+            }
+            const meter = readImportAiCostMeter();
+            const next = {
+                month: meter.month,
+                requests: Number(meter.requests || 0) + 1,
+                krw: Number(meter.krw || 0) + Math.max(0, Number(cost.krw || 0)),
+                usd: Number(meter.usd || 0) + Math.max(0, Number(cost.usd || 0))
+            };
+            writeImportAiCostMeter(next);
+            renderImportAiCostMeter();
+        }
+
+        function updateImportCostSummary(cost = null) {
+            importLastCostEstimate = cost || null;
+            if (!cost) {
+                safeSetText('import-cost-summary', '₩0');
+                safeSetText('import-token-summary', 'usage 대기 중');
+                return;
+            }
+            const krwText = Number.isFinite(Number(cost.krw))
+                ? `약 ₩${Math.ceil(Number(cost.krw)).toLocaleString()}`
+                : '대시보드 확인 필요';
+            const inputTokens = Number(cost.inputTokens || 0).toLocaleString();
+            const outputTokens = Number(cost.outputTokens || 0).toLocaleString();
+            safeSetText('import-cost-summary', krwText);
+            safeSetText('import-token-summary', `${cost.model || 'model'} · input ${inputTokens} · output ${outputTokens}`);
+        }
+
+        function normalizeImportSide(raw, shares = 0, name = '') {
+            const value = String(raw || '').trim().toLowerCase();
+            const label = `${value} ${String(name || '').toLowerCase()}`;
+            if (label.includes('매도') || label.includes('sell')) return 'sell';
+            if (label.includes('매수') || label.includes('buy') || label.includes('purchase')) return 'buy';
+            if (label.includes('배당') || label.includes('dividend')) return 'dividend';
+            if (label.includes('입금') || label.includes('deposit') || label.includes('cash')) return 'deposit';
+            if (Number(shares || 0) < 0) return 'sell';
+            return '';
+        }
+
+        function parseImportNumber(value) {
+            if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+            const raw = String(value ?? '').trim();
+            if (!raw || raw === '-' || raw === '—') return 0;
+            const negative = /^\(.*\)$/.test(raw) || raw.startsWith('-');
+            const cleaned = raw.replace(/[^\d.]/g, '');
+            const n = Number(cleaned);
+            if (!Number.isFinite(n)) return 0;
+            return negative ? -n : n;
+        }
+
+        function parseImportDate(value) {
+            if (value instanceof Date && !Number.isNaN(value.getTime())) {
+                return value.toISOString().slice(0, 10);
+            }
+            if (typeof value === 'number' && Number.isFinite(value) && value > 25000 && value < 80000) {
+                const excelDate = new Date(Math.round((value - 25569) * 86400 * 1000));
+                if (!Number.isNaN(excelDate.getTime())) return excelDate.toISOString().slice(0, 10);
+            }
+            const raw = String(value ?? '').trim();
+            if (!raw) return '';
+            const compact = raw.replace(/[^\d]/g, '');
+            if (compact.length === 8) {
+                return `${compact.slice(0, 4)}-${compact.slice(4, 6)}-${compact.slice(6, 8)}`;
+            }
+            const match = raw.match(/(\d{2,4})[./\-년\s]+(\d{1,2})[./\-월\s]+(\d{1,2})/);
+            if (!match) return raw.substring(0, 10);
+            const year = match[1].length === 2 ? `20${match[1]}` : match[1];
+            return `${year}-${String(match[2]).padStart(2, '0')}-${String(match[3]).padStart(2, '0')}`;
+        }
+
+        function getKnownTickerList() {
+            return Object.entries(marketData || {}).map(([ticker, data]) => ({
+                ticker,
+                name: String(data?.name || ticker)
+            }));
+        }
+
+        function getImportRowWarning(row) {
+            const side = normalizeImportSide(row?.side, row?.shares, row?.name) || row?.side;
+            const price = Number(row?.price || 0);
+            const shares = Number(row?.shares || 0);
+            if (!row?.date) return '날짜 확인';
+            if (!Number.isFinite(price) || price <= 0) return side === 'buy' || side === 'sell' ? '단가 확인' : '금액 확인';
+            if (side === 'buy' || side === 'sell') {
+                if (!row?.ticker && !row?.name) return '종목 확인';
+                if (!Number.isFinite(shares) || shares <= 0) return '수량 확인';
+            }
+            if (side === 'unknown' || !side) return '구분 확인';
+            return '';
+        }
+
+        function createImportRow(raw = {}, source = '') {
+            const rawShares = parseImportNumber(raw.shares);
+            const side = normalizeImportSide(raw.side, rawShares, raw.name) || String(raw.side || 'buy');
+            const isCash = side === 'deposit' || side === 'dividend';
+            const shares = isCash ? 1 : Math.abs(rawShares || parseImportNumber(raw.quantity));
+            const amount = parseImportNumber(raw.amount);
+            let price = parseImportNumber(raw.price);
+            if (!price && amount > 0 && !isCash && shares > 0) price = amount / shares;
+            if (!price && amount > 0 && isCash) price = amount;
+
+            const category = isCash
+                ? (side === 'dividend' ? '3' : normalizeCashCategory(raw.category || '1'))
+                : '0';
+            const confidence = Number(raw.confidence ?? raw.score ?? 0);
+            return {
+                id: createTxnId(),
+                selected: true,
+                source: String(raw.sourceFile || source || '').trim(),
+                date: parseImportDate(raw.date),
+                side: ['buy', 'sell', 'deposit', 'dividend'].includes(side) ? side : 'unknown',
+                ticker: String(raw.ticker || raw.code || '').trim(),
+                name: String(raw.name || raw.product || '').trim(),
+                shares: roundShares(shares),
+                price: Math.round(Number(price || 0) * 100) / 100,
+                category,
+                confidence: Number.isFinite(confidence) ? Math.max(0, Math.min(1, confidence)) : 0,
+                memo: String(raw.memo || '').trim()
+            };
+        }
+
+        function importRowToPayload(row) {
+            const side = normalizeImportSide(row.side, row.shares, row.name) || row.side;
+            const price = Number(row.price || 0);
+            const shares = roundShares(row.shares || 0);
+            const date = String(row.date || '').substring(0, 10);
+            if (!date || !Number.isFinite(price) || price <= 0) return null;
+
+            if (side === 'deposit' || side === 'dividend') {
+                const ticker = side === 'dividend' ? String(row.ticker || 'DEPOSIT').trim() : 'DEPOSIT';
+                const marketName = ticker && ticker !== 'DEPOSIT' ? getMarketName(ticker, row.name || ticker) : '';
+                return {
+                    id: createTxnId(),
+                    date,
+                    ticker: ticker || 'DEPOSIT',
+                    name: side === 'dividend'
+                        ? `${marketName || row.name || '배당'} 배당 입금`
+                        : '현금 입금',
+                    shares: 1,
+                    price,
+                    category: side === 'dividend' ? '3' : normalizeCashCategory(row.category || '1')
+                };
+            }
+
+            if ((side !== 'buy' && side !== 'sell') || shares <= 0 || (!row.ticker && !row.name)) return null;
+            const ticker = String(row.ticker || '').trim();
+            const name = String(row.name || getMarketName(ticker, ticker)).trim();
+            return {
+                id: createTxnId(),
+                date,
+                ticker,
+                name,
+                shares: side === 'sell' ? -Math.abs(shares) : Math.abs(shares),
+                price,
+                category: 0,
+                side
+            };
+        }
+
+        function isLikelyExistingTransaction(row) {
+            const payload = importRowToPayload(row);
+            if (!payload) return false;
+            return transactions.some((tx) => {
+                const sameDate = String(tx.date || '').substring(0, 10) === payload.date;
+                const sameTicker = String(tx.ticker || '').trim() === String(payload.ticker || '').trim();
+                const sameSide = getExplicitTradeSide(tx) === getExplicitTradeSide(payload)
+                    || (isDepositTransaction(tx) && isDepositTransaction(payload));
+                const sameShares = Math.abs(Number(tx.shares || 0) - Number(payload.shares || 0)) < 0.0001;
+                const samePrice = Math.abs(Number(tx.price || 0) - Number(payload.price || 0)) < 0.01;
+                return sameDate && sameTicker && sameSide && sameShares && samePrice;
+            });
+        }
+
+        function renderImportRows() {
+            const empty = getEl('import-preview-empty');
+            const wrap = getEl('import-review-wrap');
+            const body = getEl('import-review-body');
+            if (!empty || !wrap || !body) return;
+
+            empty.classList.toggle('hidden', importRows.length > 0);
+            wrap.classList.toggle('hidden', importRows.length === 0);
+            if (!importRows.length) {
+                body.innerHTML = '';
+                return;
+            }
+
+            body.innerHTML = importRows.map((row, index) => {
+                const warning = getImportRowWarning(row);
+                const confidencePct = Math.round(Number(row.confidence || 0) * 100);
+                const sideOptions = [
+                    ['buy', '매수'],
+                    ['sell', '매도'],
+                    ['deposit', '입금'],
+                    ['dividend', '배당'],
+                    ['unknown', '확인']
+                ].map(([value, label]) => `<option value="${value}" ${row.side === value ? 'selected' : ''}>${label}</option>`).join('');
+                const categoryOptions = [
+                    ['0', '거래'],
+                    ['1', '원금'],
+                    ['2', '특별'],
+                    ['3', '배당']
+                ].map(([value, label]) => `<option value="${value}" ${String(row.category) === value ? 'selected' : ''}>${label}</option>`).join('');
+
+                return `
+                    <tr class="${warning ? 'import-row-warning' : ''}" title="${escapeHtml(row.source || '')}">
+                        <td class="import-col-check"><input type="checkbox" data-import-index="${index}" data-import-field="selected" ${row.selected ? 'checked' : ''}></td>
+                        <td class="import-col-date"><input type="date" value="${escapeHtml(row.date)}" data-import-index="${index}" data-import-field="date"></td>
+                        <td class="import-col-side"><select data-import-index="${index}" data-import-field="side">${sideOptions}</select></td>
+                        <td class="import-col-ticker"><input type="text" value="${escapeHtml(row.ticker)}" data-import-index="${index}" data-import-field="ticker"></td>
+                        <td class="import-col-name"><input type="text" value="${escapeHtml(row.name)}" data-import-index="${index}" data-import-field="name"></td>
+                        <td class="import-col-number"><input type="number" step="0.0001" value="${escapeHtml(row.shares)}" data-import-index="${index}" data-import-field="shares"></td>
+                        <td class="import-col-number"><input type="number" step="0.01" value="${escapeHtml(row.price)}" data-import-index="${index}" data-import-field="price"></td>
+                        <td class="import-col-category"><select data-import-index="${index}" data-import-field="category">${categoryOptions}</select></td>
+                        <td class="import-col-confidence"><span class="import-confidence-pill">${confidencePct || 0}%</span>${warning ? `<p class="mt-1 text-[9px] font-black text-amber-600">${escapeHtml(warning)}</p>` : ''}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateImportRowFromField(target) {
+            const index = Number(target?.dataset?.importIndex);
+            const field = String(target?.dataset?.importField || '');
+            const row = importRows[index];
+            if (!row || !field) return;
+
+            if (field === 'selected') row.selected = Boolean(target.checked);
+            else if (field === 'shares' || field === 'price') row[field] = parseImportNumber(target.value);
+            else row[field] = target.value;
+
+            if (field === 'side') {
+                if (row.side === 'dividend') row.category = '3';
+                else if (row.side === 'deposit') row.category = normalizeCashCategory(row.category || '1');
+                else if (row.side === 'buy' || row.side === 'sell') row.category = '0';
+                renderImportRows();
+            }
+        }
+
+        function addImportRows(rows = [], source = '') {
+            const nextRows = rows.map((item) => createImportRow(item, source)).filter((row) => {
+                return row.date || row.ticker || row.name || Number(row.price || 0) > 0;
+            });
+            nextRows.forEach((row) => {
+                if (isLikelyExistingTransaction(row)) {
+                    row.selected = false;
+                    row.memo = row.memo || '이미 저장된 거래와 유사합니다.';
+                }
+            });
+            importRows = [...importRows, ...nextRows];
+            renderImportRows();
+            setImportStatus(nextRows.length ? `${nextRows.length}개 후보를 불러왔습니다.` : '가져올 거래 후보가 없습니다.', nextRows.length ? 'success' : 'error');
+        }
+
+        window.openImportImagePicker = () => getEl('import-image-input')?.click();
+        window.openImportDataPicker = () => getEl('import-data-input')?.click();
+        renderImportAiCostMeter();
+        window.toggleAllImportRows = (selected) => {
+            importRows = importRows.map((row) => ({ ...row, selected: Boolean(selected) }));
+            renderImportRows();
+        };
+        window.clearImportRows = () => {
+            importRows = [];
+            updateImportCostSummary(null);
+            updateImportFileSummary([]);
+            renderImportRows();
+            setImportStatus();
+        };
+
+        function readFileAsDataUrl(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result || ''));
+                reader.onerror = () => reject(reader.error || new Error('file_read_failed'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result || ''));
+                reader.onerror = () => reject(reader.error || new Error('file_read_failed'));
+                reader.readAsText(file, 'utf-8');
+            });
+        }
+
+        function readFileAsArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(reader.error || new Error('file_read_failed'));
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        function resizeImageDataUrl(dataUrl, maxSide = 1800, quality = 0.9) {
+            return new Promise((resolve) => {
+                const image = new Image();
+                image.onload = () => {
+                    const scale = Math.min(1, maxSide / Math.max(image.width || 1, image.height || 1));
+                    const width = Math.max(1, Math.round((image.width || 1) * scale));
+                    const height = Math.max(1, Math.round((image.height || 1) * scale));
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(image, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', quality));
+                };
+                image.onerror = () => resolve(dataUrl);
+                image.src = dataUrl;
+            });
+        }
+
+        window.handleImportImages = async (fileList) => {
+            const files = Array.from(fileList || []).filter((file) => /^image\//i.test(file.type || ''));
+            updateImportFileSummary(files);
+            if (!files.length) {
+                setImportStatus('이미지 파일을 찾지 못했습니다.', 'error');
+                return;
+            }
+            if (!TRADE_EXTRACT_URL) {
+                setImportStatus('추출 API URL이 설정되지 않았습니다.', 'error');
+                return;
+            }
+            if (files.length > 8) {
+                setImportStatus('사진은 한 번에 최대 8장까지 처리합니다.', 'error');
+                return;
+            }
+
+            setImportStatus('사진 분석 중입니다...', 'info');
+            try {
+                const images = [];
+                for (const file of files) {
+                    const dataUrl = await readFileAsDataUrl(file);
+                    images.push({
+                        name: file.name,
+                        dataUrl: await resizeImageDataUrl(dataUrl)
+                    });
+                }
+                const response = await fetchWithTimeout(TRADE_EXTRACT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        images,
+                        knownTickers: getKnownTickerList()
+                    })
+                }, 90000);
+                const payload = await response.json();
+                if (!response.ok || !payload?.ok) {
+                    throw new Error(payload?.message || payload?.error || `HTTP ${response.status}`);
+                }
+                updateImportCostSummary(payload.costEstimate || null);
+                rememberImportAiCost(payload.costEstimate || null);
+                const rows = Array.isArray(payload.items) ? payload.items : [];
+                addImportRows(rows, files.map((file) => file.name).join(', '));
+                if (Array.isArray(payload.warnings) && payload.warnings.length) {
+                    setImportStatus(`후보 ${rows.length}개 · 확인 필요 ${payload.warnings.length}건`, 'info');
+                }
+            } catch (error) {
+                console.error(error);
+                setImportStatus('사진 분석 실패: ' + (error?.message || '네트워크 오류'), 'error');
+            }
+        };
+
+        function splitDelimitedLine(line, delimiter) {
+            const cells = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i += 1) {
+                const char = line[i];
+                const next = line[i + 1];
+                if (char === '"' && inQuotes && next === '"') {
+                    current += '"';
+                    i += 1;
+                    continue;
+                }
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                    continue;
+                }
+                if (char === delimiter && !inQuotes) {
+                    cells.push(current.trim());
+                    current = '';
+                    continue;
+                }
+                current += char;
+            }
+            cells.push(current.trim());
+            return cells;
+        }
+
+        function parseDelimitedText(text) {
+            const lines = String(text || '').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter((line) => line.trim());
+            const sample = lines.slice(0, 5).join('\n');
+            const delimiter = ['\t', ',', ';'].sort((a, b) => sample.split(b).length - sample.split(a).length)[0] || ',';
+            return lines.map((line) => splitDelimitedLine(line, delimiter));
+        }
+
+        function normalizeHeader(value) {
+            return String(value || '').replace(/\s+/g, '').replace(/[()]/g, '').toLowerCase();
+        }
+
+        function findHeaderIndex(headers, aliases) {
+            const normalized = headers.map(normalizeHeader);
+            return normalized.findIndex((header) => aliases.some((alias) => header.includes(normalizeHeader(alias))));
+        }
+
+        function getCell(row, index) {
+            return index >= 0 ? row[index] : '';
+        }
+
+        function mapTableRowsToImportRows(tableRows, source) {
+            const rows = (tableRows || []).filter((row) => Array.isArray(row) && row.some((cell) => String(cell || '').trim()));
+            if (!rows.length) return [];
+
+            let headerRowIndex = 0;
+            let bestScore = -1;
+            rows.slice(0, 12).forEach((row, index) => {
+                const headers = row.map(String);
+                const score = [
+                    findHeaderIndex(headers, ['날짜', '거래일', '매매일', '체결일', '일자', 'date']),
+                    findHeaderIndex(headers, ['종목명', '상품명', 'name', '상품']),
+                    findHeaderIndex(headers, ['수량', '체결수량', 'quantity', 'qty', 'shares']),
+                    findHeaderIndex(headers, ['단가', '체결단가', 'price', '매매단가']),
+                    findHeaderIndex(headers, ['금액', '체결금액', '거래금액', 'amount', '입금액', '배당금'])
+                ].filter((value) => value >= 0).length;
+                if (score > bestScore) {
+                    bestScore = score;
+                    headerRowIndex = index;
+                }
+            });
+
+            const headers = rows[headerRowIndex].map(String);
+            const indexes = {
+                date: findHeaderIndex(headers, ['날짜', '거래일', '매매일', '체결일', '일자', 'date']),
+                ticker: findHeaderIndex(headers, ['종목코드', '단축코드', '코드', 'ticker', 'code']),
+                name: findHeaderIndex(headers, ['종목명', '상품명', 'name', '상품']),
+                side: findHeaderIndex(headers, ['거래구분', '매매구분', '구분', '종류', 'side', 'type', '내용']),
+                shares: findHeaderIndex(headers, ['수량', '체결수량', '매매수량', 'quantity', 'qty', 'shares']),
+                price: findHeaderIndex(headers, ['단가', '체결단가', '매매단가', '평균단가', 'price']),
+                amount: findHeaderIndex(headers, ['금액', '체결금액', '거래금액', '입금액', '배당금', '정산금액', 'amount']),
+                category: findHeaderIndex(headers, ['자금', '분류', 'category'])
+            };
+
+            return rows.slice(headerRowIndex + 1).map((row) => {
+                const sideRaw = getCell(row, indexes.side);
+                const name = getCell(row, indexes.name);
+                const shares = parseImportNumber(getCell(row, indexes.shares));
+                const side = normalizeImportSide(sideRaw, shares, name);
+                const amount = parseImportNumber(getCell(row, indexes.amount));
+                let price = parseImportNumber(getCell(row, indexes.price));
+                if (!price && amount > 0 && shares > 0 && (side === 'buy' || side === 'sell')) price = amount / Math.abs(shares);
+                if (!price && amount > 0 && (side === 'deposit' || side === 'dividend')) price = amount;
+                return {
+                    sourceFile: source,
+                    date: getCell(row, indexes.date),
+                    ticker: getCell(row, indexes.ticker),
+                    name,
+                    side: side || sideRaw,
+                    shares,
+                    price,
+                    amount,
+                    category: getCell(row, indexes.category),
+                    confidence: 1,
+                    memo: ''
+                };
+            });
+        }
+
+        async function parseSpreadsheetFile(file) {
+            const isWorkbook = /\.(xlsx|xls)$/i.test(file.name || '');
+            if (!isWorkbook) {
+                const text = await readFileAsText(file);
+                return parseDelimitedText(text);
+            }
+            if (!window.XLSX) throw new Error('Excel parser is not loaded.');
+            const buffer = await readFileAsArrayBuffer(file);
+            const workbook = window.XLSX.read(buffer, { type: 'array', cellDates: true });
+            const firstSheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[firstSheetName];
+            return window.XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: true });
+        }
+
+        window.handleImportDataFiles = async (fileList) => {
+            const files = Array.from(fileList || []);
+            updateImportFileSummary(files);
+            if (!files.length) {
+                setImportStatus('파일을 찾지 못했습니다.', 'error');
+                return;
+            }
+            setImportStatus('파일 분석 중입니다...', 'info');
+            try {
+                let rows = [];
+                for (const file of files) {
+                    const table = await parseSpreadsheetFile(file);
+                    rows = rows.concat(mapTableRowsToImportRows(table, file.name));
+                }
+                updateImportCostSummary(null);
+                addImportRows(rows, files.map((file) => file.name).join(', '));
+            } catch (error) {
+                console.error(error);
+                setImportStatus('파일 분석 실패: ' + (error?.message || '파일 형식 확인 필요'), 'error');
+            }
+        };
+
+        window.saveSelectedImportRows = async () => {
+            const selected = importRows.filter((row) => row.selected);
+            if (!selected.length) {
+                setImportStatus('저장할 행을 선택해주세요.', 'error');
+                return;
+            }
+            const invalid = selected.filter((row) => !importRowToPayload(row));
+            if (invalid.length) {
+                setImportStatus(`확인이 필요한 행 ${invalid.length}개가 있습니다.`, 'error');
+                renderImportRows();
+                return;
+            }
+
+            const totalAmount = selected.reduce((sum, row) => sum + Math.abs(Number(row.shares || 1) * Number(row.price || 0)), 0);
+            const confirmOk = await requestRecordConfirmation({
+                kind: 'import',
+                title: '가져오기 저장 확인',
+                subtitle: `${selected.length}개 거래 후보`,
+                icon: '✓',
+                tone: 'purple',
+                confirmLabel: '선택 저장',
+                rows: [
+                    { label: '저장 건수', value: `${selected.length}건` },
+                    { label: '합산 금액', value: `₩${Math.round(totalAmount).toLocaleString()}` },
+                    { label: 'API 비용', value: importLastCostEstimate?.krw ? `약 ₩${Math.ceil(importLastCostEstimate.krw).toLocaleString()}` : '-' }
+                ]
+            });
+            if (!confirmOk) return;
+
+            const btn = getEl('import-save-btn');
+            setButtonBusy(btn, true, '저장 중...', '선택 저장');
+            setImportStatus('선택한 거래를 저장 중입니다...', 'info');
+            let saved = 0;
+            const failed = [];
+            for (const row of selected) {
+                const payload = importRowToPayload(row);
+                try {
+                    const savedId = await postMutation('add', payload);
+                    await syncAfterAdd(payload, savedId);
+                    row.saved = true;
+                    row.selected = false;
+                    saved += 1;
+                } catch (error) {
+                    console.error(error);
+                    failed.push(row);
+                    row.memo = error?.message || '저장 실패';
+                }
+            }
+            importRows = importRows.filter((row) => !row.saved);
+            renderImportRows();
+            setButtonBusy(btn, false, '선택 저장', '선택 저장');
+            setImportStatus(
+                failed.length ? `${saved}개 저장, ${failed.length}개 실패` : `${saved}개 저장 완료`,
+                failed.length ? 'error' : 'success'
+            );
+            if (saved > 0) showSection('history');
+        };
+
         function shouldAnimateUi() {
             const reduceMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             return !lowPowerMode && !document.hidden && !reduceMotion;
@@ -2697,6 +3345,13 @@ if(assetChart){
             historyFilterDays = '30';
             const filteredOldTrade = filterHistoryByRange([oldTradeEnteredNow]);
             historyFilterDays = currentHistoryFilter;
+            const importMappedRows = mapTableRowsToImportRows([
+                ['거래일', '거래구분', '종목코드', '종목명', '수량', '체결단가', '체결금액'],
+                [`${testMonth}-08`, '매수', '360750', 'TIGER 미국S&P500', '3', '18250', '54750'],
+                [`${testMonth}-09`, '배당', '360750', 'TIGER 미국S&P500', '', '', '1200']
+            ], 'self-test.csv');
+            const importBuyPayload = importRowToPayload(createImportRow(importMappedRows[0], 'self-test.csv'));
+            const importDividendPayload = importRowToPayload(createImportRow(importMappedRows[1], 'self-test.csv'));
 
             const checks = [
                 { name: '보유수량 계산', pass: Math.abs((state.holdings.TEST?.shares || 0) - 8) < 0.0001 },
@@ -2705,7 +3360,10 @@ if(assetChart){
                 { name: '월간 매수 집계', pass: report.buyActionCount === 1 && report.buyShares >= 10 },
                 { name: '월간 매도 집계', pass: report.sellActionCount === 1 && report.sellShares >= 2 },
                 { name: '배당 집행률 계산', pass: report.dividendIn >= report.dividendUsed },
-                { name: '매도 손익 비율 배분', pass: Math.abs((saleRatioState.cash['1'] || 0) - 60000) <= 1 && Math.abs((saleRatioState.cash['2'] || 0) - 60000) <= 1 && Math.abs((saleRatioState.cash['3'] || 0) - 60000) <= 1 }
+                { name: '매도 손익 비율 배분', pass: Math.abs((saleRatioState.cash['1'] || 0) - 60000) <= 1 && Math.abs((saleRatioState.cash['2'] || 0) - 60000) <= 1 && Math.abs((saleRatioState.cash['3'] || 0) - 60000) <= 1 },
+                { name: '가져오기 CSV 매핑', pass: importMappedRows.length === 2 },
+                { name: '가져오기 매수 변환', pass: importBuyPayload?.side === 'buy' && importBuyPayload?.ticker === '360750' && Math.abs(importBuyPayload?.shares - 3) < 0.0001 && Number(importBuyPayload?.price) === 18250 },
+                { name: '가져오기 배당 변환', pass: importDividendPayload?.category === '3' && importDividendPayload?.ticker === '360750' && Number(importDividendPayload?.price) === 1200 }
             ];
             const failed = checks.filter(c => !c.pass);
             const resultText = failed.length === 0
@@ -2718,6 +3376,15 @@ if(assetChart){
                 resultEl.innerText = resultText;
             }
         };
+
+        function handleImportInputEvent(e) {
+            const target = e.target;
+            if (!target?.dataset?.importField) return;
+            updateImportRowFromField(target);
+        }
+
+        document.addEventListener('input', handleImportInputEvent);
+        document.addEventListener('change', handleImportInputEvent);
 
         document.addEventListener('click', (e) => {
             const target = e.target.closest('button, .holding-item');
@@ -2799,16 +3466,17 @@ if(assetChart){
         });
 
         window.showSection = (id) => {
-            ['dashboard','history','transaction'].forEach(s => { getEl('section-'+s)?.classList.add('hidden'); });
+            ['dashboard','history','import','transaction'].forEach(s => { getEl('section-'+s)?.classList.add('hidden'); });
             getEl('section-'+id)?.classList.remove('hidden');
             document.body.dataset.activeSection = id;
             window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-            document.querySelectorAll('.nav-item').forEach(b => { b.classList.remove('text-blue-600'); b.classList.add('text-slate-300'); });
-            getEl('mob-nav-'+id)?.classList.add('text-blue-600'); getEl('mob-nav-'+id)?.classList.remove('text-slate-300');
+            document.querySelectorAll('.nav-item').forEach(b => { b.classList.remove('active', 'text-blue-600'); b.classList.add('text-slate-300'); });
+            getEl('mob-nav-'+id)?.classList.add('active', 'text-blue-600'); getEl('mob-nav-'+id)?.classList.remove('text-slate-300');
             document.querySelectorAll('.pc-nav-item').forEach(b => b.classList.remove('text-blue-600', 'border-r-4', 'border-blue-600'));
             getEl('pc-nav-'+id)?.classList.add('text-blue-600', 'border-r-4', 'border-blue-600');
             if(id === 'transaction') updateQuickSelectUI();
             if(id === 'history') renderHistoryList('history-list', transactions);
+            if(id === 'import') renderImportRows();
         };
         
         window.openSettings = () => { const m = getEl('settings-modal'); if(!m) return; if(getEl('setting-url')) getEl('setting-url').value = sheetsUrl; if(getEl('setting-firebase-config')) getEl('setting-firebase-config').value = firebaseConfigRaw; if(getEl('setting-firebase-collection')) getEl('setting-firebase-collection').value = firebaseCollection; setSyncStatus(syncStatusText, syncStatusTone, syncStatusDetail); m.classList.remove('hidden'); };

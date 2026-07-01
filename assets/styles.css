@@ -4041,3 +4041,152 @@ body > nav[class~="lg:hidden"][class~="fixed"] .nav-item.text-blue-600 {
     background: transparent !important;
     box-shadow: none !important;
 }
+
+.import-ai-guard {
+    border: 1px solid rgba(245, 158, 11, 0.28);
+    border-radius: 1rem;
+    background: linear-gradient(135deg, rgba(255, 251, 235, 0.96), rgba(255, 255, 255, 0.92));
+    padding: 1rem;
+    color: #92400e;
+}
+
+.import-ai-guard strong {
+    color: #111827;
+    font-size: 0.72rem;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.import-ai-guard p {
+    margin-top: 0.55rem;
+    color: #92400e;
+    font-size: 0.68rem;
+    font-weight: 800;
+    line-height: 1.5;
+}
+
+.import-ai-cost-meter {
+    height: 0.45rem;
+    margin-top: 0.65rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(245, 158, 11, 0.18);
+}
+
+.import-ai-cost-meter span {
+    display: block;
+    width: 0%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #f59e0b, #ef4444);
+    transition: width 0.25s ease;
+}
+
+.import-review-table {
+    border-collapse: separate;
+    border-spacing: 0 0.5rem;
+    table-layout: fixed;
+}
+
+.import-review-table th {
+    padding: 0 0.5rem 0.25rem;
+    color: #94a3b8;
+    font-size: 0.62rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.import-review-table td {
+    padding: 0.45rem 0.35rem;
+    background: rgba(248, 250, 252, 0.9);
+    border-top: 1px solid rgba(226, 232, 240, 0.9);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+    vertical-align: middle;
+}
+
+.import-review-table td:first-child {
+    border-left: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 0.9rem 0 0 0.9rem;
+    text-align: center;
+}
+
+.import-review-table td:last-child {
+    border-right: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 0 0.9rem 0.9rem 0;
+}
+
+.import-review-table input,
+.import-review-table select {
+    width: 100%;
+    min-width: 0;
+    height: 2.25rem;
+    border-radius: 0.65rem;
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    background: #fff;
+    padding: 0 0.55rem;
+    color: #0f172a;
+    font-size: 0.72rem;
+    font-weight: 800;
+    outline: none;
+}
+
+.import-review-table input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    accent-color: #0f172a;
+}
+
+.import-review-table .import-col-check { width: 3rem; }
+.import-review-table .import-col-date { width: 8rem; }
+.import-review-table .import-col-side { width: 7rem; }
+.import-review-table .import-col-ticker { width: 7rem; }
+.import-review-table .import-col-name { width: 13rem; }
+.import-review-table .import-col-number { width: 7rem; }
+.import-review-table .import-col-category { width: 7rem; }
+.import-review-table .import-col-confidence { width: 6rem; }
+
+.import-row-warning td {
+    background: rgba(255, 251, 235, 0.95);
+    border-color: rgba(252, 211, 77, 0.55);
+}
+
+.import-confidence-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 3.8rem;
+    height: 1.8rem;
+    border-radius: 999px;
+    background: #e0f2fe;
+    color: #0369a1;
+    font-size: 0.68rem;
+    font-weight: 900;
+}
+
+@media (max-width: 640px) {
+    .import-review-table th,
+    .import-review-table td {
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+    }
+
+    .import-review-table input,
+    .import-review-table select {
+        font-size: 0.68rem;
+        padding: 0 0.4rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    body > nav[class~="lg:hidden"][class~="fixed"] {
+        display: none !important;
+    }
+}
+
+@media (max-width: 1023px) {
+    #main-sidebar {
+        display: none !important;
+    }
+}

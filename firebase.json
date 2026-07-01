@@ -1,0 +1,23 @@
+{
+  "functions": {
+    "source": "functions"
+  },
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "aaa.txt",
+      ".env",
+      ".env.*",
+      "functions/**",
+      "workers/**",
+      "design-source/**",
+      "previews/**",
+      ".wrangler/**",
+      "ISARICH_CLOUDFLARE_SETUP.md",
+      "test-connection.txt"
+    ]
+  }
+}
