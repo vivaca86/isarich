@@ -1,4 +1,4 @@
-        const APP_VERSION = "1.0.33";
+        const APP_VERSION = "1.0.34";
         // Rollback switch: set false to hide/remove monthly review mode instantly.
         const ENABLE_MONTHLY_REVIEW_MODE = true;
         const HISTORY_FETCH_PAGE_SIZE = 500;
@@ -13,6 +13,7 @@
         };
 
         const MONTHLY_PLAN_BUDGET = 500000;
+        const TRADE_FEE_RATE = 0.00015;
         const ISA_PLAN = {
             primaryEngine: { ticker: '486290', targetTicker: '360750', fallbackTargetValue: 2450000, role: '주엔진' },
             secondaryEngine: { ticker: '474220', targetTicker: '458730', fallbackTargetValue: 1950000, role: '보조엔진' },
@@ -96,6 +97,7 @@ const centerTextPlugin = {
         let assetAllocationExpanded = false;
         let importRows = [];
         let importLastCostEstimate = null;
+        let xlsxLoaderPromise = null;
         const IMPORT_AI_COST_METER_KEY = 'isa_import_ai_cost_meter_v1';
         let monthlyBreakdownOpen = { buy: false, sell: false, dividend: false };
         let syncStatusText = '동기화 대기 중';
@@ -134,6 +136,7 @@ const centerTextPlugin = {
         }
         let detailModalTicker = "";
         let detailModalName = "";
+        let settingsPreviousFocus = null;
         let transactionsVersion = 0;
         let portfolioStateCacheVersion = -1;
         let portfolioStateCache = null;
@@ -265,17 +268,29 @@ const centerTextPlugin = {
         function restoreLocalDataSnapshot() {
             const cached = readJsonStorage(LOCAL_DATA_CACHE_KEY, null);
             const savedAt = Number(cached?.savedAt || 0);
-            if (!savedAt || Date.now() - savedAt > LOCAL_DATA_CACHE_MAX_AGE_MS) return false;
+            if (!savedAt) return false;
+            const cacheIsFresh = Date.now() - savedAt <= LOCAL_DATA_CACHE_MAX_AGE_MS;
 
             const cachedTransactions = Array.isArray(cached.transactions) ? cached.transactions.map((item) => toHistoryRecord(item, item.source || 'cache')) : [];
-            const cachedMarketData = isUsablePriceData(cached.marketData) ? cached.marketData : (readRememberedPriceData()?.data || {});
+            const rememberedPrices = readRememberedPriceData();
+            const useSnapshotPrices = cacheIsFresh && isUsablePriceData(cached.marketData);
+            const cachedMarketData = useSnapshotPrices
+                ? cached.marketData
+                : (rememberedPrices?.data || {});
+            const cachedPriceMeta = useSnapshotPrices
+                ? { savedAt, updatedAt: new Date(savedAt).toISOString(), status: 'local' }
+                : rememberedPrices;
 
             if (!cachedTransactions.length && !Object.keys(cachedMarketData).length) return false;
 
             transactions = mergePendingTransactions(cachedTransactions);
             marketData = cachedMarketData;
             if (isUsablePriceData(marketData)) {
-                rememberPriceData(marketData, { status: 'local', savedAt });
+                rememberPriceData(marketData, {
+                    status: cachedPriceMeta?.status || 'local',
+                    savedAt: Number(cachedPriceMeta?.savedAt || Date.now()),
+                    updatedAt: cachedPriceMeta?.updatedAt || new Date().toISOString()
+                });
             }
             transactionsVersion += 1;
             invalidateMonthlyReportCaches();
@@ -879,7 +894,7 @@ const centerTextPlugin = {
                             <div><span>신뢰도</span><strong>${confidence}%</strong></div>
                             <i style="width:${confidenceWidth}%"></i>
                         </div>
-                        <button type="button" class="ai-reco-action" onclick="showSection('transaction')">거래 입력하기 <span>›</span></button>
+                        <button type="button" class="ai-reco-action" onclick="openRecommendedTrade(${escapeHtml(JSON.stringify(String(row.ticker || '')))}, ${Number(row.qty || 0)})">거래 입력하기 <span>›</span></button>
                     </div>
                 `;
             }
@@ -918,17 +933,44 @@ const centerTextPlugin = {
                         <div><span>신뢰도</span><strong>${confidence}%</strong></div>
                         <i style="width:${confidenceWidth}%"></i>
                     </div>
-                    <button type="button" class="ai-reco-action" onclick="showSection('transaction')">추천 상세 보기 <span>›</span></button>
+                    <button type="button" class="ai-reco-action" onclick="openRecommendedTrade(${escapeHtml(JSON.stringify(String(next.ticker || '')))})">추천 상세 보기 <span>›</span></button>
                 </div>
             `;
         }
 
+        function getSortableTransactionDate(value) {
+            const raw = String(value || '').trim();
+            const match = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+            if (match) {
+                const year = Number(match[1]);
+                const month = Number(match[2]);
+                const day = Number(match[3]);
+                if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                    return year * 10000 + month * 100 + day;
+                }
+            }
+            const parsed = Date.parse(raw);
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+
         function getSortedTransactions(inputTransactions) {
             return [...(inputTransactions || [])].sort((a, b) => {
-                const dateDiff = new Date(a.date) - new Date(b.date);
+                const dateDiff = getSortableTransactionDate(a?.date) - getSortableTransactionDate(b?.date);
                 if (dateDiff !== 0) return dateDiff;
+                const createdAtDiff = Number(a?.createdAtMs || 0) - Number(b?.createdAtMs || 0);
+                if (createdAtDiff !== 0) return createdAtDiff;
                 return String(a.id || '').localeCompare(String(b.id || ''));
             });
+        }
+
+        function calculateTradeFee(shares, price) {
+            const amount = Math.abs(Number(shares || 0) * Number(price || 0));
+            return Number.isFinite(amount) && amount > 0 ? Math.ceil(amount * TRADE_FEE_RATE) : 0;
+        }
+
+        function getTransactionFee(tx) {
+            const fee = Number(tx?.fee);
+            return Number.isFinite(fee) && fee >= 0 ? roundMoney(fee) : 0;
         }
 
         function createTxnId() {
@@ -952,13 +994,13 @@ const centerTextPlugin = {
                 const shares = roundShares(tx?.shares || 0);
                 const price = Number(tx?.price || 0);
                 if (!Number.isFinite(price) || price <= 0) return;
-                const amt = roundMoney(Math.abs(shares * price));
+                const grossAmount = roundMoney(Math.abs(shares * price));
 
                 if (isDepositTransaction(tx)) {
                     const cat = normalizeCashCategory(tx?.category);
-                    cash[cat] = roundMoney(cash[cat] + amt);
-                    chargedByCat[cat] = roundMoney(chargedByCat[cat] + amt);
-                    addDepositToPlanBuckets(planBuckets, tx, amt);
+                    cash[cat] = roundMoney(cash[cat] + grossAmount);
+                    chargedByCat[cat] = roundMoney(chargedByCat[cat] + grossAmount);
+                    addDepositToPlanBuckets(planBuckets, tx, grossAmount);
                     return;
                 }
 
@@ -968,18 +1010,20 @@ const centerTextPlugin = {
                     holdings[ticker] = { shares: 0, cost: 0, name: getTradeDisplayName(tx), alloc: createEmptyCashAlloc(), bucketAlloc: createEmptyPlanBuckets() };
                 }
                 const h = holdings[ticker];
+                const fee = getTransactionFee(tx);
 
                 if (shares > 0) {
-                    totalBuyAmount = roundMoney(totalBuyAmount + amt);
+                    const tradeCost = roundMoney(grossAmount + fee);
+                    totalBuyAmount = roundMoney(totalBuyAmount + tradeCost);
                     h.shares = roundShares(h.shares + shares);
-                    h.cost = roundMoney(h.cost + amt);
-                    const bucketUse = consumePlanBuckets(planBuckets, getPlanBucketConsumeOrderForBuy(ticker), amt);
+                    h.cost = roundMoney(h.cost + tradeCost);
+                    const bucketUse = consumePlanBuckets(planBuckets, getPlanBucketConsumeOrderForBuy(ticker), tradeCost);
                     addBucketAlloc(h.bucketAlloc, bucketUse.usedByBucket);
                     if (bucketUse.remain > 0) {
                         addToPlanBucket(h.bucketAlloc, getFallbackPlanBucketForTicker(ticker), bucketUse.remain);
                     }
 
-                    let remain = amt;
+                    let remain = tradeCost;
                     ['3', '2', '1'].forEach(cat => {
                         if (remain <= 0) return;
                         const usable = Math.max(0, cash[cat]);
@@ -1000,7 +1044,8 @@ const centerTextPlugin = {
                 const sellQty = Math.abs(shares);
                 if (h.shares <= 0) return;
                 const actualSellQty = Math.min(sellQty, h.shares);
-                const proceeds = roundMoney(actualSellQty * price);
+                const appliedFee = sellQty > 0 ? roundMoney(fee * (actualSellQty / sellQty)) : 0;
+                const proceeds = roundMoney(Math.max(0, actualSellQty * price - appliedFee));
                 const avgCost = h.shares > 0 ? h.cost / h.shares : 0;
                 const costBasisSold = roundMoney(actualSellQty * avgCost);
                 const catCostSplit = distributeAmountBySource(costBasisSold, h.alloc, ['1', '2', '3'], '1');
@@ -1118,6 +1163,8 @@ const centerTextPlugin = {
             let sellShares = 0;
             let sellAmount = 0;
             let sellCostBasis = 0;
+            let totalDepositAmount = 0;
+            const depositAmountByCategory = { "1": 0, "2": 0, "3": 0 };
             let unassignedDividendCount = 0;
             const tickerMonthlyStats = {};
 
@@ -1126,7 +1173,7 @@ const centerTextPlugin = {
                 const shares = roundShares(tx?.shares || 0);
                 const price = Number(tx?.price || 0);
                 if (!Number.isFinite(price) || price <= 0) return;
-                const amt = roundMoney(Math.abs(shares * price));
+                const grossAmount = roundMoney(Math.abs(shares * price));
                 const ticker = String(tx?.ticker || '').trim();
                 const tickerName = String(tx?.name || ticker).trim() || ticker;
 
@@ -1148,9 +1195,13 @@ const centerTextPlugin = {
 
                 if (isDepositTransaction(tx)) {
                     const cat = normalizeCashCategory(tx?.category);
-                    cash[cat] = roundMoney(cash[cat] + amt);
+                    cash[cat] = roundMoney(cash[cat] + grossAmount);
+                    if (txMonth === monthKey) {
+                        totalDepositAmount = roundMoney(totalDepositAmount + grossAmount);
+                        depositAmountByCategory[cat] = roundMoney(depositAmountByCategory[cat] + grossAmount);
+                    }
                     if (txMonth === monthKey && cat === '3') {
-                        dividendIn = roundMoney(dividendIn + amt);
+                        dividendIn = roundMoney(dividendIn + grossAmount);
                         const dividendTicker = ticker || 'DIVIDEND';
                         if (!ticker || ticker === 'DEPOSIT') unassignedDividendCount += 1;
                         if (!tickerMonthlyStats[dividendTicker]) {
@@ -1166,7 +1217,7 @@ const centerTextPlugin = {
                                 realizedPnl: 0
                             };
                         }
-                        tickerMonthlyStats[dividendTicker].dividendIn = roundMoney(tickerMonthlyStats[dividendTicker].dividendIn + amt);
+                        tickerMonthlyStats[dividendTicker].dividendIn = roundMoney(tickerMonthlyStats[dividendTicker].dividendIn + grossAmount);
                     }
                     return;
                 }
@@ -1175,21 +1226,23 @@ const centerTextPlugin = {
                 if (!holdings[ticker]) holdings[ticker] = { shares: 0, cost: 0 };
                 const h = holdings[ticker];
                 const tickerStat = tickerMonthlyStats[ticker];
+                const fee = getTransactionFee(tx);
 
                 if (shares > 0) {
+                    const tradeCost = roundMoney(grossAmount + fee);
                     if (txMonth === monthKey) buyActionCount += 1;
                     if (txMonth === monthKey) {
                         buyShares = roundShares(buyShares + shares);
-                        buyAmount = roundMoney(buyAmount + amt);
+                        buyAmount = roundMoney(buyAmount + tradeCost);
                         if (tickerStat) {
                             tickerStat.buyShares = roundShares(tickerStat.buyShares + shares);
-                            tickerStat.buyAmount = roundMoney(tickerStat.buyAmount + amt);
+                            tickerStat.buyAmount = roundMoney(tickerStat.buyAmount + tradeCost);
                         }
                     }
                     h.shares = roundShares(h.shares + shares);
-                    h.cost = roundMoney(h.cost + amt);
+                    h.cost = roundMoney(h.cost + tradeCost);
 
-                    let remain = amt;
+                    let remain = tradeCost;
                     ['3', '2', '1'].forEach(cat => {
                         if (remain <= 0) return;
                         const usable = Math.max(0, cash[cat]);
@@ -1207,7 +1260,8 @@ const centerTextPlugin = {
                 const sellQty = Math.abs(shares);
                 if (h.shares <= 0) return;
                 const actualSellQty = Math.min(sellQty, h.shares);
-                const proceeds = roundMoney(actualSellQty * price);
+                const appliedFee = sellQty > 0 ? roundMoney(fee * (actualSellQty / sellQty)) : 0;
+                const proceeds = roundMoney(Math.max(0, actualSellQty * price - appliedFee));
                 const avgCost = h.shares > 0 ? h.cost / h.shares : 0;
                 const costBasisSold = roundMoney(actualSellQty * avgCost);
                 const pnl = roundMoney(proceeds - costBasisSold);
@@ -1253,6 +1307,8 @@ const centerTextPlugin = {
                 sellActionCount,
                 sellShares,
                 sellAmount,
+                totalDepositAmount,
+                depositAmountByCategory,
                 totalReturnAmount,
                 monthlyTotalReturnRate,
                 unassignedDividendCount,
@@ -1429,6 +1485,7 @@ const centerTextPlugin = {
                 name: String(item.name || ''),
                 shares: Number(item.shares || 0),
                 price: Number(item.price || 0),
+                fee: getTransactionFee(item),
                 category: normalizeTransactionCategory(item.category),
                 side: String(item.side || item.type || '').trim(),
                 createdAtMs,
@@ -1510,7 +1567,7 @@ const centerTextPlugin = {
             const record = toHistoryRecord({
                 ...payload,
                 id: safeId,
-                createdAtMs: Date.now()
+                createdAtMs: Number(payload?.keepCreatedAtMs || payload?.createdAtMs || Date.now())
             }, source);
             transactions = [
                 record,
@@ -1543,22 +1600,28 @@ const centerTextPlugin = {
                 const docs = [];
                 let lastDoc = null;
                 let pageCount = 0;
+                let fromCache = false;
+                let sawSnapshot = false;
 
                 while (pageCount < HISTORY_FETCH_MAX_PAGES) {
                     const query = lastDoc ? nextQuery(lastDoc) : firstQuery();
                     const snap = await withTimeout(query.get(), 15000, '기록 조회');
+                    if (snap) {
+                        sawSnapshot = true;
+                        fromCache = fromCache || Boolean(snap.metadata?.fromCache);
+                    }
                     if (!snap || snap.empty) break;
                     docs.push(...snap.docs);
                     pageCount += 1;
                     lastDoc = snap.docs[snap.docs.length - 1];
                     if (snap.size < HISTORY_FETCH_PAGE_SIZE || docs.length >= maxDocs) break;
                 }
-                return docs.slice(0, maxDocs);
+                return { docs: docs.slice(0, maxDocs), fromCache, sawSnapshot };
             };
 
-            let docs = [];
+            let result = { docs: [], fromCache: false, sawSnapshot: false };
             try {
-                docs = await loadAllByQuery({
+                result = await loadAllByQuery({
                     firstQuery: () => firestoreDb.collection(firebaseCollection).orderBy('date', 'desc').limit(HISTORY_FETCH_PAGE_SIZE),
                     nextQuery: (lastDoc) => firestoreDb.collection(firebaseCollection).orderBy('date', 'desc').startAfter(lastDoc).limit(HISTORY_FETCH_PAGE_SIZE)
                 });
@@ -1566,12 +1629,33 @@ const centerTextPlugin = {
                 console.warn('Date-ordered history query failed, using documentId pagination fallback.', e);
                 const docIdField = firebase?.firestore?.FieldPath?.documentId?.();
                 if (!docIdField) throw e;
-                docs = await loadAllByQuery({
+                result = await loadAllByQuery({
                     firstQuery: () => firestoreDb.collection(firebaseCollection).orderBy(docIdField).limit(HISTORY_FETCH_PAGE_SIZE),
                     nextQuery: (lastDoc) => firestoreDb.collection(firebaseCollection).orderBy(docIdField).startAfter(lastDoc.id).limit(HISTORY_FETCH_PAGE_SIZE)
                 });
             }
-            return docs.map(doc => toHistoryRecord({ id: doc.id, ...(doc.data() || {}) }, 'firebase'));
+            const records = result.docs.map(doc => toHistoryRecord({ id: doc.id, ...(doc.data() || {}) }, 'firebase'));
+            Object.defineProperty(records, 'loadMeta', {
+                value: { fromCache: result.fromCache, sawSnapshot: result.sawSnapshot },
+                enumerable: false
+            });
+            return records;
+        }
+
+        function applyLoadedTransactions(loadedTransactions) {
+            const loaded = Array.isArray(loadedTransactions) ? loadedTransactions : [];
+            const meta = loadedTransactions?.loadMeta || {};
+            const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+            const untrustedEmpty = loaded.length === 0 && (Boolean(meta.fromCache) || offline || meta.sawSnapshot === false);
+            if (transactions.length > 0 && untrustedEmpty) {
+                return { preserved: true, count: transactions.length };
+            }
+
+            transactions = mergePendingTransactions(loaded);
+            transactionsVersion += 1;
+            markHistoryDirty();
+            invalidateMonthlyReportCaches({ persisted: true });
+            return { preserved: false, count: transactions.length };
         }
 
         async function addTransactionToFirebase(payload) {
@@ -1590,6 +1674,7 @@ const centerTextPlugin = {
                 category: normalizeTransactionCategory(payload.category),
                 createdAt: createdAtValue
             };
+            if(Number.isFinite(Number(payload.fee)) && Number(payload.fee) >= 0) doc.fee = roundMoney(payload.fee);
             if(payload.side) doc.side = String(payload.side);
             if(payload.type) doc.type = String(payload.type);
             await firestoreDb.collection(firebaseCollection).doc(id).set(doc);
@@ -1815,11 +1900,13 @@ const centerTextPlugin = {
 
         function parseImportDate(value) {
             if (value instanceof Date && !Number.isNaN(value.getTime())) {
-                return value.toISOString().slice(0, 10);
+                return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
             }
             if (typeof value === 'number' && Number.isFinite(value) && value > 25000 && value < 80000) {
-                const excelDate = new Date(Math.round((value - 25569) * 86400 * 1000));
-                if (!Number.isNaN(excelDate.getTime())) return excelDate.toISOString().slice(0, 10);
+                const excelDate = new Date(Date.UTC(1899, 11, 30) + Math.floor(value) * 86400 * 1000);
+                if (!Number.isNaN(excelDate.getTime())) {
+                    return `${excelDate.getUTCFullYear()}-${String(excelDate.getUTCMonth() + 1).padStart(2, '0')}-${String(excelDate.getUTCDate()).padStart(2, '0')}`;
+                }
             }
             const raw = String(value ?? '').trim();
             if (!raw) return '';
@@ -1945,7 +2032,7 @@ const centerTextPlugin = {
                 const ticker = side === 'dividend' ? String(row.ticker || 'DEPOSIT').trim() : 'DEPOSIT';
                 const marketName = ticker && ticker !== 'DEPOSIT' ? getMarketName(ticker, row.name || ticker) : '';
                 return {
-                    id: createTxnId(),
+                    id: String(row.id || createTxnId()),
                     date,
                     ticker: ticker || 'DEPOSIT',
                     name: side === 'dividend'
@@ -1961,29 +2048,50 @@ const centerTextPlugin = {
             const ticker = String(row.ticker || '').trim();
             const name = String(row.name || getMarketName(ticker, ticker)).trim();
             return {
-                id: createTxnId(),
+                id: String(row.id || createTxnId()),
                 date,
                 ticker,
                 name,
                 shares: side === 'sell' ? -Math.abs(shares) : Math.abs(shares),
                 price,
+                fee: calculateTradeFee(shares, price),
                 category: 0,
                 side
             };
         }
 
-        function isLikelyExistingTransaction(row) {
-            const payload = importRowToPayload(row);
-            if (!payload) return false;
-            return transactions.some((tx) => {
-                const sameDate = String(tx.date || '').substring(0, 10) === payload.date;
-                const sameTicker = String(tx.ticker || '').trim() === String(payload.ticker || '').trim();
-                const sameSide = getExplicitTradeSide(tx) === getExplicitTradeSide(payload)
-                    || (isDepositTransaction(tx) && isDepositTransaction(payload));
-                const sameShares = Math.abs(Number(tx.shares || 0) - Number(payload.shares || 0)) < 0.0001;
-                const samePrice = Math.abs(Number(tx.price || 0) - Number(payload.price || 0)) < 0.01;
-                return sameDate && sameTicker && sameSide && sameShares && samePrice;
+        function getTransactionDuplicateKey(tx) {
+            if (!tx) return '';
+            const date = String(tx.date || '').substring(0, 10);
+            const ticker = String(tx.ticker || '').trim().toUpperCase();
+            const category = normalizeTransactionCategory(tx.category);
+            const side = isDepositTransaction(tx)
+                ? `deposit-${normalizeCashCategory(category)}`
+                : (getExplicitTradeSide(tx) || (Number(tx.shares || 0) > 0 ? 'buy' : ''));
+            const shares = roundShares(tx.shares || 0).toFixed(4);
+            const price = Math.round(Number(tx.price || 0) * 100);
+            if (!date || !ticker || !side || !Number.isFinite(price)) return '';
+            return [date, ticker, side, category, shares, price].join('|');
+        }
+
+        function getDuplicateImportIndexes(rows = importRows) {
+            const seen = new Set(transactions.map(getTransactionDuplicateKey).filter(Boolean));
+            const duplicates = new Set();
+            (rows || []).forEach((row, index) => {
+                const key = getTransactionDuplicateKey(importRowToPayload(row));
+                if (!key) return;
+                if (seen.has(key)) duplicates.add(index);
+                else seen.add(key);
             });
+            return duplicates;
+        }
+
+        function isLikelyExistingTransaction(row, index = importRows.indexOf(row), rows = importRows) {
+            if (index < 0) {
+                const key = getTransactionDuplicateKey(importRowToPayload(row));
+                return Boolean(key) && transactions.some((tx) => getTransactionDuplicateKey(tx) === key);
+            }
+            return getDuplicateImportIndexes(rows).has(index);
         }
 
         function renderImportRows() {
@@ -1999,9 +2107,10 @@ const centerTextPlugin = {
                 return;
             }
 
+            const duplicateIndexes = getDuplicateImportIndexes(importRows);
             body.innerHTML = importRows.map((row, index) => {
                 const warning = getImportRowWarning(row);
-                const duplicate = isLikelyExistingTransaction(row);
+                const duplicate = duplicateIndexes.has(index);
                 const rowClass = [
                     warning ? 'import-row-warning' : '',
                     duplicate ? 'import-row-duplicate' : ''
@@ -2073,13 +2182,15 @@ const centerTextPlugin = {
             const nextRows = rows.map((item) => createImportRow(item, source)).filter((row) => {
                 return row.date || row.ticker || row.name || Number(row.price || 0) > 0;
             });
-            nextRows.forEach((row) => {
-                if (isLikelyExistingTransaction(row)) {
+            const startIndex = importRows.length;
+            importRows = [...importRows, ...nextRows];
+            const duplicateIndexes = getDuplicateImportIndexes(importRows);
+            nextRows.forEach((row, offset) => {
+                if (duplicateIndexes.has(startIndex + offset)) {
                     row.selected = false;
                     row.memo = row.memo || '이미 저장된 거래와 유사합니다.';
                 }
             });
-            importRows = [...importRows, ...nextRows];
             renderImportRows();
             setImportStatus(nextRows.length ? `${nextRows.length}개 후보를 불러왔습니다.` : '가져올 거래 후보가 없습니다.', nextRows.length ? 'success' : 'error');
         }
@@ -2307,13 +2418,30 @@ const centerTextPlugin = {
             });
         }
 
+        function ensureXlsxLibrary() {
+            if (window.XLSX) return Promise.resolve(window.XLSX);
+            if (xlsxLoaderPromise) return xlsxLoaderPromise;
+            xlsxLoaderPromise = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+                script.async = true;
+                script.onload = () => window.XLSX ? resolve(window.XLSX) : reject(new Error('Excel parser initialization failed.'));
+                script.onerror = () => reject(new Error('Excel parser를 불러오지 못했습니다. 네트워크 연결을 확인해주세요.'));
+                document.head.appendChild(script);
+            }).catch((error) => {
+                xlsxLoaderPromise = null;
+                throw error;
+            });
+            return xlsxLoaderPromise;
+        }
+
         async function parseSpreadsheetFile(file) {
             const isWorkbook = /\.(xlsx|xls)$/i.test(file.name || '');
             if (!isWorkbook) {
                 const text = await readFileAsText(file);
                 return parseDelimitedText(text);
             }
-            if (!window.XLSX) throw new Error('Excel parser is not loaded.');
+            await ensureXlsxLibrary();
             const buffer = await readFileAsArrayBuffer(file);
             const workbook = window.XLSX.read(buffer, { type: 'array', cellDates: true });
             const firstSheetName = workbook.SheetNames[0];
@@ -2345,12 +2473,13 @@ const centerTextPlugin = {
 
         window.saveSelectedImportRows = async () => {
             const selectedRows = importRows.filter((row) => row.selected);
-            const duplicateRows = selectedRows.filter((row) => isLikelyExistingTransaction(row));
+            const selectedDuplicateIndexes = getDuplicateImportIndexes(selectedRows);
+            const duplicateRows = selectedRows.filter((row, index) => selectedDuplicateIndexes.has(index));
             duplicateRows.forEach((row) => {
                 row.selected = false;
                 row.memo = row.memo || '이미 저장된 거래입니다. 저장에서 제외됩니다.';
             });
-            const selected = selectedRows.filter((row) => !isLikelyExistingTransaction(row));
+            const selected = selectedRows.filter((row, index) => !selectedDuplicateIndexes.has(index));
             if (!selected.length) {
                 setImportStatus(
                     duplicateRows.length ? '선택한 항목이 모두 중복이라 저장하지 않았습니다.' : '저장할 행을 선택해주세요.',
@@ -2362,6 +2491,23 @@ const centerTextPlugin = {
             const invalid = selected.filter((row) => !importRowToPayload(row));
             if (invalid.length) {
                 setImportStatus(`확인이 필요한 행 ${invalid.length}개가 있습니다.`, 'error');
+                renderImportRows();
+                return;
+            }
+
+            const createdAtBase = Date.now();
+            const entries = selected.map((row, index) => ({
+                row,
+                payload: {
+                    ...importRowToPayload(row),
+                    createdAtMs: createdAtBase + index
+                }
+            }));
+            const oversell = findCandidateOversell(entries.map((entry) => entry.payload));
+            if (oversell) {
+                const failedEntry = entries.find((entry) => String(entry.payload.id) === String(oversell.tx.id));
+                if (failedEntry) failedEntry.row.memo = `해당 시점 보유 ${oversell.availableShares.toLocaleString()}주 초과 매도`;
+                setImportStatus(`${oversell.ticker} 매도 수량이 해당 시점 보유 수량(${oversell.availableShares.toLocaleString()}주)을 초과합니다.`, 'error');
                 renderImportRows();
                 return;
             }
@@ -2391,9 +2537,15 @@ const centerTextPlugin = {
             setImportStatus('선택한 거래를 저장 중입니다...', 'info');
             let saved = 0;
             const failed = [];
-            for (const row of selected) {
-                const payload = importRowToPayload(row);
+            const sortedEntries = getSortedTransactions(entries.map((entry) => entry.payload))
+                .map((payload) => entries.find((entry) => String(entry.payload.id) === String(payload.id)))
+                .filter(Boolean);
+            for (const { row, payload } of sortedEntries) {
                 try {
+                    const rowOversell = Number(payload.shares || 0) < 0 ? findCandidateOversell([payload]) : null;
+                    if (rowOversell) {
+                        throw new Error(`해당 시점 보유 ${rowOversell.availableShares.toLocaleString()}주 초과 매도`);
+                    }
                     const savedId = await postMutation('add', payload);
                     await syncAfterAdd(payload, savedId);
                     row.saved = true;
@@ -2509,13 +2661,82 @@ const centerTextPlugin = {
             const progressWidth = Math.max(8, Math.min(100, (Number(value || 0) / 1700000) * 100));
             const profitClass = profit >= 0 ? 'holding-profit-up' : 'holding-profit-down';
 
-            return `<div class="holding-item ${trendToneClass}" data-ticker="${safeTicker}" style="--holding-color:${stockVisual.bgColor};--holding-progress:${progressWidth}%"><div class="holding-row"><div class="holding-left"><div class="holding-avatar">${avatarInitial}</div><div class="holding-copy"><p class="holding-name">${safeName}</p><p class="holding-meta">${safeTicker} · 연 ${yieldPct.toFixed(2)}%</p></div></div><div class="holding-right"><p class="holding-value">₩${Math.round(value).toLocaleString()}</p><p class="holding-return ${profitClass}">${signedProfit} (${signedRate})</p></div><span class="holding-chevron">›</span></div><div class="holding-subrow"><span>${shares.toFixed(0)}주 · 평가손익</span><span>평균 ₩${Math.round(avgPrice).toLocaleString()}</span></div><div class="holding-progress"><i></i></div></div>`;
+            return `<div class="holding-item ${trendToneClass}" data-ticker="${safeTicker}" role="button" tabindex="0" aria-label="${safeName} 상세 보기" style="--holding-color:${stockVisual.bgColor};--holding-progress:${progressWidth}%"><div class="holding-row"><div class="holding-left"><div class="holding-avatar">${avatarInitial}</div><div class="holding-copy"><p class="holding-name">${safeName}</p><p class="holding-meta">${safeTicker} · 연 ${yieldPct.toFixed(2)}%</p></div></div><div class="holding-right"><p class="holding-value">₩${Math.round(value).toLocaleString()}</p><p class="holding-return ${profitClass}">${signedProfit} (${signedRate})</p></div><span class="holding-chevron">›</span></div><div class="holding-subrow"><span>${shares.toFixed(0)}주 · 평가손익</span><span>평균 ₩${Math.round(avgPrice).toLocaleString()}</span></div><div class="holding-progress"><i></i></div></div>`;
         }
 
         function getCurrentSharesForTicker(ticker) {
             const key = String(ticker || '').trim();
             if (!key) return 0;
-            return Number(getPortfolioState()?.holdings?.[key]?.shares || 0);
+            const editId = String(getEl('edit-id')?.value || '').trim();
+            const state = editId
+                ? simulatePortfolioState(transactions.filter((tx) => String(tx.id) !== editId))
+                : getPortfolioState();
+            return Number(state?.holdings?.[key]?.shares || 0);
+        }
+
+        function getOversellShortfalls(inputTransactions = []) {
+            const sharesByTicker = {};
+            const shortfallsById = new Map();
+            for (const tx of getSortedTransactions(inputTransactions)) {
+                if (isDepositTransaction(tx)) continue;
+                const ticker = String(tx?.ticker || '').trim();
+                const shares = roundShares(tx?.shares || 0);
+                if (!ticker || !shares) continue;
+                const currentShares = roundShares(sharesByTicker[ticker] || 0);
+                if (shares > 0) {
+                    sharesByTicker[ticker] = roundShares(currentShares + shares);
+                    continue;
+                }
+                const requestedShares = Math.abs(shares);
+                const shortfall = Math.max(0, requestedShares - currentShares);
+                const id = String(tx.id || '');
+                if (id && shortfall > 0) shortfallsById.set(id, shortfall);
+                sharesByTicker[ticker] = roundShares(Math.max(0, currentShares - requestedShares));
+            }
+            return shortfallsById;
+        }
+
+        function findCandidateOversell(candidatePayloads = [], options = {}) {
+            const candidates = (candidatePayloads || []).filter(Boolean);
+            if (!candidates.length) return null;
+            const excludedIds = new Set((options.excludeIds || []).map((id) => String(id || '')).filter(Boolean));
+            const sourceTransactions = options.baseTransactions || transactions;
+            const baseTransactions = sourceTransactions.filter((tx) => !excludedIds.has(String(tx.id || '')));
+            const candidateIds = new Set(candidates.map((tx) => String(tx.id || '')).filter(Boolean));
+            const impactedTickers = new Set(candidates.map((tx) => String(tx?.ticker || '').trim()).filter(Boolean));
+            sourceTransactions.forEach((tx) => {
+                if (excludedIds.has(String(tx.id || ''))) {
+                    const ticker = String(tx?.ticker || '').trim();
+                    if (ticker) impactedTickers.add(ticker);
+                }
+            });
+            const baselineShortfalls = getOversellShortfalls(sourceTransactions);
+            const sharesByTicker = {};
+
+            for (const tx of getSortedTransactions([...baseTransactions, ...candidates])) {
+                if (isDepositTransaction(tx)) continue;
+                const ticker = String(tx?.ticker || '').trim();
+                const shares = roundShares(tx?.shares || 0);
+                if (!ticker || !shares) continue;
+                const currentShares = roundShares(sharesByTicker[ticker] || 0);
+                if (shares > 0) {
+                    sharesByTicker[ticker] = roundShares(currentShares + shares);
+                    continue;
+                }
+
+                const requestedShares = Math.abs(shares);
+                if (requestedShares > currentShares + 0.0001) {
+                    const shortfall = requestedShares - currentShares;
+                    const baselineShortfall = Number(baselineShortfalls.get(String(tx.id || '')) || 0);
+                    const isCandidate = candidateIds.has(String(tx.id || ''));
+                    const worsenedAffectedTrade = impactedTickers.has(ticker) && shortfall > baselineShortfall + 0.0001;
+                    if (isCandidate || worsenedAffectedTrade) {
+                        return { tx, ticker, requestedShares, availableShares: Math.max(0, currentShares) };
+                    }
+                }
+                sharesByTicker[ticker] = roundShares(Math.max(0, currentShares - requestedShares));
+            }
+            return null;
         }
 
         function updateTradeSummary() {
@@ -2523,14 +2744,19 @@ const centerTextPlugin = {
             const price = Number(getEl('input-price')?.value || 0);
             const ticker = String(getEl('input-ticker')?.value || selectedTicker || '').trim();
             const amount = Math.max(0, shares * price);
-            const fee = amount > 0 ? Math.ceil(amount * 0.00015) : 0;
+            const fee = calculateTradeFee(shares, price);
             const isSell = currentTransactionMode === 'sell';
             const currentShares = getCurrentSharesForTicker(ticker);
             const postShares = isSell ? Math.max(0, currentShares - shares) : currentShares + shares;
-            const cash = Object.values(getPortfolioState()?.cash || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+            const editId = String(getEl('edit-id')?.value || '').trim();
+            const previewState = editId
+                ? simulatePortfolioState(transactions.filter((tx) => String(tx.id) !== editId))
+                : getPortfolioState();
+            const cash = Object.values(previewState?.cash || {}).reduce((sum, value) => sum + Number(value || 0), 0);
             const afterCash = isSell ? cash + amount - fee : cash - amount - fee;
+            const settledAmount = isSell ? Math.max(0, amount - fee) : amount + fee;
 
-            safeSetText('trade-estimated-amount', `₩${Math.round(amount).toLocaleString()}`);
+            safeSetText('trade-estimated-amount', `₩${Math.round(settledAmount).toLocaleString()}`);
             safeSetText('trade-post-shares', `${Number(postShares || 0).toLocaleString()}주`);
             safeSetText('trade-fee', `₩${fee.toLocaleString()}`);
             safeSetText('trade-cash-impact', `₩${Math.round(afterCash).toLocaleString()}`);
@@ -2568,13 +2794,22 @@ const centerTextPlugin = {
             const amount = Number(getEl('div-amount')?.value || 0);
             const cat = normalizeCashCategory(getEl('wallet-category')?.value || '1');
             const state = getPortfolioState();
-            const currentCash = Object.values(state?.cash || {}).reduce((sum, value) => sum + Number(value || 0), 0);
             const isDividend = cat === '3';
             const monthKey = currentMonthlyModeKey || getCurrentMonthKey();
-            const report = monthlyReportCache.get(monthKey) || getCurrentMonthReport(transactions, monthKey);
-            const after = currentCash + Math.max(0, amount);
-            const monthTotal = Number(report?.totalDepositAmount || report?.totalReturnAmount || 0) + Math.max(0, amount);
-            const dividendBase = Number(report?.totalReturnAmount || 0) + (isDividend ? Math.max(0, amount) : 0);
+            const editId = String(getEl('edit-id')?.value || '').trim();
+            const previewTransactions = editId
+                ? transactions.filter((tx) => String(tx.id) !== editId)
+                : transactions;
+            const previewState = editId ? simulatePortfolioState(previewTransactions) : state;
+            const previewCash = Object.values(previewState?.cash || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+            let report = editId ? getCurrentMonthReport(previewTransactions, monthKey) : monthlyReportCache.get(monthKey);
+            if (!report || !Number.isFinite(Number(report.totalDepositAmount))) {
+                report = getCurrentMonthReport(previewTransactions, monthKey);
+            }
+            const after = previewCash + Math.max(0, amount);
+            const cashDepositTotal = Number(report?.depositAmountByCategory?.['1'] || 0) + Number(report?.depositAmountByCategory?.['2'] || 0);
+            const monthTotal = cashDepositTotal + (isDividend ? 0 : Math.max(0, amount));
+            const dividendBase = Number(report?.dividendIn || 0) + (isDividend ? Math.max(0, amount) : 0);
             const target = 50000;
             const remaining = Math.max(0, target - dividendBase);
             const pct = Math.max(0, Math.min(100, (dividendBase / target) * 100));
@@ -2743,6 +2978,7 @@ const centerTextPlugin = {
                 let priceSyncFailed = false;
                 let priceSyncMeta = null;
                 let historyRecoveredWithFallback = false;
+                let historyPreservedFromLocal = false;
 
                 if(hasPriceUrl) {
                     try {
@@ -2769,20 +3005,16 @@ const centerTextPlugin = {
                 }
 
                 try {
-                    transactions = mergePendingTransactions(await loadTransactionsFromFirebase());
-                    transactionsVersion += 1;
-                    markHistoryDirty();
-                    invalidateMonthlyReportCaches({ persisted: true });
+                    const applied = applyLoadedTransactions(await loadTransactionsFromFirebase());
+                    historyPreservedFromLocal = applied.preserved;
                 } catch(e) {
                     console.error(e);
                     const fallbackCollection = 'isa_history';
                     if(firebaseCollection !== fallbackCollection) {
                         try {
                             firebaseCollection = fallbackCollection;
-                            transactions = mergePendingTransactions(await loadTransactionsFromFirebase());
-                            transactionsVersion += 1;
-                            markHistoryDirty();
-                            invalidateMonthlyReportCaches({ persisted: true });
+                            const applied = applyLoadedTransactions(await loadTransactionsFromFirebase());
+                            historyPreservedFromLocal = applied.preserved;
                             historyRecoveredWithFallback = true;
                         } catch (retryError) {
                             setSyncFailureStatus('HISTORY_LOAD', retryError, 'HISTORY_RETRY');
@@ -2806,7 +3038,8 @@ const centerTextPlugin = {
                 }
 
                 const loadedHint = transactions.length > 0 ? ` · ${transactions.length}건` : '';
-                if(historyRecoveredWithFallback) setSyncStatus("컬렉션 자동 복구 · 기록 동기화됨" + loadedHint, 'warn');
+                if(historyPreservedFromLocal) setSyncStatus("오프라인/캐시 응답 · 저장된 기록 유지" + loadedHint, 'warn', '빈 캐시 응답으로 기존 기록을 덮어쓰지 않았습니다.');
+                else if(historyRecoveredWithFallback) setSyncStatus("컬렉션 자동 복구 · 기록 동기화됨" + loadedHint, 'warn');
                 else if(!hasPriceUrl) setSyncStatus("가격 URL 미설정 · 기록만 동기화됨" + loadedHint, 'warn', '가격 주소가 없어 보유 기록만 갱신했습니다.');
                 else if(priceSyncMeta?.code === 'PRICE_STALE_USED') setSyncStatus(`가격 일시 지연 · 마지막 정상 가격 표시${loadedHint}`, 'warn');
                 else if(priceSyncFailed) setSyncStatus(`가격 연결 실패(${priceSyncMeta?.code || 'PRICE_FETCH'}) · 기록은 동기화됨${loadedHint}`, 'warn', priceSyncMeta?.reason || '가격 서버 응답을 확인해주세요.');
@@ -2851,6 +3084,28 @@ async function postMutation(action, payload = {}) {
                 else getEl('input-price')?.focus();
                 return;
             }
+            const fee = calculateTradeFee(shares, price);
+            const proposedTrade = {
+                id: editId || '__main_trade_preview__',
+                date,
+                ticker,
+                shares: isSell ? -Math.abs(shares) : Math.abs(shares),
+                price,
+                side: isSell ? 'sell' : 'buy',
+                createdAtMs: Number(originalTx?.createdAtMs || Date.now())
+            };
+            const oversell = findCandidateOversell([proposedTrade], { excludeIds: editId ? [editId] : [] });
+            if (oversell) {
+                const affectedDate = String(oversell.tx?.date || '').substring(0, 10);
+                setFormStatus(
+                    'purchase-form-status',
+                    `${affectedDate ? `${affectedDate} ` : ''}${oversell.ticker} 매도가 해당 시점 보유 수량(${oversell.availableShares.toLocaleString()}주)을 초과하게 됩니다.`,
+                    'error'
+                );
+                getEl('input-shares')?.focus();
+                return;
+            }
+            const settledAmount = isSell ? Math.max(0, shares * price - fee) : shares * price + fee;
             const confirmOk = await requestRecordConfirmation({
                 kind: isSell ? 'sell' : 'buy',
                 title: isSell ? '매도 기록 확인' : '매수 기록 확인',
@@ -2861,7 +3116,8 @@ async function postMutation(action, payload = {}) {
                 rows: [
                     { label: '수량', value: `${Number(shares).toLocaleString()}주` },
                     { label: '단가', value: `₩${Math.round(price).toLocaleString()}` },
-                    { label: isSell ? '예상 입금' : '예상 금액', value: `₩${Math.round(shares * price).toLocaleString()}` },
+                    { label: isSell ? '예상 입금' : '예상 결제', value: `₩${Math.round(settledAmount).toLocaleString()}` },
+                    { label: '수수료', value: `₩${fee.toLocaleString()}` },
                     { label: isSell ? '매도 후 보유' : '매수 후 보유', value: getEl('trade-post-shares')?.textContent || '-' }
                 ]
             });
@@ -2878,6 +3134,7 @@ async function postMutation(action, payload = {}) {
                     name,
                     shares: isSell ? -Math.abs(shares) : Math.abs(shares),
                     price,
+                    fee,
                     category: 0,
                     side: isSell ? 'sell' : 'buy',
                     keepCreatedAtMs: Number(originalTx?.createdAtMs || 0)
@@ -2899,6 +3156,7 @@ async function postMutation(action, payload = {}) {
         function resetPurchaseForm() {
             if(getEl('input-shares')) getEl('input-shares').value = ""; 
             if(getEl('input-price')) getEl('input-price').value = "";
+            if(getEl('div-amount')) getEl('div-amount').value = "";
             if(getEl('edit-id')) getEl('edit-id').value = ""; 
             if(getEl('save-btn')) getEl('save-btn').innerText = currentTransactionMode === 'sell' ? "매도 기록 추가" : "기록 추가";
             if(getEl('save-div-btn')) getEl('save-div-btn').innerText = normalizeCashCategory(getEl('wallet-category')?.value || '1') === '3' ? "배당 기록 추가" : "입금 기록 추가";
@@ -3014,10 +3272,18 @@ async function postMutation(action, payload = {}) {
                 return;
             }
             if(isSell) {
-                const holdingShares = getHoldingSharesByTicker(detailModalTicker);
-                const sellShares = Math.abs(sharesInput);
-                if(sellShares > holdingShares) {
-                    setFormStatus('detail-trade-status', `보유 수량(${holdingShares.toFixed(2)}주)을 초과해 매도할 수 없습니다.`, 'error');
+                const oversell = findCandidateOversell([{
+                    id: '__detail_sell_preview__',
+                    date,
+                    ticker: detailModalTicker,
+                    shares,
+                    price,
+                    side: 'sell',
+                    createdAtMs: Date.now()
+                }]);
+                if(oversell) {
+                    setFormStatus('detail-trade-status', `해당 시점 보유 수량(${oversell.availableShares.toLocaleString()}주)을 초과해 매도할 수 없습니다.`, 'error');
+                    getEl('detail-trade-shares')?.focus();
                     return;
                 }
             }
@@ -3032,6 +3298,7 @@ async function postMutation(action, payload = {}) {
                     name: detailModalName,
                     shares,
                     price,
+                    fee: calculateTradeFee(shares, price),
                     category: 0,
                     side: isSell ? 'sell' : 'buy'
                 };
@@ -3091,7 +3358,7 @@ async function postMutation(action, payload = {}) {
                     avatarColor: bg[i]
                 });
             });
-            animateValue('stat-total-value', 0, Math.round(totalV), 900);
+            animateValue('stat-total-value', 0, Math.round(totalV + curCash), 900);
             const totProfit = totalV - openCostBasis, totRate = openCostBasis > 0 ? (totProfit/openCostBasis)*100 : 0;
             const totalTrend = getTrendVisual(totRate);
             safeSetText('stat-profit-amount', `₩${Math.round(Math.abs(totProfit)).toLocaleString()}`);
@@ -3119,6 +3386,11 @@ async function postMutation(action, payload = {}) {
             safeSetText('report-month-label', monthReport.monthKey || '-');
             safeSetText('report-realized-pnl', `₩${Math.round(monthReport.realizedPnl).toLocaleString()}`);
             safeSetText('report-dividend-in', `₩${Math.round(monthReport.totalReturnAmount || 0).toLocaleString()} (${Number(monthReport.monthlyTotalReturnRate || 0).toFixed(2)}%)`);
+            const monthlyReturnEl = getEl('hero-monthly-return');
+            if (monthlyReturnEl) {
+                monthlyReturnEl.classList.remove('text-emerald-300', 'text-blue-300', 'text-slate-300');
+                monthlyReturnEl.classList.add(monthReport.totalReturnAmount > 0 ? 'text-emerald-300' : (monthReport.totalReturnAmount < 0 ? 'text-blue-300' : 'text-slate-300'));
+            }
             updateMonthlyReviewPanel(monthReport);
 
             const reportPnlEl = getEl('report-realized-pnl');
@@ -3329,18 +3601,30 @@ if(assetChart){
             selectedTicker = k; getEl('input-ticker').value = k; getEl('input-name').value = d.name; getEl('input-price').value = d.price; updateQuickSelectUI(); updateSelectedStockPreview();
         };
 
+        window.openRecommendedTrade = (ticker, qty = 0) => {
+            showSection('transaction');
+            switchTransactionMode('buy');
+            fillForm(String(ticker || ''));
+            if (Number(qty || 0) > 0 && getEl('input-shares')) {
+                getEl('input-shares').value = String(qty);
+                updateTradeSummary();
+            }
+            getEl('input-shares')?.focus();
+        };
+
         window.editTransaction = (id) => {
             const t = transactions.find(x => x.id == id); if(!t) return;
             const isDeposit = isDepositTransaction(t);
             if(isDeposit) {
                 showSection('transaction'); switchTab('deposit');
                 getEl('div-date').value = String(t.date).substring(0,10); getEl('div-amount').value = t.price;
+                getEl('edit-id').value = id;
                 setDepositCat(normalizeCashCategory(t.category));
                 if (normalizeCashCategory(t.category) === '3' && getEl('div-ticker')) {
                     const depositTicker = String(t.ticker || 'DEPOSIT').trim() || 'DEPOSIT';
                     getEl('div-ticker').value = depositTicker;
                 }
-                getEl('edit-id').value = id; getEl('save-div-btn').innerText = "수정 저장"; getEl('cancel-edit-btn-deposit').classList.remove('hidden');
+                getEl('save-div-btn').innerText = "수정 저장"; getEl('cancel-edit-btn-deposit').classList.remove('hidden');
             } else {
                 const isSell = String(t?.side || '').toLowerCase() === 'sell' || Number(t?.shares || 0) < 0;
                 showSection('transaction'); switchTransactionMode(isSell ? 'sell' : 'buy');
@@ -3396,7 +3680,9 @@ if(assetChart){
                 return `<div class="bg-slate-800/5 p-4 rounded-xl border border-slate-100 flex justify-between items-center text-[10px] font-black text-left"><div class="text-left"><p class="text-[8px] mb-1 font-sans"><span class="text-slate-500">${escapeHtml(String(t.date).substring(0,10))} · </span><span class="${labelClass}">${labelText}</span></p><p class="text-slate-900 font-sans">₩${Number(t.price).toLocaleString()} · ${Math.abs(sharesNum)}주</p></div><button type="button" data-action="delete" data-id="${escapeHtml(t.id)}" class="text-slate-300 hover:text-rose-500 transition font-sans"><svg class="icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button></div>`;
             }).join('');
             if(getEl('detail-trade-date')) getEl('detail-trade-date').value = getLocalDateInputValue();
-            const lastPrice = Number(tradeData[tradeData.length - 1]?.price || marketData[ticker]?.price || 0);
+            const sortedTradeData = getSortedTransactions(tradeData);
+            const newestTrade = sortedTradeData[sortedTradeData.length - 1];
+            const lastPrice = Number(marketData[ticker]?.price || newestTrade?.price || 0);
             if(getEl('detail-trade-price')) getEl('detail-trade-price').value = lastPrice || '';
             if(getEl('detail-trade-shares')) getEl('detail-trade-shares').value = '';
             setFormStatus('detail-trade-status');
@@ -3478,6 +3764,69 @@ if(assetChart){
                 price: 10950,
                 side: 'buy'
             }, 'self-test.csv');
+            const sameDayOrderingTx = [
+                { id: 'a-buy', date: `${testMonth}-14`, ticker: 'ORDER', name: 'ordering', shares: 1, price: 100, side: 'buy', createdAtMs: 200 },
+                { id: 'z-deposit', date: `${testMonth}-14`, ticker: 'DEPOSIT', name: '현금 입금', shares: 1, price: 100, category: '3', createdAtMs: 100 }
+            ];
+            const sameDayState = simulatePortfolioState(sameDayOrderingTx);
+            const feeTx = [
+                { id: 'fee-d', date: `${testMonth}-01`, ticker: 'DEPOSIT', name: '현금 입금', shares: 1, price: 10000, category: '1' },
+                { id: 'fee-b', date: `${testMonth}-02`, ticker: 'FEE', name: 'fee test', shares: 10, price: 100, fee: 1, side: 'buy' },
+                { id: 'fee-s', date: `${testMonth}-03`, ticker: 'FEE', name: 'fee test', shares: -2, price: 200, fee: 1, side: 'sell' }
+            ];
+            const feeState = simulatePortfolioState(feeTx);
+            const feeReport = getCurrentMonthReport(feeTx, testMonth);
+            const oversellResult = findCandidateOversell([
+                { id: 'oversell-s', date: `${testMonth}-02`, ticker: 'OVER', shares: -3, price: 100, side: 'sell', createdAtMs: 2 }
+            ], {
+                baseTransactions: [{ id: 'oversell-b', date: `${testMonth}-01`, ticker: 'OVER', shares: 2, price: 100, side: 'buy', createdAtMs: 1 }]
+            });
+            const editedBuyOversell = findCandidateOversell([
+                { id: 'edit-buy', date: `${testMonth}-01`, ticker: 'EDIT', shares: 5, price: 100, side: 'buy', createdAtMs: 1 }
+            ], {
+                baseTransactions: [
+                    { id: 'edit-buy', date: `${testMonth}-01`, ticker: 'EDIT', shares: 10, price: 100, side: 'buy', createdAtMs: 1 },
+                    { id: 'later-sell', date: `${testMonth}-02`, ticker: 'EDIT', shares: -8, price: 100, side: 'sell', createdAtMs: 2 }
+                ],
+                excludeIds: ['edit-buy']
+            });
+            const unrelatedLegacyOversell = findCandidateOversell([
+                { id: 'new-buy', date: `${testMonth}-03`, ticker: 'NEW', shares: 1, price: 100, side: 'buy', createdAtMs: 3 }
+            ], {
+                baseTransactions: [
+                    { id: 'legacy-sell', date: `${testMonth}-01`, ticker: 'OLD', shares: -2, price: 100, side: 'sell', createdAtMs: 1 }
+                ]
+            });
+            const legacyDateOrder = getSortedTransactions([
+                { id: 'october', date: '2026-10-01' },
+                { id: 'february', date: '2026-2-01' }
+            ]);
+            const duplicateImportRows = [
+                createImportRow({ date: '2099-12-30', ticker: 'DUPTEST', name: 'duplicate', shares: 1, price: 1234, side: 'buy' }, 'self-test.csv'),
+                createImportRow({ date: '2099-12-30', ticker: 'DUPTEST', name: 'duplicate', shares: 1, price: 1234, side: 'buy' }, 'self-test.csv')
+            ];
+            const duplicateImportIndexes = getDuplicateImportIndexes(duplicateImportRows);
+            const selectedOnlyDuplicateIndexes = getDuplicateImportIndexes([duplicateImportRows[1]]);
+            const categoryImportRows = [
+                createImportRow({ date: '2099-12-31', ticker: 'DEPOSIT', name: '현금 입금', amount: 5000, side: 'deposit', category: '1' }, 'self-test.csv'),
+                createImportRow({ date: '2099-12-31', ticker: 'DEPOSIT', name: '현금 입금', amount: 5000, side: 'deposit', category: '2' }, 'self-test.csv')
+            ];
+            const categoryDuplicateIndexes = getDuplicateImportIndexes(categoryImportRows);
+            const localDate = new Date(2026, 6, 14, 0, 0, 0);
+            const excelSerial = Math.floor((Date.UTC(2026, 6, 14) - Date.UTC(1899, 11, 30)) / 86400000);
+            const cacheWasPreserved = (() => {
+                const originalTransactions = transactions;
+                const cachedSentinel = [{ id: 'cache-sentinel', date: '2099-01-01', ticker: 'CACHE', name: 'cache', shares: 1, price: 1, side: 'buy' }];
+                try {
+                    transactions = cachedSentinel;
+                    const untrustedEmpty = [];
+                    Object.defineProperty(untrustedEmpty, 'loadMeta', { value: { fromCache: true, sawSnapshot: true } });
+                    const cachePreserveResult = applyLoadedTransactions(untrustedEmpty);
+                    return cachePreserveResult.preserved && transactions === cachedSentinel;
+                } finally {
+                    transactions = originalTransactions;
+                }
+            })();
 
             const checks = [
                 { name: '보유수량 계산', pass: Math.abs((state.holdings.TEST?.shares || 0) - 8) < 0.0001 },
@@ -3493,7 +3842,19 @@ if(assetChart){
                 { name: '가져오기 매도 변환', pass: importSellPayload?.side === 'sell' && Math.abs(Number(importSellPayload?.shares || 0) + 2) < 0.0001 },
                 { name: '가져오기 구분 없음 기본값', pass: unknownSideRow.side === 'unknown' && !importRowToPayload(unknownSideRow) },
                 { name: '가져오기 종목 alias 매칭', pass: importAliasRow.ticker === '458730' },
-                { name: '가져오기 잘못된 ticker 보정', pass: importAliasOverrideRow.ticker === '0183J0' }
+                { name: '가져오기 잘못된 ticker 보정', pass: importAliasOverrideRow.ticker === '0183J0' },
+                { name: '동일 날짜 생성순 정렬', pass: getSortedTransactions(sameDayOrderingTx)[0]?.id === 'z-deposit' && Math.abs(Number(sameDayState.cash['3'] || 0)) < 0.001 && Math.abs(Number(sameDayState.cash['1'] || 0)) < 0.001 },
+                { name: '수수료 현금·원가 반영', pass: Math.abs(Number(feeState.cash['1'] || 0) - 9398) < 0.01 && Math.abs(Number(feeState.holdings.FEE?.cost || 0) - 800.8) < 0.01 && Math.abs(Number(feeReport.realizedPnl || 0) - 198.8) < 0.01 },
+                { name: '초과 매도 차단', pass: oversellResult?.ticker === 'OVER' && Math.abs(Number(oversellResult?.availableShares || 0) - 2) < 0.001 },
+                { name: '매수 편집 후속 초과 매도 차단', pass: editedBuyOversell?.tx?.id === 'later-sell' && Math.abs(Number(editedBuyOversell?.availableShares || 0) - 5) < 0.001 },
+                { name: '무관한 레거시 초과매도 허용', pass: unrelatedLegacyOversell === null },
+                { name: '레거시 날짜 월 순서', pass: legacyDateOrder[0]?.id === 'february' },
+                { name: '가져오기 배치 내 중복', pass: !duplicateImportIndexes.has(0) && duplicateImportIndexes.has(1) },
+                { name: '미선택 행 중복 판정 제외', pass: selectedOnlyDuplicateIndexes.size === 0 },
+                { name: '입금 카테고리별 중복 구분', pass: !categoryDuplicateIndexes.has(0) && !categoryDuplicateIndexes.has(1) },
+                { name: '월간 입금 카테고리 집계', pass: report.totalDepositAmount === 100000 && report.depositAmountByCategory?.['3'] === 100000 },
+                { name: '로컬·Excel 날짜 보존', pass: parseImportDate(localDate) === '2026-07-14' && parseImportDate(excelSerial) === '2026-07-14' },
+                { name: '빈 오프라인 캐시 덮어쓰기 방지', pass: cacheWasPreserved }
             ];
             const failed = checks.filter(c => !c.pass);
             const resultText = failed.length === 0
@@ -3518,6 +3879,40 @@ if(assetChart){
 
         document.addEventListener('input', handleImportInputEvent);
         document.addEventListener('change', handleImportInputEvent);
+
+        document.addEventListener('keydown', (event) => {
+            const settingsModal = getEl('settings-modal');
+            const settingsOpen = settingsModal && !settingsModal.classList.contains('hidden');
+            if (settingsOpen) {
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    closeSettings();
+                    return;
+                }
+                if (event.key === 'Tab') {
+                    const focusable = [...settingsModal.querySelectorAll('button, input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+                        .filter((el) => !el.disabled && el.getClientRects().length > 0);
+                    if (focusable.length) {
+                        const first = focusable[0];
+                        const last = focusable[focusable.length - 1];
+                        if (event.shiftKey && document.activeElement === first) {
+                            event.preventDefault();
+                            last.focus();
+                        } else if (!event.shiftKey && document.activeElement === last) {
+                            event.preventDefault();
+                            first.focus();
+                        }
+                    }
+                }
+            }
+
+            const holding = event.target?.closest?.('.holding-item');
+            if (holding && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault();
+                const ticker = holding.dataset.ticker;
+                if (ticker) openDetailModal(ticker);
+            }
+        });
 
         document.addEventListener('click', (e) => {
             const target = e.target.closest('button, .holding-item');
@@ -3612,8 +4007,26 @@ if(assetChart){
             if(id === 'import') renderImportRows();
         };
         
-        window.openSettings = () => { const m = getEl('settings-modal'); if(!m) return; if(getEl('setting-url')) getEl('setting-url').value = sheetsUrl; if(getEl('setting-firebase-config')) getEl('setting-firebase-config').value = firebaseConfigRaw; if(getEl('setting-firebase-collection')) getEl('setting-firebase-collection').value = firebaseCollection; setSyncStatus(syncStatusText, syncStatusTone, syncStatusDetail); m.classList.remove('hidden'); };
-        window.closeSettings = () => getEl('settings-modal')?.classList.add('hidden');
+        window.openSettings = () => {
+            const m = getEl('settings-modal');
+            if(!m) return;
+            settingsPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+            if(getEl('setting-url')) getEl('setting-url').value = sheetsUrl;
+            if(getEl('setting-firebase-config')) getEl('setting-firebase-config').value = firebaseConfigRaw;
+            if(getEl('setting-firebase-collection')) getEl('setting-firebase-collection').value = firebaseCollection;
+            setSyncStatus(syncStatusText, syncStatusTone, syncStatusDetail);
+            m.classList.remove('hidden');
+            m.setAttribute('aria-hidden', 'false');
+            window.setTimeout(() => m.querySelector('.settings-close-btn')?.focus(), 0);
+        };
+        window.closeSettings = () => {
+            const m = getEl('settings-modal');
+            if (!m || m.classList.contains('hidden')) return;
+            m.classList.add('hidden');
+            m.setAttribute('aria-hidden', 'true');
+            settingsPreviousFocus?.focus?.();
+            settingsPreviousFocus = null;
+        };
         window.hardRefreshApp = async () => {
             try {
                 localStorage.removeItem('isa_monthly_review_snapshot');

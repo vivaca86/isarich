@@ -3459,6 +3459,27 @@ body > nav[class~="lg:hidden"][class~="fixed"] .nav-item.text-blue-600 {
     padding: 1.45rem !important;
 }
 
+#settings-modal > .relative.bg-white {
+    max-height: calc(100dvh - 1rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+@media (max-width: 420px) {
+    #settings-modal {
+        padding: 0.5rem !important;
+        align-items: flex-end !important;
+    }
+
+    #settings-modal > .relative.bg-white {
+        width: 100% !important;
+        max-height: calc(100dvh - 0.5rem);
+        border-radius: 22px 22px 0 0 !important;
+        padding: 1.15rem !important;
+    }
+}
+
 #detail-modal .relative.bg-white::before {
     content: "";
     display: block;

@@ -1,17 +1,17 @@
 const CACHE_PREFIX = 'isa-rich-cache-';
-const CACHE_VERSION = 'v57-mobile-bottom-nav';
+const CACHE_VERSION = 'v59-data-integrity';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const OFFLINE_URLS = [
   './',
   './index.html',
   './test.html',
   './config.js?v=20260701b',
-  './assets/styles.css?v=20260701e',
+  './assets/styles.css?v=20260714a',
   './assets/test-styles.css?v=20260513c',
   './assets/skins/test-hero-skin.svg',
   './assets/skins/test-panel-skin.svg',
   './assets/skins/test-holding-skin.svg',
-  './assets/app.js?v=20260701h',
+  './assets/app.js?v=20260714b',
   './manifest.webmanifest',
   './icons/app-icon.svg',
   './icons/ui/card-base.svg',
@@ -61,9 +61,14 @@ self.addEventListener('fetch', (event) => {
     event.respondWith((async () => {
       try {
         const preloadResponse = await event.preloadResponse;
-        if (preloadResponse) return preloadResponse;
+        if (preloadResponse?.ok) return preloadResponse;
 
         const networkResponse = await fetch(event.request);
+        if (!networkResponse.ok) {
+          const fallbackUrl = url.pathname.endsWith('/test.html') ? './test.html' : './index.html';
+          const cachedPage = await caches.match(fallbackUrl);
+          return cachedPage || networkResponse;
+        }
         const cache = await caches.open(CACHE_NAME);
         const fallbackUrl = url.pathname.endsWith('/test.html') ? './test.html' : './index.html';
         cache.put(fallbackUrl, networkResponse.clone());
@@ -80,7 +85,6 @@ self.addEventListener('fetch', (event) => {
   event.respondWith((async () => {
     const cached = await caches.match(event.request);
     if (cached) return cached;
-
     try {
       const response = await fetch(event.request);
       if (response.ok) {
@@ -89,7 +93,7 @@ self.addEventListener('fetch', (event) => {
       }
       return response;
     } catch (error) {
-      return caches.match('./index.html');
+      return cached || Response.error();
     }
   })());
 });
