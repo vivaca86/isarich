@@ -2,13 +2,13 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#0f172a">
     <meta name="robots" content="noindex,nofollow">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ISA RICH TEST">
-    <title>ISA RICH Design Test ver1.0.32</title>
+    <title>ISA RICH Design Test ver1.0.34</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/svg+xml" href="icons/app-icon.svg">
     <link rel="apple-touch-icon" href="icons/app-icon.svg">
@@ -20,7 +20,7 @@
     <script src="./config.js?v=20260513b"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-    <link rel="stylesheet" href="./assets/styles.css?v=20260517i">
+    <link rel="stylesheet" href="./assets/styles.css?v=20260714a">
     <link rel="stylesheet" href="./assets/test-styles.css?v=20260513c">
     <style>
         body.test-page::after {
@@ -442,10 +442,16 @@
     </div>
 
     <!-- [Modal] 설정 -->
-    <div id="settings-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6 text-left font-sans">
+    <div id="settings-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6 text-left font-sans" role="dialog" aria-modal="true" aria-labelledby="settings-title" aria-hidden="true">
         <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-xl" onclick="closeSettings()"></div>
         <div class="relative bg-white w-full max-w-sm p-8 rounded-[2.5rem] shadow-2xl animate-fade-up text-left font-sans">
-            <h3 class="text-2xl font-black mb-6 tracking-tighter text-left font-sans">시스템 설정</h3>
+            <button type="button" onclick="closeSettings()" aria-label="설정 닫기" class="settings-close-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <h3 id="settings-title" class="text-2xl font-black mb-6 tracking-tighter text-left font-sans">시스템 설정</h3>
             <div class="mb-6 p-4 rounded-2xl border border-slate-200 bg-slate-50/70">
                 <div class="flex items-center justify-between gap-3">
                     <div>
@@ -486,6 +492,6 @@
                 .catch(() => {});
         }
     </script>
-    <script src="./assets/app.js?v=20260517i"></script>
+    <script src="./assets/app.js?v=20260714b"></script>
 </body>
 </html>
