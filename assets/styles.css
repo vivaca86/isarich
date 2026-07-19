@@ -4162,7 +4162,7 @@ body > nav[class~="lg:hidden"][class~="fixed"] .nav-item.text-blue-600 {
 .import-review-table .import-col-check { width: 3rem; }
 .import-review-table .import-col-date { width: 8rem; }
 .import-review-table .import-col-side { width: 7rem; }
-.import-review-table .import-col-ticker { width: 7rem; }
+.import-review-table .import-col-ticker { display: none; }
 .import-review-table .import-col-name { width: 13rem; }
 .import-review-table .import-col-number { width: 7rem; }
 .import-review-table .import-col-category { width: 7rem; }
