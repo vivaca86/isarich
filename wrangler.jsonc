@@ -11,5 +11,8 @@
   ],
   "vars": {
     "PRICE_CACHE_TTL_SECONDS": "300"
+  },
+  "triggers": {
+    "crons": ["0 20 * * *"]
   }
 }

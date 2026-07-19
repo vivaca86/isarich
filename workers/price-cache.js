@@ -367,7 +367,138 @@ async function fetchPrices(env) {
   return payload;
 }
 
+// ===== KIS(한국투자증권) 분배금 → 배당률 자동 계산 =====
+const KIS_BASE_URL = "https://openapi.koreainvestment.com:9443";
+const KIS_TOKEN_KEY = "kis:token";
+const DIVIDENDS_KEY = "kis:dividends";
+const DIVIDENDS_TTL_SECONDS = 18 * 60 * 60; // 분배금 합은 월 단위로만 바뀌므로 하루 1회 갱신이면 충분
+
+const kisSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function kisYmd(date) {
+  return `${date.getUTCFullYear()}${String(date.getUTCMonth() + 1).padStart(2, "0")}${String(date.getUTCDate()).padStart(2, "0")}`;
+}
+
+async function getKisToken(env) {
+  const cached = await env.ISARICH_PRICE_CACHE.get(KIS_TOKEN_KEY, "json");
+  if (cached?.token && cached.expiresAt && Date.parse(cached.expiresAt) - Date.now() > 60_000) {
+    return cached.token;
+  }
+  const r = await fetch(`${KIS_BASE_URL}/oauth2/tokenP`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ grant_type: "client_credentials", appkey: env.KIS_APP_KEY, appsecret: env.KIS_APP_SECRET })
+  });
+  const d = await r.json();
+  if (!d.access_token) {
+    throw new Error("kis_token_failed: " + String(d.error_description || d.msg1 || JSON.stringify(d)).slice(0, 140));
+  }
+  const ttlSeconds = 23 * 60 * 60; // KIS 토큰은 24h 유효 → 여유롭게 23h 캐시
+  const expiresAt = new Date(Date.now() + ttlSeconds * 1000).toISOString();
+  await env.ISARICH_PRICE_CACHE.put(KIS_TOKEN_KEY, JSON.stringify({ token: d.access_token, expiresAt }), { expirationTtl: ttlSeconds });
+  return d.access_token;
+}
+
+// 최근 12개월 주당 분배금 합(원)을 반환. 분배 없으면 0.
+async function fetchKisTrailingDividend(env, token, ticker) {
+  const now = new Date();
+  const from = new Date(now.getTime() - 400 * 24 * 60 * 60 * 1000);
+  const url = new URL(`${KIS_BASE_URL}/uapi/domestic-stock/v1/ksdinfo/dividend`);
+  url.searchParams.set("CTS", "");
+  url.searchParams.set("GB1", "0");
+  url.searchParams.set("F_DT", kisYmd(from));
+  url.searchParams.set("T_DT", kisYmd(now));
+  url.searchParams.set("SHT_CD", ticker);
+  url.searchParams.set("HIGH_GB", "");
+  const r = await fetch(url.toString(), {
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${token}`,
+      appkey: env.KIS_APP_KEY,
+      appsecret: env.KIS_APP_SECRET,
+      tr_id: "HHKDB669102C0",
+      custtype: "P"
+    }
+  });
+  const d = await r.json();
+  const list = Array.isArray(d?.output) ? d.output
+    : Array.isArray(d?.output1) ? d.output1
+    : Array.isArray(d?.output2) ? d.output2 : [];
+  const cutoff = kisYmd(new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000));
+  let sum = 0;
+  for (const rec of list) {
+    const recDate = String(rec?.record_date || "").replace(/[^\d]/g, "");
+    if (recDate && recDate >= cutoff) {
+      const amt = Number(rec?.per_sto_divi_amt || 0);
+      if (Number.isFinite(amt) && amt > 0) sum += amt;
+    }
+  }
+  return sum;
+}
+
+// 모든 종목의 최근 12개월 분배금 합을 계산해 KV에 저장.
+async function refreshDividends(env, baseData) {
+  if (!env.KIS_APP_KEY || !env.KIS_APP_SECRET || !baseData) return null;
+  const token = await getKisToken(env);
+  const data = {};
+  for (const ticker of Object.keys(baseData)) {
+    try {
+      data[ticker] = await fetchKisTrailingDividend(env, token, ticker);
+    } catch (error) {
+      console.warn("kis dividend fetch failed", ticker, String(error?.message || error));
+      // 실패한 종목은 생략(기존 시트 배당률 유지)
+    }
+    await kisSleep(200); // KIS 유량제한 배려
+  }
+  await env.ISARICH_PRICE_CACHE.put(
+    DIVIDENDS_KEY,
+    JSON.stringify({ updatedAt: new Date().toISOString(), data }),
+    { expirationTtl: 7 * 24 * 60 * 60 }
+  );
+  return data;
+}
+
+// 저장된 분배금 합 + 현재가로 배당률(yield)을 실시간 계산해 덮어쓴다.
+// KIS 키가 없거나 데이터가 없으면 원본(시트 배당률) 그대로 반환.
+async function applyStoredYields(env, ctx, baseData) {
+  if (!env.KIS_APP_KEY || !env.KIS_APP_SECRET || !baseData || typeof baseData !== "object") return baseData;
+  let stored = null;
+  try {
+    stored = await env.ISARICH_PRICE_CACHE.get(DIVIDENDS_KEY, "json");
+  } catch (_) {
+    stored = null;
+  }
+  const ageMs = stored?.updatedAt ? Date.now() - Date.parse(stored.updatedAt) : Infinity;
+  if ((!stored?.data || ageMs > DIVIDENDS_TTL_SECONDS * 1000) && ctx?.waitUntil) {
+    ctx.waitUntil(refreshDividends(env, baseData).catch((error) => console.warn("dividend refresh failed", String(error?.message || error))));
+  }
+  const dividends = stored?.data;
+  if (!dividends) return baseData;
+  const out = {};
+  for (const [ticker, value] of Object.entries(baseData)) {
+    const sum = Number(dividends[ticker]);
+    const price = Number(value?.price || 0);
+    if (ticker in dividends && Number.isFinite(sum) && sum >= 0 && price > 0) {
+      out[ticker] = { ...value, yield: Number(((sum / price) * 100).toFixed(2)) };
+    } else {
+      out[ticker] = { ...value };
+    }
+  }
+  return out;
+}
+
 export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil((async () => {
+      try {
+        const base = (await readStoredPrices(env))?.data || (await fetchPrices(env)).data;
+        await refreshDividends(env, base);
+      } catch (error) {
+        console.warn("scheduled dividend refresh failed", String(error?.message || error));
+      }
+    })());
+  },
+
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
@@ -399,7 +530,7 @@ export default {
       const force = url.searchParams.get("refresh") === "1";
       const cached = force ? null : await readCachedPrices(env);
       if (cached) {
-        return jsonResponse(cached.data, 200, {
+        return jsonResponse(await applyStoredYields(env, ctx, cached.data), 200, {
           "X-ISARICH-Cache": "HIT",
           "X-ISARICH-Updated-At": cached.updatedAt
         });
@@ -411,21 +542,21 @@ export default {
           console.warn("background price refresh failed", error);
         });
         if (ctx?.waitUntil) ctx.waitUntil(refreshPromise);
-        return jsonResponse(stale.data, 200, {
+        return jsonResponse(await applyStoredYields(env, ctx, stale.data), 200, {
           "X-ISARICH-Cache": "STALE-WHILE-REVALIDATE",
           "X-ISARICH-Updated-At": stale.updatedAt
         });
       }
 
       const fresh = await fetchPrices(env);
-      return jsonResponse(fresh.data, 200, {
+      return jsonResponse(await applyStoredYields(env, ctx, fresh.data), 200, {
         "X-ISARICH-Cache": "MISS",
         "X-ISARICH-Updated-At": fresh.updatedAt
       });
     } catch (error) {
       const stale = await readStoredPrices(env);
       if (stale?.data) {
-        return jsonResponse(stale.data, 200, {
+        return jsonResponse(await applyStoredYields(env, ctx, stale.data), 200, {
           "X-ISARICH-Cache": "STALE",
           "X-ISARICH-Updated-At": stale.updatedAt,
           "X-ISARICH-Error": String(error?.message || error)
