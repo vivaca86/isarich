@@ -2623,13 +2623,14 @@ main {
     letter-spacing: -0.01em;
 }
 
-/* 한국식: 수익(플러스)=빨강, 손실(마이너스)=파랑 */
+/* 한국식: 수익(플러스)=빨강, 손실(마이너스)=파랑
+   (.holding-item p { color: inherit } 를 이겨야 해서 !important) */
 .holding-profit-up {
-    color: #f0442e;
+    color: #f0442e !important;
 }
 
 .holding-profit-down {
-    color: #2f6bff;
+    color: #2f6bff !important;
 }
 
 .holding-chevron {
