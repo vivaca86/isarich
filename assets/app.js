@@ -2052,8 +2052,46 @@ const centerTextPlugin = {
                 price: Math.round(Number(price || 0) * 100) / 100,
                 category,
                 confidence: Number.isFinite(confidence) ? Math.max(0, Math.min(1, confidence)) : 0,
+                corrected: Boolean(raw._autoFixed),
                 memo: String(raw.memo || '').trim()
             };
+        }
+
+        // 저장은 되지만 "확인 권장"으로 표시할 소프트 경고. 하드 경고(빠진 값)가 우선.
+        function getImportRowReviewNote(row, priceStats) {
+            if (getImportRowWarning(row)) return '';
+            const notes = [];
+            if (row?.corrected) notes.push('종목 자동보정됨');
+            const conf = Number(row?.confidence || 0);
+            if (conf > 0 && conf < 0.85) notes.push('인식 신뢰도 낮음');
+            const side = normalizeImportSide(row?.side, row?.shares, row?.name);
+            if ((side === 'buy' || side === 'sell') && priceStats) {
+                const stat = priceStats[resolveImportTicker(String(row?.ticker || '').trim(), String(row?.name || '').trim())];
+                const price = Number(row?.price || 0);
+                if (stat && stat.count >= 2 && price > 0 && (price > stat.median * 2 || price < stat.median * 0.5)) {
+                    notes.push('단가 이상');
+                }
+            }
+            return notes.length ? notes.join(' · ') + ' · 확인' : '';
+        }
+
+        // 같은 종목 매매 단가의 중앙값을 계산해 이상치 판정에 쓴다.
+        function buildImportPriceStats(rows) {
+            const buckets = {};
+            (rows || []).forEach((r) => {
+                const side = normalizeImportSide(r?.side, r?.shares, r?.name);
+                if (side !== 'buy' && side !== 'sell') return;
+                const price = Number(r?.price || 0);
+                if (price <= 0) return;
+                const ticker = resolveImportTicker(String(r?.ticker || '').trim(), String(r?.name || '').trim());
+                (buckets[ticker] = buckets[ticker] || []).push(price);
+            });
+            const stats = {};
+            Object.keys(buckets).forEach((ticker) => {
+                const arr = buckets[ticker].sort((a, b) => a - b);
+                stats[ticker] = { count: arr.length, median: arr[Math.floor(arr.length / 2)] };
+            });
+            return stats;
         }
 
         function importRowToPayload(row) {
@@ -2173,16 +2211,18 @@ const centerTextPlugin = {
             }
 
             const duplicateIndexes = getDuplicateImportIndexes(importRows);
+            const priceStats = buildImportPriceStats(importRows);
             body.innerHTML = importRows.map((row, index) => {
                 const warning = getImportRowWarning(row);
+                const reviewNote = getImportRowReviewNote(row, priceStats);
                 const duplicate = duplicateIndexes.has(index);
                 const rowClass = [
-                    warning ? 'import-row-warning' : '',
+                    (warning || reviewNote) ? 'import-row-warning' : '',
                     duplicate ? 'import-row-duplicate' : ''
                 ].filter(Boolean).join(' ');
                 const rowNote = duplicate
                     ? '이미 저장된 거래입니다. 저장에서 제외됩니다.'
-                    : (warning || row.memo || '');
+                    : (warning || reviewNote || row.memo || '');
                 const confidencePct = Math.round(Number(row.confidence || 0) * 100);
                 const sideOptions = [
                     ['buy', '매수'],
@@ -2284,7 +2324,7 @@ const centerTextPlugin = {
                 if (cur !== '379810' && cur !== '486290') return t;
                 const p = Number(t.price);
                 const near = Math.abs(p - mA) <= Math.abs(p - mB) ? '379810' : '486290';
-                return near === cur ? t : { ...t, ticker: near, name: CANON[near] };
+                return near === cur ? t : { ...t, ticker: near, name: CANON[near], _autoFixed: true };
             });
         }
 
