@@ -1,17 +1,17 @@
 const CACHE_PREFIX = 'isa-rich-cache-';
-const CACHE_VERSION = 'v59-data-integrity';
+const CACHE_VERSION = 'v60-korean-colors';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const OFFLINE_URLS = [
   './',
   './index.html',
   './test.html',
   './config.js?v=20260701b',
-  './assets/styles.css?v=20260714a',
+  './assets/styles.css?v=20260719a',
   './assets/test-styles.css?v=20260513c',
   './assets/skins/test-hero-skin.svg',
   './assets/skins/test-panel-skin.svg',
   './assets/skins/test-holding-skin.svg',
-  './assets/app.js?v=20260714b',
+  './assets/app.js?v=20260719a',
   './manifest.webmanifest',
   './icons/app-icon.svg',
   './icons/ui/card-base.svg',
