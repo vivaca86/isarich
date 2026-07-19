@@ -93,6 +93,7 @@ function getExtractSchema() {
           additionalProperties: false,
           properties: {
             date: { type: "string" },
+            time: { type: "string" },
             ticker: { type: "string" },
             name: { type: "string" },
             shares: { type: "number" },
@@ -105,6 +106,7 @@ function getExtractSchema() {
           },
           required: [
             "date",
+            "time",
             "ticker",
             "name",
             "shares",
@@ -128,15 +130,23 @@ function getExtractSchema() {
 
 function buildExtractPrompt(knownTickers) {
   return [
-    "You extract Korean ISA brokerage transaction history from screenshots.",
+    "You extract Korean ISA brokerage transaction history from KakaoPay Securities (카카오증권) screenshots.",
     "Return only actual executed transaction rows. Ignore holdings, portfolio balances, quotes, recommendations, and totals unless they are transaction rows.",
+    "The user may upload TWO DIFFERENT kinds of screenshots together, and you must COMBINE them into one clean list of transactions:",
+    "  (A) 주문내역 (Order history): rows like '종목명 / N주 구매 완료' or 'N주 판매 완료' with '주당 X원'. This gives the exact PER-SHARE price plus the side (구매=buy, 판매=sell) and share count. It usually shows only a coarse date header (e.g. '2026년 6월 22일') and NO precise time.",
+    "  (B) 계좌내역 (Account ledger): timestamped rows 'M월 D일 HH:MM:SS'. Row kinds: stock delivery legs ('…매수입고 +N주' = a buy, '…-N주 출고' or '…매도출고' = a sell) give ticker+shares+side+timestamp; trade cash legs ('…국내주식구매 -원' or '…국내주식판매 +원'); cash deposits ('ISA납입금 …', or a person-name bank transfer like '홍길동(카카오뱅크1234) +원'); dividends/distributions (a fund name with '+원 입금'); and deposit interest ('정기 예탁금 수익 +원').",
+    "MERGE RULES — emit exactly ONE item per real event, never double-count:",
+    "For each executed stock trade, output a single item: take the exact PER-SHARE price from the matching 주문내역 row, and take the DATE and TIME from the matching 계좌내역 stock delivery leg. Match a 주문내역 order to a 계좌내역 leg by the SAME ticker + SAME share count + SAME side (buy/sell).",
+    "If a trade appears only in 주문내역 (no matching ledger leg), keep its per-share price and leave time empty. If a trade appears only in 계좌내역 (no 주문내역 price), compute per-share price as (that trade's 국내주식구매/판매 cash-leg amount ÷ shares) and use the leg's timestamp.",
+    "NEVER emit the 계좌내역 '국내주식구매' / '국내주식판매' cash legs as their own transactions — they are only the cash side of a trade you already output.",
     "For stock trades: side must be buy or sell, category must be \"0\", shares is positive quantity, and price is per-share execution price.",
-    "Korean side cues are strict and override all other hints. If the same row contains 매도, 매도체결, 매도주문, 매도금액, 매도입금, 팔기, sell, sold, or sale, side MUST be \"sell\" and MUST NOT be \"buy\" or \"unknown\".",
-    "If the same row contains 매수, 매수체결, 매수주문, 사기, buy, bought, or purchase, side MUST be \"buy\" and MUST NOT be \"sell\" or \"unknown\".",
+    "Korean side cues are strict and override all other hints. If the same row contains 매도, 매도체결, 매도주문, 매도금액, 팔기, 판매, sell, sold, or sale, side MUST be \"sell\" and MUST NOT be \"buy\" or \"unknown\".",
+    "If the same row contains 매수, 매수체결, 매수주문, 매수입고, 사기, 구매, buy, bought, or purchase, side MUST be \"buy\" and MUST NOT be \"sell\" or \"unknown\".",
     "Never default an unclear stock trade to buy. Use \"unknown\" only when no buy/sell/deposit/dividend side cue is visible in the transaction row; lower confidence and add a warning.",
-    "For cash deposits: side must be deposit, ticker must be DEPOSIT, shares must be 1, price is the cash amount, category is \"1\" unless the row explicitly says special/bonus, then category \"2\".",
-    "For dividends: side must be dividend, shares must be 1, price is the dividend amount, category must be \"3\". Use the underlying ticker/name if visible; otherwise ticker DEPOSIT and add a warning.",
-    "Use YYYY-MM-DD dates. If a core field is missing, leave an empty string or 0 and lower confidence. Never invent unseen exact numbers.",
+    "For cash deposits (ISA납입금, 입금, incoming bank transfers showing a person/bank name): side must be deposit, ticker must be DEPOSIT, shares must be 1, price is the cash amount in 원, category is \"1\" unless the row explicitly says special/bonus, then category \"2\".",
+    "For dividends, distributions, and deposit interest (정기 예탁금 수익, or a fund name with '+원 입금'): side must be dividend, shares must be 1, price is the amount in 원, category must be \"3\". Use the underlying ticker/name if visible; otherwise ticker DEPOSIT and add a warning.",
+    "Use YYYY-MM-DD dates; infer the year from the nearest visible '____년' date header. If a core field is missing, leave an empty string or 0 and lower confidence. Never invent unseen exact numbers.",
+    "For time: if the row shows an execution time, return it as 24-hour HH:MM:SS (or HH:MM if seconds are not shown). Convert Korean 오전/오후 (AM/PM) correctly: 오후 2:30 -> 14:30, 오전 12:05 -> 00:05. If no time is visible for the row, return an empty string. Never invent a time.",
     "Known ticker hints from the app:",
     buildKnownTickerHint(knownTickers)
   ].join("\n");

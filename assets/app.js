@@ -953,10 +953,42 @@ const centerTextPlugin = {
             return Number.isFinite(parsed) ? parsed : 0;
         }
 
+        function normalizeClockTime(value) {
+            const raw = String(value || '').trim();
+            if (!raw) return '';
+            const isPm = /오후|p\.?m\.?/i.test(raw);
+            const isAm = /오전|a\.?m\.?/i.test(raw);
+            const match = raw.match(/(\d{1,2})\s*[:시]\s*(\d{1,2})(?:\s*[:분]\s*(\d{1,2}))?/);
+            if (!match) return '';
+            let hour = Number(match[1]);
+            const minute = Number(match[2]);
+            const second = match[3] != null ? Number(match[3]) : 0;
+            if (isPm && hour < 12) hour += 12;
+            if (isAm && hour === 12) hour = 0;
+            if (hour > 23 || minute > 59 || second > 59) return '';
+            return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+        }
+
+        function getTransactionTimeMs(tx) {
+            const normalized = normalizeClockTime(tx?.time);
+            if (!normalized) return -1;
+            const [hour, minute, second] = normalized.split(':').map(Number);
+            return ((hour * 60 + minute) * 60 + second) * 1000;
+        }
+
         function getSortedTransactions(inputTransactions) {
             return [...(inputTransactions || [])].sort((a, b) => {
                 const dateDiff = getSortableTransactionDate(a?.date) - getSortableTransactionDate(b?.date);
                 if (dateDiff !== 0) return dateDiff;
+                // 같은 날짜: 실제 체결 시각을 최우선으로 본다. 둘 다 시각이 있고 서로 다르면
+                // 입금/매수/매도 종류와 무관하게 시각순 그대로 줄세운다.
+                const timeA = getTransactionTimeMs(a);
+                const timeB = getTransactionTimeMs(b);
+                if (timeA >= 0 && timeB >= 0 && timeA !== timeB) return timeA - timeB;
+                // 시각을 알 수 없거나(한쪽만 있거나 없음) 분 단위까지 같아 순서를 못 가리면
+                // "입금은 매매보다 먼저" 규칙으로 현금이 음수가 되는 꼬임을 방지한다.
+                const depositDiff = (isDepositTransaction(a) ? 0 : 1) - (isDepositTransaction(b) ? 0 : 1);
+                if (depositDiff !== 0) return depositDiff;
                 const createdAtDiff = Number(a?.createdAtMs || 0) - Number(b?.createdAtMs || 0);
                 if (createdAtDiff !== 0) return createdAtDiff;
                 return String(a.id || '').localeCompare(String(b.id || ''));
@@ -1481,6 +1513,7 @@ const centerTextPlugin = {
             return {
                 id: String(item.id ?? Date.now()),
                 date: String(item.date || '').substring(0, 10),
+                time: normalizeClockTime(item.time),
                 ticker: String(item.ticker || ''),
                 name: String(item.name || ''),
                 shares: Number(item.shares || 0),
@@ -1675,6 +1708,7 @@ const centerTextPlugin = {
                 createdAt: createdAtValue
             };
             if(Number.isFinite(Number(payload.fee)) && Number(payload.fee) >= 0) doc.fee = roundMoney(payload.fee);
+            if(payload.time) doc.time = String(payload.time);
             if(payload.side) doc.side = String(payload.side);
             if(payload.type) doc.type = String(payload.type);
             await firestoreDb.collection(firebaseCollection).doc(id).set(doc);
@@ -2010,6 +2044,7 @@ const centerTextPlugin = {
                 selected: true,
                 source: String(raw.sourceFile || source || '').trim(),
                 date: parseImportDate(raw.date),
+                time: normalizeClockTime(raw.time || raw.date),
                 side: ['buy', 'sell', 'deposit', 'dividend'].includes(side) ? side : 'unknown',
                 ticker,
                 name: rawName || getMarketName(ticker, ticker),
@@ -2026,6 +2061,7 @@ const centerTextPlugin = {
             const price = Number(row.price || 0);
             const shares = roundShares(row.shares || 0);
             const date = String(row.date || '').substring(0, 10);
+            const time = normalizeClockTime(row.time);
             if (!date || !Number.isFinite(price) || price <= 0) return null;
 
             if (side === 'deposit' || side === 'dividend') {
@@ -2034,6 +2070,7 @@ const centerTextPlugin = {
                 return {
                     id: String(row.id || createTxnId()),
                     date,
+                    time,
                     ticker: ticker || 'DEPOSIT',
                     name: side === 'dividend'
                         ? `${marketName || row.name || '배당'} 배당 입금`
@@ -2050,6 +2087,7 @@ const centerTextPlugin = {
             return {
                 id: String(row.id || createTxnId()),
                 date,
+                time,
                 ticker,
                 name,
                 shares: side === 'sell' ? -Math.abs(shares) : Math.abs(shares),
@@ -2060,7 +2098,7 @@ const centerTextPlugin = {
             };
         }
 
-        function getTransactionDuplicateKey(tx) {
+        function getTransactionBaseKey(tx) {
             if (!tx) return '';
             const date = String(tx.date || '').substring(0, 10);
             const ticker = String(tx.ticker || '').trim().toUpperCase();
@@ -2074,22 +2112,49 @@ const centerTextPlugin = {
             return [date, ticker, side, category, shares, price].join('|');
         }
 
+        function getTransactionDuplicateKey(tx) {
+            const base = getTransactionBaseKey(tx);
+            if (!base) return '';
+            // 시각까지 넣어 같은 날 동일 종목·수량·단가의 '진짜 다른 거래'를 구분한다.
+            return `${normalizeClockTime(tx?.time)}|${base}`;
+        }
+
+        // 두 거래가 '같은 실거래'인지 판정. 한쪽에 시각이 없으면(예: 시각 기능 이전에 저장된 옛 기록)
+        // 시각을 무시하고 나머지로 비교해 재업로드 시 이중 등록을 막는다.
+        function transactionIdentityMatches(a, b) {
+            const base = getTransactionBaseKey(a);
+            if (!base || base !== getTransactionBaseKey(b)) return false;
+            const ta = normalizeClockTime(a?.time);
+            const tb = normalizeClockTime(b?.time);
+            if (ta && tb) return ta === tb;
+            return true;
+        }
+
         function getDuplicateImportIndexes(rows = importRows) {
-            const seen = new Set(transactions.map(getTransactionDuplicateKey).filter(Boolean));
             const duplicates = new Set();
+            const batchExactKeys = new Set();
             (rows || []).forEach((row, index) => {
-                const key = getTransactionDuplicateKey(importRowToPayload(row));
-                if (!key) return;
-                if (seen.has(key)) duplicates.add(index);
-                else seen.add(key);
+                const payload = importRowToPayload(row);
+                if (!getTransactionBaseKey(payload)) return;
+                // 이미 저장된 기록과 비교: 시각 없는 옛 기록도 잡도록 관대하게(시각 무시 허용).
+                const matchesExisting = transactions.some((tx) => transactionIdentityMatches(payload, tx));
+                // 같은 배치 안에서는 엄격하게(시각 포함): 진짜 다른 거래는 살린다.
+                const exactKey = getTransactionDuplicateKey(payload);
+                const matchesBatch = batchExactKeys.has(exactKey);
+                if (matchesExisting || matchesBatch) {
+                    duplicates.add(index);
+                } else {
+                    batchExactKeys.add(exactKey);
+                }
             });
             return duplicates;
         }
 
         function isLikelyExistingTransaction(row, index = importRows.indexOf(row), rows = importRows) {
             if (index < 0) {
-                const key = getTransactionDuplicateKey(importRowToPayload(row));
-                return Boolean(key) && transactions.some((tx) => getTransactionDuplicateKey(tx) === key);
+                const payload = importRowToPayload(row);
+                return Boolean(getTransactionBaseKey(payload))
+                    && transactions.some((tx) => transactionIdentityMatches(payload, tx));
             }
             return getDuplicateImportIndexes(rows).has(index);
         }
@@ -2384,6 +2449,7 @@ const centerTextPlugin = {
             const headers = rows[headerRowIndex].map(String);
             const indexes = {
                 date: findHeaderIndex(headers, ['날짜', '거래일', '매매일', '체결일', '일자', 'date']),
+                time: findHeaderIndex(headers, ['시간', '시각', '체결시각', '체결시간', '거래시각', 'time']),
                 ticker: findHeaderIndex(headers, ['종목코드', '단축코드', '코드', 'ticker', 'code']),
                 name: findHeaderIndex(headers, ['종목명', '상품명', 'name', '상품']),
                 side: findHeaderIndex(headers, ['거래구분', '매매구분', '구분', '종류', 'side', 'type', '내용']),
@@ -2405,6 +2471,7 @@ const centerTextPlugin = {
                 return {
                     sourceFile: source,
                     date: getCell(row, indexes.date),
+                    time: getCell(row, indexes.time),
                     ticker: getCell(row, indexes.ticker),
                     name,
                     side: side || sideRaw,
