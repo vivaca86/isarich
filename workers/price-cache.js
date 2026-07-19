@@ -387,7 +387,7 @@ async function getKisToken(env) {
   const r = await fetch(`${KIS_BASE_URL}/oauth2/tokenP`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ grant_type: "client_credentials", appkey: env.KIS_APP_KEY, appsecret: env.KIS_APP_SECRET })
+    body: JSON.stringify({ grant_type: "client_credentials", appkey: String(env.KIS_APP_KEY || "").trim(), appsecret: String(env.KIS_APP_SECRET || "").trim() })
   });
   const d = await r.json();
   if (!d.access_token) {
@@ -414,8 +414,8 @@ async function fetchKisTrailingDividend(env, token, ticker) {
     headers: {
       "content-type": "application/json",
       authorization: `Bearer ${token}`,
-      appkey: env.KIS_APP_KEY,
-      appsecret: env.KIS_APP_SECRET,
+      appkey: String(env.KIS_APP_KEY || "").trim(),
+      appsecret: String(env.KIS_APP_SECRET || "").trim(),
       tr_id: "HHKDB669102C0",
       custtype: "P"
     }
