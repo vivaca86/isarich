@@ -2263,6 +2263,31 @@ const centerTextPlugin = {
             };
         }
 
+        // 이름이 비슷한 KODEX 미국나스닥100(379810)과 미국나스닥100 타겟데일리커버드콜(486290)을
+        // 단가 군집으로 교정한다. 둘 다 있고 중앙값이 30% 넘게 벌어질 때만 동작(오작동 방지).
+        function disambiguateNasdaqPair(trades) {
+            const CANON = { '379810': 'KODEX 미국나스닥100', '486290': 'TIGER 미국나스닥100 타겟데일리커버드콜' };
+            const medianFor = (ticker) => {
+                const ps = trades
+                    .filter((t) => resolveImportTicker(String(t.ticker || '').trim(), String(t.name || '').trim()) === ticker)
+                    .map((t) => Number(t.price))
+                    .filter((p) => p > 0)
+                    .sort((a, b) => a - b);
+                return ps.length ? ps[Math.floor(ps.length / 2)] : null;
+            };
+            const mA = medianFor('379810');
+            const mB = medianFor('486290');
+            if (mA == null || mB == null) return trades;
+            if (Math.abs(mA - mB) < Math.max(mA, mB) * 0.3) return trades;
+            return trades.map((t) => {
+                const cur = resolveImportTicker(String(t.ticker || '').trim(), String(t.name || '').trim());
+                if (cur !== '379810' && cur !== '486290') return t;
+                const p = Number(t.price);
+                const near = Math.abs(p - mA) <= Math.abs(p - mB) ? '379810' : '486290';
+                return near === cur ? t : { ...t, ticker: near, name: CANON[near] };
+            });
+        }
+
         // OCR 원본 행을 합친다: 매매는 주문내역(docType 'order', 가격 있음)을 정식 거래로 삼고,
         // 계좌내역 체결줄(docType 'ledger', 시각만)에서 (종목+수량+구분)이 같은 걸 찾아 실제 날짜·시각을 붙인다.
         // 계좌내역 체결줄 자체는 거래로 만들지 않아 가격 0짜리 중복을 원천 차단한다. 입금·배당은 그대로 통과.
@@ -2313,12 +2338,13 @@ const centerTextPlugin = {
                 const p = Number(r.price);
                 if (!(t in minPriceByTicker) || p < minPriceByTicker[t]) minPriceByTicker[t] = p;
             });
-            const cleanTrades = pricedTrades
-                .filter((r) => {
-                    const t = resolveImportTicker(String(r.ticker || '').trim(), String(r.name || '').trim());
-                    return Number(r.price) <= (minPriceByTicker[t] || 0) * 5 + 1;
-                })
-                .map((r) => ({ ...r, time: '' }));
+            const sanePricedTrades = pricedTrades.filter((r) => {
+                const t = resolveImportTicker(String(r.ticker || '').trim(), String(r.name || '').trim());
+                return Number(r.price) <= (minPriceByTicker[t] || 0) * 5 + 1;
+            });
+            // 이름이 거의 같은 'KODEX 미국나스닥100'(379810)과 '미국나스닥100 타겟데일리커버드콜'(486290)은
+            // 모델이 가끔 뒤바꾼다. 두 종목이 함께 들어오고 단가 군집이 뚜렷이 갈리면 가까운 쪽으로 자가 교정한다.
+            const cleanTrades = disambiguateNasdaqPair(sanePricedTrades).map((r) => ({ ...r, time: '' }));
             const cleanCash = passthrough.filter((r) => {
                 const s = normalizeImportSide(r.side, r.shares, r.name);
                 return (s === 'deposit' || s === 'dividend') && Number(r.price || 0) > 0;
