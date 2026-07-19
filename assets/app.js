@@ -3632,8 +3632,8 @@ async function postMutation(action, payload = {}) {
             safeSetText('report-dividend-in', `₩${Math.round(monthReport.totalReturnAmount || 0).toLocaleString()} (${Number(monthReport.monthlyTotalReturnRate || 0).toFixed(2)}%)`);
             const monthlyReturnEl = getEl('hero-monthly-return');
             if (monthlyReturnEl) {
-                monthlyReturnEl.classList.remove('text-emerald-300', 'text-blue-300', 'text-slate-300');
-                monthlyReturnEl.classList.add(monthReport.totalReturnAmount > 0 ? 'text-emerald-300' : (monthReport.totalReturnAmount < 0 ? 'text-blue-300' : 'text-slate-300'));
+                monthlyReturnEl.classList.remove('text-emerald-300', 'text-red-300', 'text-blue-300', 'text-slate-300');
+                monthlyReturnEl.classList.add(monthReport.totalReturnAmount > 0 ? 'text-red-300' : (monthReport.totalReturnAmount < 0 ? 'text-blue-300' : 'text-slate-300'));
             }
             updateMonthlyReviewPanel(monthReport);
 
