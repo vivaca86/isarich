@@ -3606,16 +3606,12 @@ async function postMutation(action, payload = {}) {
             const totProfit = totalV - openCostBasis, totRate = openCostBasis > 0 ? (totProfit/openCostBasis)*100 : 0;
             const totalTrend = getTrendVisual(totRate);
             safeSetText('stat-profit-amount', `₩${Math.round(Math.abs(totProfit)).toLocaleString()}`);
-            const amountBox = getEl('stat-profit-amount');
-            if (amountBox) {
-                amountBox.classList.remove('text-white/80', 'text-red-300', 'text-blue-300', 'text-slate-300');
-                amountBox.classList.add(totalTrend.darkTextClass);
-            }
-            const pctBox = getEl('stat-profit-pct');
-            if (pctBox) {
-                pctBox.classList.remove('text-white/60', 'text-red-300', 'text-blue-300', 'text-slate-300');
-                pctBox.classList.add(totalTrend.darkTextClass);
-            }
+            // 어두운 히어로 카드 위에서 확실히 보이게 인라인 색을 직접 적용 (수익=빨강, 손실=파랑)
+            const profitColor = totProfit > 0 ? '#ff6058' : (totProfit < 0 ? '#4d9bff' : '#94a3b8');
+            ['stat-profit-amount', 'stat-profit-pct', 'stat-profit-icon'].forEach((id) => {
+                const el = getEl(id);
+                if (el) el.style.color = profitColor;
+            });
             safeSetHTML('stat-profit-pct', `${totProfit>=0?'+':''}${totRate.toFixed(1)}%`);
             safeSetHTML('stat-profit-icon', totalTrend.iconHtml);
             safeSetText('stat-cash-balance', `₩${Math.round(curCash).toLocaleString()}`);
@@ -3632,8 +3628,8 @@ async function postMutation(action, payload = {}) {
             safeSetText('report-dividend-in', `₩${Math.round(monthReport.totalReturnAmount || 0).toLocaleString()} (${Number(monthReport.monthlyTotalReturnRate || 0).toFixed(2)}%)`);
             const monthlyReturnEl = getEl('hero-monthly-return');
             if (monthlyReturnEl) {
-                monthlyReturnEl.classList.remove('text-emerald-300', 'text-red-300', 'text-blue-300', 'text-slate-300');
-                monthlyReturnEl.classList.add(monthReport.totalReturnAmount > 0 ? 'text-red-300' : (monthReport.totalReturnAmount < 0 ? 'text-blue-300' : 'text-slate-300'));
+                const mv = monthReport.totalReturnAmount;
+                monthlyReturnEl.style.color = mv > 0 ? '#ff6058' : (mv < 0 ? '#4d9bff' : '#94a3b8');
             }
             updateMonthlyReviewPanel(monthReport);
 
