@@ -2288,12 +2288,26 @@ const centerTextPlugin = {
                 return { ...o, time: '' };
             });
 
+            // 최종 정제: 저장 가능한 것만 남긴다.
+            // - 매매: 가격이 있는 것만 (가격 0 = 계좌내역 체결줄이 새어든 것 → 버림)
+            // - 현금: 모델이 deposit/dividend로 명확히 판정한 것만 (국내주식구매/판매 현금 정산줄이
+            //   side 'unknown' 등으로 새어드는 것을 차단해 가짜 입출금 오염을 막는다)
+            const cleanTrades = mergedTrades.filter((r) => Number(r.price || 0) > 0);
+            const cleanCash = passthrough.filter((r) => {
+                const s = normalizeImportSide(r.side, r.shares, r.name);
+                return (s === 'deposit' || s === 'dividend') && Number(r.price || 0) > 0;
+            });
+
             const warnings = [];
+            const noise = (mergedTrades.length - cleanTrades.length) + (passthrough.length - cleanCash.length);
+            if (noise) {
+                warnings.push(`가격·구분이 불명확한 ${noise}개 행은 제외했습니다(현금 정산줄 등).`);
+            }
             const unmatched = pool.filter((p) => !p.used).length;
             if (unmatched) {
-                warnings.push(`체결 시각만 있고 매칭되는 주문내역 가격이 없는 거래 ${unmatched}건은 제외했습니다. 해당 주문내역도 함께 캡처하면 반영됩니다.`);
+                warnings.push(`매칭되는 주문내역 가격이 없는 체결 ${unmatched}건은 제외했습니다. 해당 주문내역도 함께 캡처하면 반영됩니다.`);
             }
-            return { rows: [...mergedTrades, ...passthrough], warnings };
+            return { rows: [...cleanTrades, ...cleanCash], warnings };
         }
 
         function addImportRows(rows = [], source = '') {
