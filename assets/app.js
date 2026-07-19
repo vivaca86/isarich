@@ -2243,6 +2243,26 @@ const centerTextPlugin = {
             }
         }
 
+        // 여러 번 나눠 호출한 OCR 비용 추정치를 하나로 합산한다.
+        function mergeCostEstimates(list) {
+            const items = (list || []).filter(Boolean);
+            if (!items.length) return null;
+            if (items.length === 1) return items[0];
+            const sum = (key) => items.reduce((acc, c) => acc + (Number(c?.[key]) || 0), 0);
+            const first = items[0] || {};
+            return {
+                available: items.some((c) => c?.available),
+                model: first.model,
+                inputTokens: sum('inputTokens'),
+                cachedTokens: sum('cachedTokens'),
+                outputTokens: sum('outputTokens'),
+                usd: Number(sum('usd').toFixed(8)),
+                krw: Number(sum('krw').toFixed(2)),
+                usdKrwRate: first.usdKrwRate,
+                note: first.note
+            };
+        }
+
         // OCR 원본 행을 합친다: 매매는 주문내역(docType 'order', 가격 있음)을 정식 거래로 삼고,
         // 계좌내역 체결줄(docType 'ledger', 시각만)에서 (종목+수량+구분)이 같은 걸 찾아 실제 날짜·시각을 붙인다.
         // 계좌내역 체결줄 자체는 거래로 만들지 않아 가격 0짜리 중복을 원천 차단한다. 입금·배당은 그대로 통과.
@@ -2277,35 +2297,41 @@ const centerTextPlugin = {
                 }
             });
 
-            const pool = ledgerTradeLegs.map((r) => ({ r, used: false, key: tradeKey(r) }));
-            const mergedTrades = orderTrades.map((o) => {
-                const donor = pool.find((p) => !p.used && p.key === tradeKey(o));
-                if (donor) {
-                    donor.used = true;
-                    // 실제 계좌 반영 시점(계좌내역)의 날짜·시각을 쓰고, 가격은 주문내역 값 유지
-                    return { ...o, date: donor.r.date || o.date, time: donor.r.time || '' };
-                }
-                return { ...o, time: '' };
+            // 거래는 주문내역(주문일 + 가격)만 사용한다. 카카오는 매매 '체결 시각'을 노출하지 않고,
+            // 계좌내역 입고는 결제일(T+2)이라 날짜가 달라 기존 주문일 기록과 중복 판정이 어긋난다.
+            // → 계좌내역 체결줄은 날짜/시각으로 쓰지 않고 버린다. 같은 날 입금↔매매 순서는 '입금 우선'으로 처리.
+            // 정제: 매매는 가격이 있는 것만, 현금은 모델이 deposit/dividend로 명확히 판정한 것만 남겨
+            // 국내주식구매/판매 현금 정산줄이 side 'unknown' 등으로 새어들어 가짜 입출금을 만드는 것을 차단한다.
+            const orderKeys = new Set(orderTrades.map(tradeKey));
+            const pricedTrades = orderTrades.filter((r) => Number(r.price || 0) > 0);
+            // 현금 정산줄(국내주식구매/판매)이 매매로 잘못 분류되면 '단가' 자리에 총액(주당가×주수)이
+            // 들어와 비정상적으로 커진다. 같은 종목 최저 단가의 5배를 넘는 건 정산줄로 보고 버린다
+            // (같은 ETF의 주당가는 그 정도로 벌어지지 않는다).
+            const minPriceByTicker = {};
+            pricedTrades.forEach((r) => {
+                const t = resolveImportTicker(String(r.ticker || '').trim(), String(r.name || '').trim());
+                const p = Number(r.price);
+                if (!(t in minPriceByTicker) || p < minPriceByTicker[t]) minPriceByTicker[t] = p;
             });
-
-            // 최종 정제: 저장 가능한 것만 남긴다.
-            // - 매매: 가격이 있는 것만 (가격 0 = 계좌내역 체결줄이 새어든 것 → 버림)
-            // - 현금: 모델이 deposit/dividend로 명확히 판정한 것만 (국내주식구매/판매 현금 정산줄이
-            //   side 'unknown' 등으로 새어드는 것을 차단해 가짜 입출금 오염을 막는다)
-            const cleanTrades = mergedTrades.filter((r) => Number(r.price || 0) > 0);
+            const cleanTrades = pricedTrades
+                .filter((r) => {
+                    const t = resolveImportTicker(String(r.ticker || '').trim(), String(r.name || '').trim());
+                    return Number(r.price) <= (minPriceByTicker[t] || 0) * 5 + 1;
+                })
+                .map((r) => ({ ...r, time: '' }));
             const cleanCash = passthrough.filter((r) => {
                 const s = normalizeImportSide(r.side, r.shares, r.name);
                 return (s === 'deposit' || s === 'dividend') && Number(r.price || 0) > 0;
             });
 
             const warnings = [];
-            const noise = (mergedTrades.length - cleanTrades.length) + (passthrough.length - cleanCash.length);
+            const noise = (orderTrades.length - cleanTrades.length) + (passthrough.length - cleanCash.length);
             if (noise) {
                 warnings.push(`가격·구분이 불명확한 ${noise}개 행은 제외했습니다(현금 정산줄 등).`);
             }
-            const unmatched = pool.filter((p) => !p.used).length;
-            if (unmatched) {
-                warnings.push(`매칭되는 주문내역 가격이 없는 체결 ${unmatched}건은 제외했습니다. 해당 주문내역도 함께 캡처하면 반영됩니다.`);
+            const orphanLegs = ledgerTradeLegs.filter((r) => !orderKeys.has(tradeKey(r))).length;
+            if (orphanLegs) {
+                warnings.push(`주문내역 가격이 없는 체결 ${orphanLegs}건은 제외했습니다. 해당 주문내역도 함께 캡처하면 반영됩니다.`);
             }
             return { rows: [...cleanTrades, ...cleanCash], warnings };
         }
@@ -2420,26 +2446,41 @@ const centerTextPlugin = {
                         dataUrl: await resizeImageDataUrl(dataUrl)
                     });
                 }
-                const response = await fetchWithTimeout(TRADE_EXTRACT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        images,
-                        knownTickers: getKnownTickerList()
-                    })
-                }, 90000);
-                const payload = await response.json();
-                if (!response.ok || !payload?.ok) {
-                    throw new Error(payload?.message || payload?.error || `HTTP ${response.status}`);
+                const knownTickers = getKnownTickerList();
+                const callExtract = async (imgs) => {
+                    const response = await fetchWithTimeout(TRADE_EXTRACT_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ images: imgs, knownTickers })
+                    }, 90000);
+                    const payload = await response.json();
+                    if (!response.ok || !payload?.ok) {
+                        throw new Error(payload?.message || payload?.error || `HTTP ${response.status}`);
+                    }
+                    return payload;
+                };
+                // 사진을 2장씩 묶어 개별 호출한다. 한 번에 여러 장을 보내면 모델이 행을 누락하거나
+                // 비슷한 종목명(KODEX vs 커버드콜)을 헷갈리기 쉬워서, 나눠서 각 사진에 집중시킨다.
+                const CHUNK = 2;
+                const batches = [];
+                for (let i = 0; i < images.length; i += CHUNK) batches.push(images.slice(i, i + CHUNK));
+                const settled = await Promise.allSettled(batches.map(callExtract));
+                const okPayloads = settled.filter((s) => s.status === 'fulfilled').map((s) => s.value);
+                const failedCount = settled.length - okPayloads.length;
+                if (!okPayloads.length) {
+                    throw new Error(settled.find((s) => s.status === 'rejected')?.reason?.message || '분석 실패');
                 }
-                updateImportCostSummary(payload.costEstimate || null);
-                rememberImportAiCost(payload.costEstimate || null);
-                const rawRows = Array.isArray(payload.items) ? payload.items : [];
+                const mergedCost = mergeCostEstimates(okPayloads.map((p) => p.costEstimate).filter(Boolean));
+                updateImportCostSummary(mergedCost);
+                rememberImportAiCost(mergedCost);
+                const rawRows = okPayloads.flatMap((p) => Array.isArray(p.items) ? p.items : []);
+                const serverWarnings = okPayloads.flatMap((p) => Array.isArray(p.warnings) ? p.warnings : []);
                 const reconciled = reconcileExtractedRows(rawRows);
                 addImportRows(reconciled.rows, files.map((file) => file.name).join(', '));
                 const allWarnings = [
-                    ...(Array.isArray(payload.warnings) ? payload.warnings : []),
-                    ...reconciled.warnings
+                    ...serverWarnings,
+                    ...reconciled.warnings,
+                    ...(failedCount ? [`사진 ${failedCount}묶음 분석 실패 — 일부 누락됐을 수 있어요.`] : [])
                 ];
                 if (allWarnings.length) {
                     setImportStatus(`후보 ${reconciled.rows.length}개 · 확인 필요 ${allWarnings.length}건`, 'info');
