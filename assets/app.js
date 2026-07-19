@@ -2243,6 +2243,59 @@ const centerTextPlugin = {
             }
         }
 
+        // OCR 원본 행을 합친다: 매매는 주문내역(docType 'order', 가격 있음)을 정식 거래로 삼고,
+        // 계좌내역 체결줄(docType 'ledger', 시각만)에서 (종목+수량+구분)이 같은 걸 찾아 실제 날짜·시각을 붙인다.
+        // 계좌내역 체결줄 자체는 거래로 만들지 않아 가격 0짜리 중복을 원천 차단한다. 입금·배당은 그대로 통과.
+        function reconcileExtractedRows(rawItems = []) {
+            const items = (rawItems || []).map((r) => ({ ...r }));
+            const tradeSideOf = (r) => normalizeImportSide(r.side, r.shares, r.name);
+            const isTradeRow = (r) => {
+                const s = tradeSideOf(r);
+                return s === 'buy' || s === 'sell';
+            };
+            const tradeKey = (r) => {
+                const resolved = resolveImportTicker(String(r.ticker || '').trim(), String(r.name || '').trim());
+                const idPart = resolved || normalizeImportLookupText(r.name);
+                return `${idPart}|${Math.abs(roundShares(r.shares || 0))}|${tradeSideOf(r)}`;
+            };
+
+            const orderTrades = [];
+            const ledgerTradeLegs = [];
+            const passthrough = [];
+            items.forEach((r) => {
+                if (!isTradeRow(r)) {
+                    passthrough.push(r); // 입금·배당 등은 그대로
+                    return;
+                }
+                const docType = String(r.docType || '').toLowerCase();
+                const hasPrice = Number(r.price || 0) > 0;
+                // 주문내역(가격 있음) = 정식 거래 / 계좌내역 체결줄(시각만, 가격 0) = 시각 공급용
+                if (docType === 'ledger' || (docType !== 'order' && !hasPrice)) {
+                    ledgerTradeLegs.push(r);
+                } else {
+                    orderTrades.push(r);
+                }
+            });
+
+            const pool = ledgerTradeLegs.map((r) => ({ r, used: false, key: tradeKey(r) }));
+            const mergedTrades = orderTrades.map((o) => {
+                const donor = pool.find((p) => !p.used && p.key === tradeKey(o));
+                if (donor) {
+                    donor.used = true;
+                    // 실제 계좌 반영 시점(계좌내역)의 날짜·시각을 쓰고, 가격은 주문내역 값 유지
+                    return { ...o, date: donor.r.date || o.date, time: donor.r.time || '' };
+                }
+                return { ...o, time: '' };
+            });
+
+            const warnings = [];
+            const unmatched = pool.filter((p) => !p.used).length;
+            if (unmatched) {
+                warnings.push(`체결 시각만 있고 매칭되는 주문내역 가격이 없는 거래 ${unmatched}건은 제외했습니다. 해당 주문내역도 함께 캡처하면 반영됩니다.`);
+            }
+            return { rows: [...mergedTrades, ...passthrough], warnings };
+        }
+
         function addImportRows(rows = [], source = '') {
             const nextRows = rows.map((item) => createImportRow(item, source)).filter((row) => {
                 return row.date || row.ticker || row.name || Number(row.price || 0) > 0;
@@ -2367,10 +2420,15 @@ const centerTextPlugin = {
                 }
                 updateImportCostSummary(payload.costEstimate || null);
                 rememberImportAiCost(payload.costEstimate || null);
-                const rows = Array.isArray(payload.items) ? payload.items : [];
-                addImportRows(rows, files.map((file) => file.name).join(', '));
-                if (Array.isArray(payload.warnings) && payload.warnings.length) {
-                    setImportStatus(`후보 ${rows.length}개 · 확인 필요 ${payload.warnings.length}건`, 'info');
+                const rawRows = Array.isArray(payload.items) ? payload.items : [];
+                const reconciled = reconcileExtractedRows(rawRows);
+                addImportRows(reconciled.rows, files.map((file) => file.name).join(', '));
+                const allWarnings = [
+                    ...(Array.isArray(payload.warnings) ? payload.warnings : []),
+                    ...reconciled.warnings
+                ];
+                if (allWarnings.length) {
+                    setImportStatus(`후보 ${reconciled.rows.length}개 · 확인 필요 ${allWarnings.length}건`, 'info');
                 }
             } catch (error) {
                 console.error(error);
