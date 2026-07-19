@@ -531,7 +531,6 @@ const centerTextPlugin = {
         function getMarketYieldPct(ticker) {
             let yieldPct = Number(marketData?.[ticker]?.yield || 0);
             if (!Number.isFinite(yieldPct) || yieldPct <= 0) return 0;
-            if (yieldPct < 1) yieldPct *= 100;
             return yieldPct;
         }
 
@@ -3017,7 +3016,6 @@ const centerTextPlugin = {
             const name = String(data?.name || getEl('input-name')?.value || '종목을 선택하세요');
             const price = Number(data?.price || getEl('input-price')?.value || 0);
             let yieldPct = Number(data?.yield || 0);
-            if (yieldPct > 0 && yieldPct < 1) yieldPct *= 100;
             const visual = getStockVisual(name, ticker, '#7132f5');
             const currentShares = getCurrentSharesForTicker(ticker);
             const isSell = currentTransactionMode === 'sell';
@@ -3586,7 +3584,7 @@ async function postMutation(action, payload = {}) {
                 const avgPrice = d.shares > 0 ? d.cost / d.shares : 0;
                 const rawPrice = Number(m.price || 0);
                 const safePrice = Number.isFinite(rawPrice) && rawPrice > 0 ? rawPrice : avgPrice;
-                let yieldPct = Number(m.yield || 0); if(yieldPct < 1 && yieldPct > 0) yieldPct *= 100;
+                let yieldPct = Number(m.yield || 0);
                 const val = d.shares * safePrice, profit = val - d.cost, prate = d.cost > 0 ? (profit/d.cost)*100 : 0, div = val * (yieldPct/100/12);
                 const itemTrend = getTrendVisual(prate);
                 totalV += val; totalD += div;
